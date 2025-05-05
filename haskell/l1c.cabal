@@ -1,0 +1,38 @@
+cabal-version:      3.0
+name:               l1c
+version:            0.1.0.0
+
+synopsis: Simple toy compiler
+description: This was developed for the lecture 'Compiler Design' in the summer term 2025 by André Platzer at KIT Karlsruhe
+
+author:             Darius Schefer
+maintainer:         darius.schefer@student.kit.edu
+
+build-type:         Simple
+
+common warnings
+    ghc-options: -Wall
+
+executable l1c
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:
+                  base >= 4.15 && < 5,
+                  containers,
+                  directory,
+                  filepath,
+                  megaparsec >= 9.7.0,
+                  mtl,
+                  optparse-applicative >= 0.18.1.0,
+                  parser-combinators,
+                  transformers
+    other-modules:
+                  Args,
+                  Compile,
+                  Compile.AST,
+                  Compile.Parser,
+                  Compile.Semantic,
+                  Compile.AAsm,
+                  Error
+    hs-source-dirs:   app
+    default-language: Haskell2010
