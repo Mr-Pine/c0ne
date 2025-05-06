@@ -6,7 +6,6 @@ import edu.kit.kastel.vads.compiler.ir.node.*
 import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempDirectory
-import kotlin.io.path.createTempFile
 import kotlin.io.path.writeText
 
 class X86CodeGenerator: CodeGenerator<X86RegisterAllocator.X86RegisterAllocation> {
