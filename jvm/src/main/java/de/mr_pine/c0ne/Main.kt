@@ -5,6 +5,7 @@ import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
 import de.mr_pine.c0ne.backend.aasm.AasmCodeGenerator
+import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
 import edu.kit.kastel.vads.compiler.lexer.Lexer
@@ -14,7 +15,11 @@ import edu.kit.kastel.vads.compiler.parser.TokenSource
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis
 import edu.kit.kastel.vads.compiler.semantic.SemanticException
 import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermission
+import kotlin.io.path.getPosixFilePermissions
 import kotlin.io.path.readText
+import kotlin.io.path.setPosixFilePermissions
+import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 import kotlin.system.exitProcess
 
@@ -37,8 +42,14 @@ class C0ne : CliktCommand() {
         }
 
         // TODO: generate assembly and invoke gcc instead of generating abstract assembly
-        val code = AasmCodeGenerator().generateCode(graphs)
-        output.writeText(code)
+        val code = X86CodeGenerator().generateCode(graphs)
+        output.writeBytes(code)
+        output.setPosixFilePermissions(
+            setOf(
+                PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_EXECUTE,
+                PosixFilePermission.OTHERS_EXECUTE
+            ) + output.getPosixFilePermissions()
+        )
     }
 
     companion object {
