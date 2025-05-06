@@ -1,6 +1,8 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("java")
-    kotlin("jvm") version "2.1.20"
+    kotlin("jvm") version "2.2.0-Beta2"
     application
 }
 
@@ -25,6 +27,12 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.withType<KotlinCompile> {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-parameters")
+    }
 }
 
 java {

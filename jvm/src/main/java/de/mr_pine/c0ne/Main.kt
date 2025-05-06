@@ -4,7 +4,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
-import edu.kit.kastel.vads.compiler.backend.aasm.CodeGenerator
+import de.mr_pine.c0ne.backend.aasm.AasmCodeGenerator
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
 import edu.kit.kastel.vads.compiler.lexer.Lexer
@@ -37,7 +37,7 @@ class C0ne : CliktCommand() {
         }
 
         // TODO: generate assembly and invoke gcc instead of generating abstract assembly
-        val code = CodeGenerator().generateCode(graphs)
+        val code = AasmCodeGenerator().generateCode(graphs)
         output.writeText(code)
     }
 
