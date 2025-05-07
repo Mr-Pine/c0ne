@@ -9,12 +9,12 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
-class X86CodeGenerator : CodeGenerator<X86Register, X86ColoringRegisterAllocator.X86ColoringRegisterAllocation> {
-    typealias Allocation = X86ColoringRegisterAllocator.X86ColoringRegisterAllocation
+class X86CodeGenerator : CodeGenerator<X86Register, X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation> {
+    typealias Allocation = X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation
 
-    // override fun getAllocator(): RegisterAllocator<X86Register, X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation> = X86StraightLineRegisterAllocator()
-    override fun getAllocator(): RegisterAllocator<X86Register, X86ColoringRegisterAllocator.X86ColoringRegisterAllocation> =
-        X86ColoringRegisterAllocator()
+    override fun getAllocator(): RegisterAllocator<X86Register, X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation> = X86StraightLineRegisterAllocator()
+    /*override fun getAllocator(): RegisterAllocator<X86Register, X86ColoringRegisterAllocator.X86ColoringRegisterAllocation> =
+        X86ColoringRegisterAllocator()*/
 
     override fun postprocess(generation: String): ByteArray {
         val tmpdir = createTempDirectory("c0ne")
