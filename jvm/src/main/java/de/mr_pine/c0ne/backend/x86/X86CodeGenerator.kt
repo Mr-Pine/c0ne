@@ -119,10 +119,15 @@ class X86CodeGenerator: CodeGenerator<X86RegisterAllocator.X86RegisterAllocation
 
     context(builder: StringBuilder)
     private fun processInstruction(instruction: Instruction, vararg operands: Any) {
-        builder.append(instruction.name)
-            .append(" ")
-            .append(operands.joinToString(", "))
-            .appendLine()
+        if (operands.isNotEmpty() && operands[0] is X86Register.OverflowSlot) {
+            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, operands[0])
+            processInstruction(instruction, *(listOf(X86Register.RealRegister.R15D) + operands.drop(1)).toTypedArray())
+        } else {
+            builder.append(instruction.name)
+                .append(" ")
+                .append(operands.joinToString(", "))
+                .appendLine()
+        }
     }
 
     private enum class Instruction {

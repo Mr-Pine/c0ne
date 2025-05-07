@@ -19,12 +19,12 @@ sealed interface X86Register : Register {
         R12D(true),
         R13D(true),
         R14D(true),
-        R15D(true);
+        R15D(false);
 
         override fun toString() = name.lowercase()
     }
 
     data class OverflowSlot(val index: Int) : X86Register {
-        override fun toString() = "[${RealRegister.ESP} + $index]"
+        override fun toString() = "DWORD PTR [${RealRegister.ESP} + $index]"
     }
 }
