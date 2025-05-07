@@ -28,6 +28,9 @@ class X86ColoringRegisterAllocator :
         }
     }
 
+    fun Node.neighbourhoodIn(nodes: Collection<Node>) =
+        predecessors().filter { it in nodes } + nodes.filter { this in it.predecessors() }
+
     private val conflicts = mutableSetOf<Conflict>()
     private val liveNodes = mutableSetOf<Node>()
     fun addLiveConflicts(node: Node) {
@@ -45,8 +48,21 @@ class X86ColoringRegisterAllocator :
         X86Register.RealRegister.entries.filter(X86Register.RealRegister::availableForAllocation)
             .asSequence() + generateSequence(X86Register.OverflowSlot(0)) { X86Register.OverflowSlot(it.index + 1) }
 
+    fun buildSimplicialOrdering(nodes: Collection<Node>): List<Node> {
+        val weights = nodes.associateWith { node -> 0 }.toMutableMap()
+        return buildList {
+            while (weights.isNotEmpty()) {
+                val minNode = weights.minBy(Map.Entry<Node, Int>::value).key
+                weights.remove(minNode)
+                minNode.neighbourhoodIn(weights.keys).forEach {
+                    weights[it] = weights[it]!! + 1
+                }
+                add(minNode)
+            }
+        }
+    }
 
-    fun scanConflicts(node: Node, visited: MutableSet<Node>) {
+    fun scanNodes(node: Node, visited: MutableSet<Node>) {
         when (node) {
             is AddNode, is MulNode, is SubNode -> {
                 addLiveConflicts(node)
@@ -73,16 +89,30 @@ class X86ColoringRegisterAllocator :
         for (predecessor in node.predecessors()) {
             if (predecessor !in visited) {
                 visited.add(predecessor)
-                scanConflicts(predecessor, visited)
+                scanNodes(predecessor, visited)
             }
+        }
+    }
+
+    fun allocateFromSimplicialOrdering(ordering: List<Node>) {
+        val relevant = ordering.filter(Node::needsRegister)
+        val soFar = mutableSetOf<Node>()
+        for (node in relevant) {
+            val availableRegisters = registerSequence.filter { reg ->
+                reg !in node.neighbourhoodIn(soFar).map { registerMap[it] }
+            }
+            registerMap[node] = availableRegisters.first()
+            soFar.add(node)
         }
     }
 
     override fun allocateRegisters(graph: IrGraph): X86ColoringRegisterAllocation {
         val conflictVisited = mutableSetOf<Node>(graph.endBlock())
-        scanConflicts(graph.endBlock(), conflictVisited)
-        val visited = mutableSetOf<Node>(graph.endBlock())
-        scan(graph.endBlock(), visited)
+        scanNodes(graph.endBlock(), conflictVisited)
+        val simplicialOrdering = buildSimplicialOrdering(conflictVisited)
+        /*val visited = mutableSetOf<Node>(graph.endBlock())
+        scan(graph.endBlock(), visited)*/
+        allocateFromSimplicialOrdering(simplicialOrdering)
         return X86ColoringRegisterAllocation(
             registerMap, registerMap.values.mapNotNull { it as? X86Register.OverflowSlot }.maxOfOrNull(
                 X86Register.OverflowSlot::index
@@ -108,8 +138,7 @@ class X86ColoringRegisterAllocator :
     }
 
     data class X86ColoringRegisterAllocation(
-        private val allocations: Map<Node, X86Register>,
-        override val overflowCount: Int
+        private val allocations: Map<Node, X86Register>, override val overflowCount: Int
     ) : X86RegisterAllocation {
         override fun get(node: Node) = allocations[node]!!
 
