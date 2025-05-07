@@ -122,6 +122,10 @@ class X86CodeGenerator: CodeGenerator<X86RegisterAllocator.X86RegisterAllocation
         if (operands.isNotEmpty() && operands[0] is X86Register.OverflowSlot) {
             processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, operands[0])
             processInstruction(instruction, *(listOf(X86Register.RealRegister.R15D) + operands.drop(1)).toTypedArray())
+            builder.append(Instruction.MOV.name)
+                .append(" ")
+                .append(listOf(operands[0], X86Register.RealRegister.R15D).joinToString(", "))
+                .appendLine()
         } else {
             builder.append(instruction.name)
                 .append(" ")
