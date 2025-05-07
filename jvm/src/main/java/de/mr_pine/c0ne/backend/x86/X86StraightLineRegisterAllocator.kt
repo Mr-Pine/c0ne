@@ -8,18 +8,19 @@ import edu.kit.kastel.vads.compiler.ir.node.ProjNode
 import edu.kit.kastel.vads.compiler.ir.node.ReturnNode
 import edu.kit.kastel.vads.compiler.ir.node.StartNode
 
-class X86RegisterAllocator : RegisterAllocator<X86RegisterAllocator.X86RegisterAllocation> {
+class X86StraightLineRegisterAllocator :
+    RegisterAllocator<X86Register, X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation> {
     private val registerMap: MutableMap<Node, X86Register> = mutableMapOf()
     private val remainingRealRegisters: ArrayDeque<X86Register.RealRegister> =
         ArrayDeque(X86Register.RealRegister.entries.filter(X86Register.RealRegister::availableForAllocation))
     var overflowCount: Int = 0
         private set
 
-    override fun allocateRegisters(graph: IrGraph): X86RegisterAllocation {
+    override fun allocateRegisters(graph: IrGraph): X86StraightLineRegisterAllocation {
         val visited = mutableSetOf<Node>()
         visited.add(graph.endBlock())
         scan(graph.endBlock(), visited)
-        return X86RegisterAllocation(registerMap, overflowCount)
+        return X86StraightLineRegisterAllocation(registerMap, overflowCount)
     }
 
     fun scan(node: Node, visited: MutableSet<Node>) {
@@ -39,8 +40,9 @@ class X86RegisterAllocator : RegisterAllocator<X86RegisterAllocator.X86RegisterA
         }
     }
 
-    data class X86RegisterAllocation(private val registerMap: Map<Node, X86Register>, val overflowCount: Int) :
-        RegisterAllocator.RegisterAllocation {
+    data class X86StraightLineRegisterAllocation(
+        private val registerMap: Map<Node, X86Register>, override val overflowCount: Int
+    ) : X86RegisterAllocation {
         override fun get(node: Node) = registerMap[node]!!
     }
 }

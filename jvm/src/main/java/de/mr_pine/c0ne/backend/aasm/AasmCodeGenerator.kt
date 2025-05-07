@@ -6,7 +6,7 @@ import edu.kit.kastel.vads.compiler.ir.node.*
 import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
 
 
-class AasmCodeGenerator : CodeGenerator<AasmRegisterAllocator.AasmRegisterAllocation> {
+class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.AasmRegisterAllocation> {
     companion object {
         private const val INDENTATION = "  "
     }

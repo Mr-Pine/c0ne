@@ -3,8 +3,8 @@ package de.mr_pine.c0ne.backend
 import edu.kit.kastel.vads.compiler.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.*
 
-interface CodeGenerator<A : RegisterAllocator.RegisterAllocation> {
-    fun getAllocator(): RegisterAllocator<A>
+interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>> {
+    fun getAllocator(): RegisterAllocator<R, A>
 
 
     fun generateCode(graphs: List<IrGraph>): ByteArray {
