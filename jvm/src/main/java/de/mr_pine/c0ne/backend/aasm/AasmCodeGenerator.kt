@@ -1,7 +1,6 @@
 package de.mr_pine.c0ne.backend.aasm
 
 import de.mr_pine.c0ne.backend.CodeGenerator
-import de.mr_pine.c0ne.backend.RegisterAllocator
 import edu.kit.kastel.vads.compiler.ir.node.*
 import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
 

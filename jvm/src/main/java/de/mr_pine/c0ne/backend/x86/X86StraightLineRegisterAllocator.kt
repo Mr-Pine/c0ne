@@ -31,7 +31,7 @@ class X86StraightLineRegisterAllocator :
             }
         }
         if (node.needsRegister) {
-            val real = remainingRealRegisters.removeFirstOrNull();
+            val real = remainingRealRegisters.removeFirstOrNull()
             if (real != null) {
                 registerMap[node] = real
             } else {
