@@ -41,7 +41,6 @@ class C0ne : CliktCommand() {
             translation.translate()
         }
 
-        // TODO: generate assembly and invoke gcc instead of generating abstract assembly
         val code = X86CodeGenerator().generateCode(graphs)
         output.writeBytes(code)
         output.setPosixFilePermissions(
