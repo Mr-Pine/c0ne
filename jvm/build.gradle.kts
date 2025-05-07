@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("java")
     kotlin("jvm") version "2.2.0-Beta2"
+    id("org.jetbrains.kotlinx.kover") version "0.9.1"
     application
 }
 
