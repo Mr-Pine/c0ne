@@ -70,4 +70,8 @@ public sealed abstract class Node permits BinaryOperationNode, Block, ConstIntNo
     public DebugInfo debugInfo() {
         return debugInfo;
     }
+
+    protected static int predecessorHash(Node node, int predecessor) {
+        return System.identityHashCode(node.predecessor(predecessor));
+    }
 }
