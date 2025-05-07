@@ -4,9 +4,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ParserTest {
+    // TODO: Test case
     @Test
     fun `program trailing stuff`() {
-        val expected = 42;
+        val expected = 42
         val program = """
             int main() {
                 return $expected;
@@ -22,7 +23,7 @@ class ParserTest {
 
     @Test
     fun `multiple functions`() {
-        val expected = 42;
+        val expected = 42
         val program = """
             int main() {
                 return $expected;
@@ -40,7 +41,7 @@ class ParserTest {
 
     @Test
     fun `empty program`() {
-        val expected = 42;
+        val expected = 42
         val program = """
         """.trimIndent()
         assertThrows<ParseException> {
@@ -51,7 +52,7 @@ class ParserTest {
 
     @Test
     fun `lonely expression`() {
-        val expected = 42;
+        val expected = 42
         val program = """
             int main() {
                 int a = 3;
@@ -67,7 +68,7 @@ class ParserTest {
 
     @Test
     fun `some lonely numbers`() {
-        val expected = 42;
+        val expected = 42
         val program = """
             int main() {
                 a 3 5;
@@ -82,7 +83,7 @@ class ParserTest {
 
     @Test
     fun `missing semicolon`() {
-        val expected = 42;
+        val expected = 42
         val program = """
             int main() {
                 int a = 3
@@ -97,7 +98,7 @@ class ParserTest {
 
     @Test
     fun `parenthesized lvalue`() {
-        val expected = 8;
+        val expected = 8
         val program = """
             int main() {
                 int a = 0;
@@ -112,7 +113,7 @@ class ParserTest {
 
     @Test
     fun `mismatched parenthesized lvalue`() {
-        val expected = 8;
+        val expected = 8
         val program = """
             int main() {
                 int a = 0;
@@ -129,7 +130,7 @@ class ParserTest {
 
     @Test
     fun multiplication() {
-        val expected = -48;
+        val expected = -48
         val program = """
             int main() {
                 int a = 3;
@@ -144,7 +145,7 @@ class ParserTest {
 
     @Test
     fun `assignment chain`() {
-        val expected = -48;
+        val expected = -48
         val program = """
             int main() {
                 int a = 3;
