@@ -25,6 +25,6 @@ sealed interface X86Register : Register {
     }
 
     data class OverflowSlot(val index: Int) : X86Register {
-        override fun toString() = "DWORD PTR [${RealRegister.RSP} + $index]"
+        override fun toString() = "DWORD PTR [${RealRegister.RSP} + ${index * 4}]"
     }
 }
