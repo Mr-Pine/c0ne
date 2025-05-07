@@ -130,6 +130,10 @@ public class SsaTranslation {
             pushSpan(blockTree);
             for (StatementTree statement : blockTree.statements()) {
                 statement.accept(this, data);
+                // skip everything after a return in a block
+                if (statement instanceof ReturnTree) {
+                    break;
+                }
             }
             popSpan();
             return NOT_AN_EXPRESSION;
