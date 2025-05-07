@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ParserTest {
-    // TODO: Test case
     @Test
     fun `program trailing stuff`() {
         val expected = 42
@@ -12,7 +11,7 @@ class ParserTest {
             int main() {
                 return $expected;
             }
-            afasf
+            keys
             /
         """.trimIndent()
         assertThrows<ParseException> {
