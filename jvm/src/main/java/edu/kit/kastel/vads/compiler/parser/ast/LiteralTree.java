@@ -25,7 +25,10 @@ public record LiteralTree(String value, int base, Span span) implements Expressi
         } catch (NumberFormatException _) {
             return OptionalLong.empty();
         }
-        if (l < 0 || l > Integer.toUnsignedLong(Integer.MIN_VALUE)) {
+        boolean isNegative = l < 0;
+        boolean validPositiveInt = l <= Integer.toUnsignedLong(Integer.MIN_VALUE);
+        boolean validInt = l <= Integer.toUnsignedLong(-1);
+        if (isNegative || (!validPositiveInt && base != 16) || !validInt) {
             return OptionalLong.empty();
         }
         return OptionalLong.of(l);
