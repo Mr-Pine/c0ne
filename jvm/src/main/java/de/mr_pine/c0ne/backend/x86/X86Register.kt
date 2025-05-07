@@ -10,8 +10,8 @@ sealed interface X86Register : Register {
         EDX(false),
         ESI(true),
         EDI(true),
-        ESP(false),
-        EBP(false),
+        RSP(false),
+        RBP(false),
         R8D(true),
         R9D(true),
         R10D(true),
@@ -25,6 +25,6 @@ sealed interface X86Register : Register {
     }
 
     data class OverflowSlot(val index: Int) : X86Register {
-        override fun toString() = "DWORD PTR [${RealRegister.ESP} + $index]"
+        override fun toString() = "DWORD PTR [${RealRegister.RSP} + $index]"
     }
 }
