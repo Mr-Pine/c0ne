@@ -44,12 +44,28 @@ class SemanticTest {
         }
     }
 
+    // TODO: Test case
+    @Test
+    fun `uninitialized return`() {
+        val program = """
+            int main() {
+                int a;
+                return a;
+            }
+        """.trimIndent()
+        assertThrows<SemanticException> {
+            TestUtil.compileAndRun(program)
+        }
+    }
+
+    // TODO: Test case
     @Test
     fun `uninitialized variable`() {
         val program = """
             int main() {
                 int a;
-                return a;
+                int b = a + 3;
+                return b;
             }
         """.trimIndent()
         assertThrows<SemanticException> {
@@ -85,7 +101,7 @@ class SemanticTest {
 
     @Test
     fun `initialize declared variable`() {
-        val expected = 42;
+        val expected = 42
         val program = """
             int main() {
                 int a;
@@ -97,9 +113,10 @@ class SemanticTest {
         assertEquals(expected.mod(256), result)
     }
 
+    // TODO: Test case
     @Test
     fun `assign declared variable`() {
-        val expected = 42;
+        val expected = 42
         val program = """
             int main() {
                 int a;
