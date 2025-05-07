@@ -9,9 +9,9 @@ import edu.kit.kastel.vads.compiler.ir.node.ProjNode
 import edu.kit.kastel.vads.compiler.ir.node.ReturnNode
 import edu.kit.kastel.vads.compiler.ir.node.StartNode
 
-class AasmRegisterAllocator : RegisterAllocator<AasmRegisterAllocator.AasmRegisterAllocation> {
+class AasmRegisterAllocator : RegisterAllocator<VirtualRegister, AasmRegisterAllocator.AasmRegisterAllocation> {
     private var counter = 0
-    private var registerMap = mutableMapOf<Node, Register>()
+    private var registerMap = mutableMapOf<Node, VirtualRegister>()
 
     override fun allocateRegisters(graph: IrGraph): AasmRegisterAllocation {
         val visited = mutableSetOf<Node>()
@@ -32,8 +32,8 @@ class AasmRegisterAllocator : RegisterAllocator<AasmRegisterAllocator.AasmRegist
         }
     }
 
-    data class AasmRegisterAllocation(private val registerMap: Map<Node, Register>) :
-        RegisterAllocator.RegisterAllocation {
+    data class AasmRegisterAllocation(private val registerMap: Map<Node, VirtualRegister>) :
+        RegisterAllocator.RegisterAllocation<VirtualRegister> {
         override fun get(node: Node) = registerMap[node]!!
 
     }
