@@ -23,15 +23,22 @@ class VariableStatusAnalysis implements NoOpVisitor<Namespace<VariableStatusAnal
         switch (assignmentTree.lValue()) {
             case LValueIdentTree(var name) -> {
                 VariableStatus status = data.get(name);
-                checkInitialized(name, status);
+                checkDeclared(name, status);
+                data.put(name, VariableStatus.INITIALIZED, (_, replacement) -> replacement);
             }
         }
         return NoOpVisitor.super.visit(assignmentTree, data);
     }
 
-    private static void checkInitialized(NameTree name, @Nullable VariableStatus status) {
+    private static void checkDeclared(NameTree name, @Nullable VariableStatus status) {
         if (status == null) {
             throw new SemanticException("Variable " + name + " must be declared before assignment");
+        }
+    }
+
+    private static void checkInitialized(NameTree name, @Nullable VariableStatus status) {
+        if (status != VariableStatus.INITIALIZED) {
+            throw new SemanticException("Variable " + name + " must be initialized before usage");
         }
     }
 
