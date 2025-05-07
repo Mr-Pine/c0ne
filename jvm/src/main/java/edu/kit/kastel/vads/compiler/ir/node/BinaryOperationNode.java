@@ -15,7 +15,7 @@ public sealed abstract class BinaryOperationNode extends Node permits AddNode, D
     protected static int commutativeHashCode(BinaryOperationNode node) {
         int h = node.block().hashCode();
         // commutative operation: we want h(op(x, y)) == h(op(y, x))
-        h += 31 * (node.predecessor(LEFT).hashCode() ^ node.predecessor(RIGHT).hashCode());
+        h += 31 * (predecessorHash(node, LEFT) ^ predecessorHash(node, RIGHT));
         return h;
     }
 
@@ -45,6 +45,6 @@ public sealed abstract class BinaryOperationNode extends Node permits AddNode, D
 
     @Override
     public int hashCode() {
-        return (this.predecessor(LEFT).hashCode() * 31 + this.predecessor(RIGHT).hashCode()) ^ this.getClass().hashCode();
+        return (predecessorHash(this, LEFT) * 31 + predecessorHash(this, RIGHT)) ^ this.getClass().hashCode();
     }
 }
