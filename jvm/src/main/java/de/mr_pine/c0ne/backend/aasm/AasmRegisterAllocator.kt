@@ -1,13 +1,8 @@
 package de.mr_pine.c0ne.backend.aasm
 
 import de.mr_pine.c0ne.backend.RegisterAllocator
-import de.mr_pine.c0ne.backend.Register
 import edu.kit.kastel.vads.compiler.ir.IrGraph
-import edu.kit.kastel.vads.compiler.ir.node.Block
-import edu.kit.kastel.vads.compiler.ir.node.Node
-import edu.kit.kastel.vads.compiler.ir.node.ProjNode
-import edu.kit.kastel.vads.compiler.ir.node.ReturnNode
-import edu.kit.kastel.vads.compiler.ir.node.StartNode
+import edu.kit.kastel.vads.compiler.ir.node.*
 
 class AasmRegisterAllocator : RegisterAllocator<VirtualRegister, AasmRegisterAllocator.AasmRegisterAllocation> {
     private var counter = 0
