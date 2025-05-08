@@ -19,17 +19,22 @@ private fun scan(node: Node, visited: MutableSet<Node>, controlFlowOrder: Mutabl
     controlFlowOrder.add(node)
 }
 
-abstract class BackwardsControlFlow<Output>: BackwardsFlow<Output>() {
+abstract class BackwardsControlFlow<InValue, OutValue>: BackwardsFlow<InValue, OutValue>() {
     val controlFlowOrders = mutableMapOf<IrGraph, List<Node>>()
     override fun analyze(graph: IrGraph) {
         controlFlowOrders[graph] = graph.nodesInControlFlowOrder()
         super.analyze(graph)
     }
 
-    context(graph: IrGraph)
     override fun predecessors(node: Node): List<Node> {
-        val nodes = controlFlowOrders[graph]!!
+        val nodes = controlFlowOrders[node.graph()]!!
         val currentIndex = nodes.indexOf(node)
         return listOfNotNull(nodes.getOrNull(currentIndex - 1))
+    }
+
+    override fun successors(node: Node): List<Node> {
+        val nodes = controlFlowOrders[node.graph()]!!
+        val currentIndex = nodes.indexOf(node)
+        return listOfNotNull(nodes.getOrNull(currentIndex + 1))
     }
 }

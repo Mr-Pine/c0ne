@@ -21,7 +21,7 @@ class AasmRegisterAllocator : RegisterAllocator<VirtualRegister, AasmRegisterAll
 
     data class AasmRegisterAllocation(private val registerMap: Map<Node, VirtualRegister>) :
         RegisterAllocator.RegisterAllocation<VirtualRegister> {
-        override fun get(node: Node) = registerMap[node]!!
+        override fun getOrNull(node: Node) = registerMap[node]
 
     }
 }
