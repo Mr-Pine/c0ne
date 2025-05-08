@@ -1,6 +1,7 @@
 package de.mr_pine.c0ne.backend.aasm
 
 import de.mr_pine.c0ne.backend.RegisterAllocator
+import de.mr_pine.c0ne.backend.nodesInControlFlowOrder
 import edu.kit.kastel.vads.compiler.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.*
 
@@ -9,22 +10,13 @@ class AasmRegisterAllocator : RegisterAllocator<VirtualRegister, AasmRegisterAll
     private var registerMap = mutableMapOf<Node, VirtualRegister>()
 
     override fun allocateRegisters(graph: IrGraph): AasmRegisterAllocation {
-        val visited = mutableSetOf<Node>()
-        visited.add(graph.endBlock())
-        scan(graph.endBlock(), visited)
-        return AasmRegisterAllocation(registerMap)
-    }
-
-    fun scan(node: Node, visited: MutableSet<Node>) {
-        for (predecessor in node.predecessors()) {
-            if (predecessor !in visited) {
-                visited.add(predecessor)
-                scan(predecessor, visited)
+        val nodes = graph.nodesInControlFlowOrder()
+        for (node in nodes) {
+            if (node.needsRegister) {
+                registerMap[node] = VirtualRegister(counter++)
             }
         }
-        if (node.needsRegister) {
-            registerMap[node] = VirtualRegister(counter++)
-        }
+        return AasmRegisterAllocation(registerMap)
     }
 
     data class AasmRegisterAllocation(private val registerMap: Map<Node, VirtualRegister>) :
