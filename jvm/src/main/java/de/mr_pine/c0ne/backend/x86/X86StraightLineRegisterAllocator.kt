@@ -9,7 +9,7 @@ class X86StraightLineRegisterAllocator :
     RegisterAllocator<X86Register, X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation> {
     private val registerMap: MutableMap<Node, X86Register> = mutableMapOf()
     private val remainingRealRegisters: ArrayDeque<X86Register.RealRegister> =
-        ArrayDeque(X86Register.RealRegister.entries.filter(X86Register.RealRegister::availableForAllocation))
+        ArrayDeque(X86Register.RealRegister.entries - listOf(X86Register.RealRegister.EAX, X86Register.RealRegister.EDX, X86Register.RealRegister.RBP, X86Register.RealRegister.RSP, X86Register.RealRegister.R15D))
     var overflowCount: Int = 0
         private set
 
@@ -31,9 +31,9 @@ class X86StraightLineRegisterAllocator :
     data class X86StraightLineRegisterAllocation(
         private val registerMap: Map<Node, X86Register>, override val overflowCount: Int
     ) : X86RegisterAllocation {
-        override fun get(node: Node) = registerMap[node]!!
+        override fun getOrNull(node: Node) = registerMap[node]
     }
 }
 
-private val Node.needsRegister: Boolean
+val Node.needsRegister: Boolean
     get() = !(this is ProjNode || this is StartNode || this is Block || this is ReturnNode)

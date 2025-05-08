@@ -3,11 +3,18 @@ package de.mr_pine.c0ne.analysis
 import edu.kit.kastel.vads.compiler.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.Node
 
-abstract class BackwardsFlow<Output> {
-    private val computedInputs = mutableMapOf<Node, List<Output?>>()
-    private val outputs = mutableMapOf<Node, Output>()
-    val result: Map<Node, Output>
-        get() = outputs
+abstract class BackwardsFlow<InValue, OutValue> {
+    private val computedInputs = mutableMapOf<Node, List<InValue?>>()
+    private val outValues = mutableMapOf<Node, OutValue>()
+    private val inValues = mutableMapOf<Node, InValue>()
+
+    data class BackwardsFlowResult<InValue, OutValue>(val inValue: InValue, val outValue: OutValue)
+    val result: Map<Node, BackwardsFlowResult<InValue, OutValue>>
+        get() = buildMap {
+            for (key in outValues.keys) {
+                put(key, BackwardsFlowResult(inValues[key]!!, outValues[key]!!))
+            }
+        }
 
     open fun analyze(graph: IrGraph) {
         with(graph) {
@@ -17,17 +24,19 @@ abstract class BackwardsFlow<Output> {
 
     context(graph: IrGraph)
     private fun analyzeNode(node: Node) {
-        val inputs = predecessors(node).map { outputs[it] }
+        val inputs = successors(node).map { inValues[it] }
         if (computedInputs[node] == inputs) return
-        val output = computeOutput(node, inputs)
-        outputs[node] = output
+        val outValue = computeOutValue(node, inputs)
+        outValues[node] = outValue
+        inValues[node] = computeInValue(node, outValue)
         computedInputs[node] = inputs
         for (predecessor in predecessors(node)) {
             analyzeNode(predecessor)
         }
     }
 
-    context(graph: IrGraph)
     abstract fun predecessors(node: Node): List<Node>
-    abstract fun computeOutput(node: Node, inputs: List<Output?>): Output
+    abstract fun successors(node: Node): List<Node>
+    abstract fun computeOutValue(node: Node, inputs: List<InValue?>): OutValue
+    abstract fun computeInValue(node: Node, outValue: OutValue): InValue
 }
