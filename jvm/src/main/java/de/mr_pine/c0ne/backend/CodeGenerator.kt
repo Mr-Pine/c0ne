@@ -1,8 +1,10 @@
 package de.mr_pine.c0ne.backend
 
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
+import de.mr_pine.c0ne.ir.util.YCompPrinter
 import edu.kit.kastel.vads.compiler.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.*
+import java.io.File
 
 interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>> {
     fun getAllocator(): RegisterAllocator<R, A>
@@ -13,6 +15,7 @@ interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>
             prologue()
             for (graph in graphs) {
                 val registers = getAllocator().allocateRegisters(graph)
+                File("/tmp/graph.vcg").writeText(YCompPrinter.print(graph, registers))
                 with(registers) {
                     functionPrologue(graph.name())
                     codegenGraph(graph)

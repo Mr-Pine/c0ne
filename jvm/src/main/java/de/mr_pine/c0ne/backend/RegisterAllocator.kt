@@ -7,6 +7,8 @@ interface RegisterAllocator<R: Register, A: RegisterAllocator.RegisterAllocation
     fun allocateRegisters(graph: IrGraph): A
 
     interface RegisterAllocation<R: Register> {
-        operator fun get(node: Node): R
+        operator fun get(node: Node) = getOrNull(node)!!
+
+        fun getOrNull(node: Node): R?
     }
 }

@@ -2,20 +2,22 @@ package de.mr_pine.c0ne.backend.x86
 
 import de.mr_pine.c0ne.backend.CodeGenerator
 import de.mr_pine.c0ne.backend.RegisterAllocator
+import de.mr_pine.c0ne.ir.left
 import de.mr_pine.c0ne.ir.result
+import de.mr_pine.c0ne.ir.right
 import edu.kit.kastel.vads.compiler.ir.node.*
 import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
-// private typealias Allocation = X86ColoringRegisterAllocator.X86ColoringRegisterAllocation
-private typealias Allocation = X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation
+private typealias Allocation = X86ColoringRegisterAllocator.X86ColoringRegisterAllocation
+//private typealias Allocation = X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation
 
 class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
 
-    override fun getAllocator(): RegisterAllocator<X86Register, Allocation> = X86StraightLineRegisterAllocator()
-    // override fun getAllocator(): RegisterAllocator<X86Register, Allocation> = X86ColoringRegisterAllocator()
+    // override fun getAllocator(): RegisterAllocator<X86Register, Allocation> = X86StraightLineRegisterAllocator()
+    override fun getAllocator(): RegisterAllocator<X86Register, Allocation> = X86ColoringRegisterAllocator()
 
     override fun postprocess(generation: String): ByteArray {
         val tmpdir = createTempDirectory("c0ne")
@@ -49,57 +51,49 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
             functionEpilogue("_main")
             return
         }
-        processInstruction(Instruction.LEAVE)
         builder.appendLine("# end of $name")
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: AddNode) {
-        processInstruction(
-            Instruction.MOV, registers[node], registers[NodeSupport.predecessorSkipProj(node, AddNode.LEFT)]
-        )
-        processInstruction(
-            Instruction.ADD, registers[node], registers[NodeSupport.predecessorSkipProj(node, AddNode.RIGHT)]
-        )
+        processBinaryOperation(node, Instruction.ADD)
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: SubNode) {
-        processInstruction(
-            Instruction.MOV, registers[node], registers[NodeSupport.predecessorSkipProj(node, AddNode.LEFT)]
-        )
-        processInstruction(
-            Instruction.SUB, registers[node], registers[NodeSupport.predecessorSkipProj(node, AddNode.RIGHT)]
-        )
-    }
-
-    context(builder: StringBuilder, registers: Allocation) override fun processNode(node: DivNode) {
-        processInstruction(
-            Instruction.MOV,
-            X86Register.RealRegister.EAX,
-            registers[NodeSupport.predecessorSkipProj(node, DivNode.LEFT)]
-        )
-        processInstruction(Instruction.CDQ)
-        processInstruction(Instruction.IDIV, registers[NodeSupport.predecessorSkipProj(node, DivNode.RIGHT)])
-        processInstruction(Instruction.MOV, registers[node], X86Register.RealRegister.EAX)
-    }
-
-    context(builder: StringBuilder, registers: Allocation) override fun processNode(node: ModNode) {
-        processInstruction(
-            Instruction.MOV,
-            X86Register.RealRegister.EAX,
-            registers[NodeSupport.predecessorSkipProj(node, DivNode.LEFT)]
-        )
-        processInstruction(Instruction.CDQ)
-        processInstruction(Instruction.IDIV, registers[NodeSupport.predecessorSkipProj(node, DivNode.RIGHT)])
-        processInstruction(Instruction.MOV, registers[node], X86Register.RealRegister.EDX)
+        processBinaryOperation(node, Instruction.SUB, false)
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: MulNode) {
-        processInstruction(
-            Instruction.MOV, registers[node], registers[NodeSupport.predecessorSkipProj(node, MulNode.LEFT)]
-        )
-        processInstruction(
-            Instruction.IMUL, registers[node], registers[NodeSupport.predecessorSkipProj(node, MulNode.RIGHT)]
-        )
+        processBinaryOperation(node, Instruction.IMUL)
+    }
+
+    context(builder: StringBuilder, registers: Allocation) private fun processBinaryOperation(node: BinaryOperationNode, instruction: Instruction, commutative: Boolean = true) {
+        val target = registers[node]
+        val left = registers[node.left]
+        val right = registers[node.right]
+        if (left == target) {
+            processInstruction(instruction, left, right)
+        } else if (right == target && commutative) {
+            processInstruction(instruction, right, left)
+        } else {
+            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, left)
+            processInstruction(instruction, X86Register.RealRegister.R15D, right)
+            processInstruction(Instruction.MOV, target, X86Register.RealRegister.R15D)
+        }
+    }
+
+    context(builder: StringBuilder, registers: Allocation) override fun processNode(node: DivNode) {
+        processIdiv(node, X86Register.RealRegister.EAX)
+    }
+
+    context(builder: StringBuilder, registers: Allocation) override fun processNode(node: ModNode) {
+        processIdiv(node, X86Register.RealRegister.EDX)
+    }
+
+    context(builder: StringBuilder, registers: Allocation) private fun processIdiv(node: BinaryOperationNode, target: X86Register.RealRegister) {
+        processInstruction(Instruction.MOV, X86Register.RealRegister.EAX, registers[node.left])
+        processInstruction(Instruction.CDQ)
+        processInstruction(Instruction.IDIV, registers[node.right])
+        processInstruction(Instruction.MOV, registers[node], target)
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: ConstIntNode) {
@@ -122,13 +116,16 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
     }
 
     context(builder: StringBuilder) private fun processInstruction(instruction: Instruction, vararg operands: Any) {
-        if (operands.isNotEmpty() && operands[0] is X86Register.OverflowSlot) {
+        if (operands.isNotEmpty() && instruction != Instruction.MOV && operands[0] is X86Register.OverflowSlot) {
             processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, operands[0])
             processInstruction(instruction, *(listOf(X86Register.RealRegister.R15D) + operands.drop(1)).toTypedArray())
             builder.append(Instruction.MOV.name).append(" ")
                 .append(listOf(operands[0], X86Register.RealRegister.R15D).joinToString(", ")).appendLine()
         } else {
-            builder.append(instruction.name).append(" ").append(operands.joinToString(", ")).appendLine()
+            val isUnnecessaryMove = instruction == Instruction.MOV && operands[0] == operands[1]
+            if (!isUnnecessaryMove) {
+                builder.append(instruction.name).append(" ").append(operands.joinToString(", ")).appendLine()
+            }
         }
     }
 
