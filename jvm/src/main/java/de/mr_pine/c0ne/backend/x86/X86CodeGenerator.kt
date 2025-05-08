@@ -65,21 +65,25 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
         processBinaryOperation(node, Instruction.IMUL)
     }
 
-    context(builder: StringBuilder, registers: Allocation) private fun processBinaryOperation(node: BinaryOperationNode, instruction: Instruction, commutative: Boolean = true) {
+    context(builder: StringBuilder, registers: Allocation) private fun processBinaryOperation(
+        node: BinaryOperationNode,
+        instruction: Instruction,
+        commutative: Boolean = true
+    ) {
         val target = registers[node]
-        val left = registers[node.left]
-        val right = registers[node.right]
+        val left = registers.getOrNull(node.left)
+        val right = registers.getOrNull(node.right)
         if (left == target) {
-            processInstruction(instruction, left, right)
+            processInstruction(instruction, left, node.right.registerOrConstValue)
         } else if (right == target && commutative) {
-            processInstruction(instruction, right, left)
-        } else if (right == target || (left is X86Register.OverflowSlot && target is X86Register.OverflowSlot)) {
-            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, left)
-            processInstruction(instruction, X86Register.RealRegister.R15D, right)
+            processInstruction(instruction, right, node.left.registerOrConstValue)
+        } else if (right == target || (left !is X86Register.RealRegister && target !is X86Register.RealRegister)) {
+            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, node.left.registerOrConstValue)
+            processInstruction(instruction, X86Register.RealRegister.R15D, node.right.registerOrConstValue)
             processInstruction(Instruction.MOV, target, X86Register.RealRegister.R15D)
         } else {
-            processInstruction(Instruction.MOV, target, left)
-            processInstruction(instruction, target, right)
+            processInstruction(Instruction.MOV, target, node.left.registerOrConstValue)
+            processInstruction(instruction, target, node.right.registerOrConstValue)
         }
     }
 
@@ -91,15 +95,22 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
         processIdiv(node, X86Register.RealRegister.EDX)
     }
 
-    context(builder: StringBuilder, registers: Allocation) private fun processIdiv(node: BinaryOperationNode, target: X86Register.RealRegister) {
-        processInstruction(Instruction.MOV, X86Register.RealRegister.EAX, registers[node.left])
+    context(builder: StringBuilder, registers: Allocation) private fun processIdiv(
+        node: BinaryOperationNode,
+        target: X86Register.RealRegister
+    ) {
+        processInstruction(Instruction.MOV, X86Register.RealRegister.EAX, node.left.registerOrConstValue)
         processInstruction(Instruction.CDQ)
-        processInstruction(Instruction.IDIV, registers[node.right])
+        if (node.right.registerOrConstValue !is X86Register.RealRegister) {
+            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, node.right.registerOrConstValue)
+            processInstruction(Instruction.IDIV, X86Register.RealRegister.R15D)
+        } else {
+            processInstruction(Instruction.IDIV, registers[node.right])
+        }
         processInstruction(Instruction.MOV, registers[node], target)
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: ConstIntNode) {
-        processInstruction(Instruction.MOV, registers[node], node.value())
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: Block) {
@@ -109,7 +120,7 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: ReturnNode) {
-        processInstruction(Instruction.MOV, X86Register.RealRegister.EAX, registers[node.result])
+        processInstruction(Instruction.MOV, X86Register.RealRegister.EAX, node.result.registerOrConstValue)
         processInstruction(Instruction.LEAVE)
         processInstruction(Instruction.RET)
     }
@@ -135,3 +146,7 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
         MOV, ADD, SUB, IDIV, CDQ, IMUL, ENTER, LEAVE, RET
     }
 }
+
+context(registers: Allocation)
+val Node.registerOrConstValue
+    get() = if (this is ConstIntNode) value() else registers[this]
