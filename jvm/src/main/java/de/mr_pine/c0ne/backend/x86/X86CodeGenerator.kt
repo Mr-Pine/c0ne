@@ -74,10 +74,13 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
             processInstruction(instruction, left, right)
         } else if (right == target && commutative) {
             processInstruction(instruction, right, left)
-        } else {
+        } else if (right == target || (left is X86Register.OverflowSlot && target is X86Register.OverflowSlot)) {
             processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, left)
             processInstruction(instruction, X86Register.RealRegister.R15D, right)
             processInstruction(Instruction.MOV, target, X86Register.RealRegister.R15D)
+        } else {
+            processInstruction(Instruction.MOV, target, left)
+            processInstruction(instruction, target, right)
         }
     }
 
