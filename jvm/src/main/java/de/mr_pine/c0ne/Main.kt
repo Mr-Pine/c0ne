@@ -4,8 +4,9 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
-import de.mr_pine.c0ne.backend.aasm.AasmCodeGenerator
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
+import de.mr_pine.c0ne.ir.optimize.ConstantFolding
+import de.mr_pine.c0ne.ir.optimize.MultiOptimizer
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
 import edu.kit.kastel.vads.compiler.lexer.Lexer
@@ -20,7 +21,6 @@ import kotlin.io.path.getPosixFilePermissions
 import kotlin.io.path.readText
 import kotlin.io.path.setPosixFilePermissions
 import kotlin.io.path.writeBytes
-import kotlin.io.path.writeText
 import kotlin.system.exitProcess
 
 class C0ne : CliktCommand() {
@@ -37,7 +37,8 @@ class C0ne : CliktCommand() {
             exitProcess(ExitCodes.SEMANTIC_ERROR.code)
         }
         val graphs = program.topLevelTrees.map { function ->
-            val translation = SsaTranslation(function, LocalValueNumbering())
+            val optimizer = MultiOptimizer(ConstantFolding(), LocalValueNumbering())
+            val translation = SsaTranslation(function, optimizer)
             translation.translate()
         }
 
