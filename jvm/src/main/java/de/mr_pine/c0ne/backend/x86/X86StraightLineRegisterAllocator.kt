@@ -1,12 +1,9 @@
 package de.mr_pine.c0ne.backend.x86
 
 import de.mr_pine.c0ne.backend.RegisterAllocator
+import de.mr_pine.c0ne.backend.nodesInControlFlowOrder
 import edu.kit.kastel.vads.compiler.ir.IrGraph
-import edu.kit.kastel.vads.compiler.ir.node.Block
-import edu.kit.kastel.vads.compiler.ir.node.Node
-import edu.kit.kastel.vads.compiler.ir.node.ProjNode
-import edu.kit.kastel.vads.compiler.ir.node.ReturnNode
-import edu.kit.kastel.vads.compiler.ir.node.StartNode
+import edu.kit.kastel.vads.compiler.ir.node.*
 
 class X86StraightLineRegisterAllocator :
     RegisterAllocator<X86Register, X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation> {
@@ -17,27 +14,18 @@ class X86StraightLineRegisterAllocator :
         private set
 
     override fun allocateRegisters(graph: IrGraph): X86StraightLineRegisterAllocation {
-        val visited = mutableSetOf<Node>()
-        visited.add(graph.endBlock())
-        scan(graph.endBlock(), visited)
+        val nodes = graph.nodesInControlFlowOrder()
+        for (node in nodes) {
+            if (node.needsRegister) {
+                val real = remainingRealRegisters.removeFirstOrNull()
+                if (real != null) {
+                    registerMap[node] = real
+                } else {
+                    registerMap[node] = X86Register.OverflowSlot(overflowCount++)
+                }
+            }
+        }
         return X86StraightLineRegisterAllocation(registerMap, overflowCount)
-    }
-
-    fun scan(node: Node, visited: MutableSet<Node>) {
-        for (predecessor in node.predecessors()) {
-            if (predecessor !in visited) {
-                visited.add(predecessor)
-                scan(predecessor, visited)
-            }
-        }
-        if (node.needsRegister) {
-            val real = remainingRealRegisters.removeFirstOrNull()
-            if (real != null) {
-                registerMap[node] = real
-            } else {
-                registerMap[node] = X86Register.OverflowSlot(overflowCount++)
-            }
-        }
     }
 
     data class X86StraightLineRegisterAllocation(
