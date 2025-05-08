@@ -35,30 +35,21 @@ interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>
 
     context(builder: StringBuilder, registers: A)
     fun codegenGraph(irGraph: IrGraph) {
-        scan(irGraph.endBlock(), visited = mutableSetOf())
-    }
-
-    context(builder: StringBuilder, registers: A)
-    fun scan(node: Node, visited: MutableSet<Node>) {
-        for (predecessor in node.predecessors()) {
-            if (predecessor !in visited) {
-                visited.add(predecessor)
-                scan(predecessor, visited)
+        val nodes = irGraph.nodesInControlFlowOrder()
+        for (node in nodes) {
+            when (node) {
+                is AddNode -> processNode(node)
+                is DivNode -> processNode(node)
+                is ModNode -> processNode(node)
+                is MulNode -> processNode(node)
+                is SubNode -> processNode(node)
+                is Block -> processNode(node)
+                is ConstIntNode -> processNode(node)
+                is Phi -> processNode(node)
+                is ProjNode -> processNode(node)
+                is ReturnNode -> processNode(node)
+                is StartNode -> processNode(node)
             }
-        }
-
-        when (node) {
-            is AddNode -> processNode(node)
-            is DivNode -> processNode(node)
-            is ModNode -> processNode(node)
-            is MulNode -> processNode(node)
-            is SubNode -> processNode(node)
-            is Block -> processNode(node)
-            is ConstIntNode -> processNode(node)
-            is Phi -> processNode(node)
-            is ProjNode -> processNode(node)
-            is ReturnNode -> processNode(node)
-            is StartNode -> processNode(node)
         }
     }
 
