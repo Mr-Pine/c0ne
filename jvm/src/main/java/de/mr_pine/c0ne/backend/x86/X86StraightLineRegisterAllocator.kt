@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.backend.x86
 
 import de.mr_pine.c0ne.backend.RegisterAllocator
-import de.mr_pine.c0ne.backend.nodesInControlFlowOrder
+import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import edu.kit.kastel.vads.compiler.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.*
 
