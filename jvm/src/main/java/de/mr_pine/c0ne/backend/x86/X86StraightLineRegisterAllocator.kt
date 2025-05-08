@@ -2,6 +2,7 @@ package de.mr_pine.c0ne.backend.x86
 
 import de.mr_pine.c0ne.backend.RegisterAllocator
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
+import de.mr_pine.c0ne.backend.needsRegister
 import edu.kit.kastel.vads.compiler.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.*
 
@@ -25,6 +26,7 @@ class X86StraightLineRegisterAllocator :
                 }
             }
         }
+        println("Used overflow slots: $overflowCount")
         return X86StraightLineRegisterAllocation(registerMap, overflowCount)
     }
 
@@ -34,6 +36,3 @@ class X86StraightLineRegisterAllocator :
         override fun getOrNull(node: Node) = registerMap[node]
     }
 }
-
-val Node.needsRegister: Boolean
-    get() = !(this is ProjNode || this is StartNode || this is Block || this is ReturnNode)

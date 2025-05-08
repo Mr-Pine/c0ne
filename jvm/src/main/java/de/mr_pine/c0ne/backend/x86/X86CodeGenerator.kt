@@ -6,7 +6,6 @@ import de.mr_pine.c0ne.ir.left
 import de.mr_pine.c0ne.ir.result
 import de.mr_pine.c0ne.ir.right
 import edu.kit.kastel.vads.compiler.ir.node.*
-import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
@@ -16,7 +15,7 @@ private typealias Allocation = X86ColoringRegisterAllocator.X86ColoringRegisterA
 
 class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
 
-    // override fun getAllocator(): RegisterAllocator<X86Register, Allocation> = X86StraightLineRegisterAllocator()
+    //override fun getAllocator(): RegisterAllocator<X86Register, Allocation> = X86StraightLineRegisterAllocator()
     override fun getAllocator(): RegisterAllocator<X86Register, Allocation> = X86ColoringRegisterAllocator()
 
     override fun postprocess(generation: String): ByteArray {

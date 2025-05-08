@@ -7,5 +7,5 @@ import edu.kit.kastel.vads.compiler.ir.node.ReturnNode
 import edu.kit.kastel.vads.compiler.ir.node.StartNode
 
 
-private val Node.needsRegister: Boolean
+val Node.needsRegister: Boolean
     get() = !(this is ProjNode || this is StartNode || this is Block || this is ReturnNode)
