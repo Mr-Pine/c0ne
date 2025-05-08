@@ -86,6 +86,9 @@ public class Lexer {
                         } else if (peek(1) == '*') {
                             currentCommentType = CommentType.MULTI_LINE;
                             multiLineCommentDepth++;
+                        } else if (currentCommentType == CommentType.MULTI_LINE) {
+                            this.pos++;
+                            continue;
                         } else {
                             return null;
                         }
@@ -172,9 +175,9 @@ public class Lexer {
 
     private boolean isIdentifierChar(char c) {
         return c == '_'
-            || c >= 'a' && c <= 'z'
-            || c >= 'A' && c <= 'Z'
-            || c >= '0' && c <= '9';
+                || c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9';
     }
 
     private boolean isNumeric(char c) {
