@@ -15,28 +15,34 @@ public record Operator(OperatorType type, Span span) implements Token {
     }
 
     public enum OperatorType {
-        ASSIGN_MINUS("-="),
-        MINUS("-"),
-        ASSIGN_PLUS("+="),
-        PLUS("+"),
-        MUL("*"),
-        ASSIGN_MUL("*="),
-        ASSIGN_DIV("/="),
-        DIV("/"),
-        ASSIGN_MOD("%="),
-        MOD("%"),
-        ASSIGN("="),
+        ASSIGN_MINUS("-=", true),
+        MINUS("-", false),
+        ASSIGN_PLUS("+=", true),
+        PLUS("+", false),
+        MUL("*", false),
+        ASSIGN_MUL("*=", true),
+        ASSIGN_DIV("/=", true),
+        DIV("/", false),
+        ASSIGN_MOD("%=", true),
+        MOD("%", false),
+        ASSIGN("=", false),
         ;
 
         private final String value;
+        private final boolean selfAssignOperator;
 
-        OperatorType(String value) {
+        OperatorType(String value, boolean selfAssignOperator) {
             this.value = value;
+            this.selfAssignOperator = selfAssignOperator;
         }
 
         @Override
         public String toString() {
             return this.value;
+        }
+
+        public boolean isSelfAssignOperator() {
+            return selfAssignOperator;
         }
     }
 }
