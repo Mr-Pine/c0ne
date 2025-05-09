@@ -23,7 +23,11 @@ class VariableStatusAnalysis implements NoOpVisitor<Namespace<VariableStatusAnal
         switch (assignmentTree.lValue()) {
             case LValueIdentTree(var name) -> {
                 VariableStatus status = data.get(name);
-                checkDeclared(name, status);
+                if (assignmentTree.operator().type().isSelfAssignOperator()) {
+                    checkInitialized(name, status);
+                } else {
+                    checkDeclared(name, status);
+                }
                 data.put(name, VariableStatus.INITIALIZED, (_, replacement) -> replacement);
             }
         }
