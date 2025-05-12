@@ -43,6 +43,12 @@ public class Parser {
     private FunctionTree parseFunction() {
         Keyword returnType = this.tokenSource.expectKeyword(KeywordType.INT);
         Identifier identifier = this.tokenSource.expectIdentifier();
+        /*
+        Remove with more functions
+         */
+        if (!identifier.asString().equals("main")) {
+            throw new ParseException("Only main function allowed");
+        }
         this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN);
         this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE);
         BlockTree body = parseBlock();
