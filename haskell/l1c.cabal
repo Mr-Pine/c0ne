@@ -33,6 +33,8 @@ executable l1c
                   Compile.Parser,
                   Compile.Semantic,
                   Compile.AAsm,
+                  Compile.Backend.X86.RegAlloc,
+                  Compile.Backend.X86.Codegen,
                   Error
     hs-source-dirs:   app
     default-language: Haskell2010
