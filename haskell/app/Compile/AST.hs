@@ -3,6 +3,7 @@ module Compile.AST
   , Stmt(..)
   , Expr(..)
   , Op(..)
+  , Identifier
   , showAsgnOp
   , posPretty
   ) where
@@ -13,15 +14,17 @@ import Text.Megaparsec
 data AST =
   Block [Stmt] SourcePos
 
+type Identifier = String
+
 data Stmt
-  = Decl String SourcePos
-  | Init String Expr SourcePos
-  | Asgn String AsgnOp Expr SourcePos
+  = Decl Identifier SourcePos
+  | Init Identifier Expr SourcePos
+  | Asgn Identifier AsgnOp Expr SourcePos
   | Ret Expr SourcePos
 
 data Expr
   = IntExpr Integer SourcePos
-  | Ident String SourcePos
+  | Ident Identifier SourcePos
   | UnExpr Op Expr
   | BinExpr Op Expr Expr
 
