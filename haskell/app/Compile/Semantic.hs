@@ -1,13 +1,16 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+
 module Compile.Semantic
   ( semanticAnalysis
   ) where
 
-import           Compile.AST (AST(..), Expr(..), Stmt(..), posPretty)
+import           Compile.AST (AST(..), Expr(..), Stmt(..), posPretty, IntLiteral (HexLit, DecLit, value))
 import           Error (L1ExceptT, semanticFail)
 
 import           Control.Monad (unless, when)
 import           Control.Monad.State
 import qualified Data.Map as Map
+import Debug.Pretty.Simple (pTraceShow, pTraceShowWith)
 
 data VariableStatus
   = Declared
@@ -33,8 +36,10 @@ varStatusAnalysis :: AST -> L1ExceptT Namespace
 varStatusAnalysis (Block stmts _) = do
   execStateT (mapM_ checkStmt stmts) Map.empty
 
-maxInt :: Integer
-maxInt = 2 ^ (31 :: Integer)
+maxDecInt :: Integer
+maxDecInt = 2 ^ (31 :: Integer)
+maxHexInt :: Integer
+maxHexInt = 2 ^ (32 :: Integer) - 1
 
 -- So far this checks:
 -- + we cannot declare a variable again that has already been declared or initialized
@@ -70,10 +75,15 @@ checkStmt (Asgn name _ e pos) = do
 checkStmt (Ret e _) = checkExpr e
 
 checkExpr :: Expr -> L1Semantic ()
-checkExpr (IntExpr n pos) = do
-  when (n < 0 || n > maxInt)
+checkExpr (IntExpr lit pos) = do
+  when (val < 0 || val > max)
     $ semanticFail'
-    $ "Integer literal " ++ show n ++ " out of bounds at: " ++ posPretty pos
+    $ "Integer literal " ++ show lit ++ " out of bounds at: " ++ posPretty pos
+  where
+    max = maxOf lit
+    val = lit.value
+    maxOf (DecLit _) = maxDecInt
+    maxOf (HexLit _) = maxHexInt
 checkExpr (Ident name pos) = do
   ns <- get
   case Map.lookup name ns of

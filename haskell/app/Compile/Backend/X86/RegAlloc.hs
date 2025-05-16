@@ -17,7 +17,7 @@ print (OverflowSlot idx) = "DWORD PTR [RSP + " ++ show (idx * 4) ++ "]"
 print reg = lower $ show reg
 
 allocateableRegisters :: [Register]
-allocateableRegisters = [EAX, EBX, ECX, ESI, EDI, R8D, R9D, R10D, R11D, R12D, R13D, R14D] ++ map OverflowSlot [1 ..]
+allocateableRegisters = [EBX, ECX, ESI, EDI, R8D, R9D, R10D, R11D, R12D, R13D, R14D] ++ map OverflowSlot [1 ..]
 
 type RegisterMap = Map.Map Node Register
 data RegAllocState = RegAllocState {remainingRegisters :: [Register], regMap :: RegisterMap}

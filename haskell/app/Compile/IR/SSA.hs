@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module Compile.IR.SSA (ssaTransform, SSAGraph(..), Node(..), Value(..), BinaryOperation(..), maybeSideEffect) where
 
 import Compile.AST (AST, Expr (BinExpr, Ident, IntExpr, UnExpr), Identifier, Op (Neg), Stmt (..))
@@ -15,7 +17,7 @@ data Block
 data Node
     = Value {value :: Value, block :: Block}
     | Start {block :: Block}
-    | Return {result :: Node, block :: Block}
+    | Return {result :: Node, sideEffect :: Node, block :: Block}
     deriving (Ord, Eq, Show)
 
 data Value = ConstInt Integer | BinaryOperation BinaryOperation deriving (Ord, Eq, Show)
@@ -28,9 +30,10 @@ data BinaryOperation
     | Div {left :: Node, right :: Node, sideEffect :: Node}
     deriving (Ord, Eq, Show)
 
-maybeSideEffect :: BinaryOperation -> Maybe Node
-maybeSideEffect o@(Div {}) = Just $ sideEffect o
-maybeSideEffect o@(Mod {}) = Just $ sideEffect o
+maybeSideEffect :: Node -> Maybe Node
+maybeSideEffect (Value (BinaryOperation o@(Div {})) _) = Just o.sideEffect
+maybeSideEffect (Value (BinaryOperation o@(Mod {})) _) = Just o.sideEffect
+maybeSideEffect n@(Return {}) = Just n.sideEffect
 maybeSideEffect _ = Nothing
 
 type Successors = Map.Map Node (Set.Set Node)
@@ -85,7 +88,8 @@ translateStatements (Asgn identifier (Just op) expr sourcePos) = Just <$> transl
 translateStatements (Ret expr _) = do
     value <- translateExpression expr
     block <- getCurrentBlock
-    let returnNode = Return value block
+    sideEffect <- gets currentSideEffectNode
+    let returnNode = Return value sideEffect block
     current <- get
     put current{currentReturnNodes=currentReturnNodes current ++ [returnNode]}
     addSuccessor value returnNode
@@ -95,9 +99,9 @@ translateAssignment :: Identifier -> Expr -> SSATranslation Node
 translateAssignment identifier expr = translateExpression expr >>= assignValue identifier
 
 translateExpression :: Expr -> SSATranslation Node
-translateExpression (IntExpr value _) = do
+translateExpression (IntExpr lit _) = do
     block <- gets currentBlock
-    let valueNode = Value (ConstInt value) block
+    let valueNode = Value (ConstInt lit.value) block
     return valueNode
 translateExpression (Ident ident _) = gets ((Map.! ident) . valueMapping)
 translateExpression (UnExpr Neg expr) = do
