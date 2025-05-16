@@ -39,6 +39,7 @@ data Op
   | Neg
   | Mod
   | Nop
+  deriving (Eq)
 
 -- re-exported for convenience
 posPretty :: SourcePos -> String
