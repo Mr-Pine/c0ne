@@ -1,4 +1,4 @@
-module Compile.IR.SSA (ssaTransform, SSAGraph) where
+module Compile.IR.SSA (ssaTransform, SSAGraph(..), Node(..), Value(..), BinaryOperation(..), maybeSideEffect) where
 
 import Compile.AST (AST, Expr (BinExpr, Ident, IntExpr, UnExpr), Identifier, Op (Neg), Stmt (..))
 import qualified Compile.AST as AST
@@ -23,9 +23,15 @@ data Value = ConstInt Integer | BinaryOperation BinaryOperation deriving (Ord, E
 data BinaryOperation
     = Add {left :: Node, right :: Node}
     | Sub {left :: Node, right :: Node}
+    | Mul {left :: Node, right :: Node}
     | Mod {left :: Node, right :: Node, sideEffect :: Node}
     | Div {left :: Node, right :: Node, sideEffect :: Node}
     deriving (Ord, Eq, Show)
+
+maybeSideEffect :: BinaryOperation -> Maybe Node
+maybeSideEffect o@(Div {}) = Just $ sideEffect o
+maybeSideEffect o@(Mod {}) = Just $ sideEffect o
+maybeSideEffect _ = Nothing
 
 type Successors = Map.Map Node (Set.Set Node)
 type ValueMapping = Map.Map Identifier Node
@@ -102,7 +108,7 @@ translateExpression (UnExpr Neg expr) = do
     addSuccessor constZeroNode exprNode
     addSuccessor rightNode exprNode
     return exprNode
-translateExpression (BinExpr op lexpr rexpr) | op == AST.Sub || op == AST.Add = do
+translateExpression (BinExpr op lexpr rexpr) | op == AST.Sub || op == AST.Add || op == AST.Mul = do
     block <- gets currentBlock
     leftNode <- translateExpression lexpr
     rightNode <- translateExpression rexpr
@@ -113,6 +119,7 @@ translateExpression (BinExpr op lexpr rexpr) | op == AST.Sub || op == AST.Add = 
   where
     operandMapping AST.Sub = Sub
     operandMapping AST.Add = Add
+    operandMapping AST.Mul = Mul
 translateExpression (BinExpr op lexpr rexpr) | op == AST.Mod || op == AST.Div = do
     block <- gets currentBlock
     leftNode <- translateExpression lexpr
@@ -126,3 +133,4 @@ translateExpression (BinExpr op lexpr rexpr) | op == AST.Mod || op == AST.Div = 
   where
     operandMapping AST.Div = Div
     operandMapping AST.Mod = Mod
+translateExpression expr = error ("How do I translate " ++ show expr ++ "?")
