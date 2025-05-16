@@ -3,16 +3,16 @@ module Compile.Backend.Schedule (schedule, Schedule) where
 import Compile.IR.SSA (Node (Return, Start, Value), SSAGraph (SSAGraph), Value (BinaryOperation, ConstInt))
 import qualified Compile.IR.SSA as SSA
 import Control.Monad.State (MonadState (get, put), State, execState, forM_, void, unless, gets)
-import Data.List.NonEmpty (groupWith, last)
+import Data.List.NonEmpty (groupWith, head)
 import qualified Data.Set as Set
-import Prelude hiding (last)
+import Prelude hiding (head)
 
 type Schedule = [Node]
 schedule :: SSAGraph -> Schedule
 schedule (SSAGraph successors returnNodes) = graphSchedule $ execState (scheduleBasicBlock exitPoint) initialState
   where
     initialState = ScheduleConstructionState Set.empty []
-    exitPoints = map last $ groupWith SSA.block returnNodes
+    exitPoints = map head $ groupWith SSA.block returnNodes
     [exitPoint] = exitPoints
 
 data ScheduleConstructionState = ScheduleConstructionState {visited :: Set.Set Node, graphSchedule :: [Node]}
@@ -32,7 +32,7 @@ isScheduled node = do
 
 scheduleBasicBlock :: Node -> ScheduleConstruction ()
 scheduleBasicBlock node@(Start _) = addNode node
-scheduleBasicBlock node@(Return result _) = addNode node >> scheduleBasicBlock result
+scheduleBasicBlock node@(Return result sideEffect _) = addNode node >> scheduleBasicBlock result >> scheduleBasicBlock sideEffect
 scheduleBasicBlock node@(Value val _) = scheduleValue val
   where
     scheduleValue (ConstInt _) = addNode node
@@ -42,5 +42,5 @@ scheduleBasicBlock node@(Value val _) = scheduleValue val
             addNode node
             scheduleBasicBlock $ SSA.right binop
             scheduleBasicBlock $ SSA.left binop
-            let sideeffect = SSA.maybeSideEffect binop
+            let sideeffect = SSA.maybeSideEffect node
             forM_ sideeffect scheduleBasicBlock

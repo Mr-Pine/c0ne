@@ -2,6 +2,7 @@ module Compile.AST
   ( AST(..)
   , Stmt(..)
   , Expr(..)
+  , IntLiteral(..)
   , Op(..)
   , Identifier
   , showAsgnOp
@@ -10,6 +11,7 @@ module Compile.AST
 
 import Data.List (intercalate)
 import Text.Megaparsec
+import Numeric (showHex)
 
 data AST =
   Block [Stmt] SourcePos
@@ -23,10 +25,12 @@ data Stmt
   | Ret Expr SourcePos
 
 data Expr
-  = IntExpr Integer SourcePos
+  = IntExpr IntLiteral SourcePos
   | Ident Identifier SourcePos
   | UnExpr Op Expr
   | BinExpr Op Expr Expr
+
+data IntLiteral = DecLit { value :: Integer } | HexLit { value :: Integer }
 
 -- Nothing means =, Just is for +=, %=, ...
 type AsgnOp = Maybe Op
@@ -66,6 +70,10 @@ instance Show Expr where
   show (UnExpr op e) = "(" ++ show op ++ " " ++ show e ++ ")"
   show (BinExpr op lhs rhs) =
     "(" ++ show lhs ++ " " ++ show op ++ " " ++ show rhs ++ ")"
+
+instance Show IntLiteral where
+  show (DecLit i) = show i
+  show (HexLit i) = "0x" ++ showHex i ""
 
 instance Show Op where
   show Mul = "*"

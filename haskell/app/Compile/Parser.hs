@@ -2,7 +2,7 @@ module Compile.Parser
   ( parseAST
   ) where
 
-import           Compile.AST (AST(..), Expr(..), Op(..), Stmt(..))
+import           Compile.AST (AST(..), Expr(..), Op(..), Stmt(..), IntLiteral (DecLit, HexLit))
 import           Error (L1ExceptT, parserFail)
 
 import           Control.Monad.Combinators.Expr
@@ -13,6 +13,7 @@ import           Data.Void (Void)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
+import Debug.Pretty.Simple (pTraceShow)
 
 parseAST :: FilePath -> L1ExceptT AST
 parseAST path = do
@@ -30,14 +31,16 @@ astParser = do
   reserved "int"
   reserved "main"
   parens $ pure ()
-  braces $ do
+  mainBlock <- braces $ do
     pos <- getSourcePos
     stmts <- many stmt
     return $ Block stmts pos
+  eof
+  return mainBlock
 
 stmt :: Parser Stmt
 stmt = do
-  s <- decl <|> simp <|> ret
+  s <- try decl <|> try simp <|> ret
   semi
   return s
 
@@ -56,14 +59,14 @@ declInit = do
   pos <- getSourcePos
   reserved "int"
   name <- identifier
-  reserved "="
+  void $ symbol "="
   e <- expr
   return $ Init name e pos
 
 simp :: Parser Stmt
 simp = do
   pos <- getSourcePos
-  name <- identifier
+  name <- lvalue
   op <- asnOp
   e <- expr
   return $ Asgn name op e pos
@@ -105,13 +108,17 @@ identExpr = do
 
 opTable :: [[Operator Parser Expr]]
 opTable =
-  [ [Prefix (UnExpr Neg <$ symbol "-")]
+  [ [Prefix manyUnaryOp]
   , [ InfixL (BinExpr Mul <$ symbol "*")
     , InfixL (BinExpr Div <$ symbol "/")
     , InfixL (BinExpr Mod <$ symbol "%")
     ]
   , [InfixL (BinExpr Add <$ symbol "+"), InfixL (BinExpr Sub <$ symbol "-")]
   ]
+  where
+    -- this allows us to parse `---x` as `-(-(-x))`
+    -- makeExprParser doesn't do this by default
+    manyUnaryOp = foldr1 (.) <$> some (UnExpr Neg <$ symbol "-")
 
 expr :: Parser Expr
 expr = try (makeExprParser expr' opTable) <?> "expression"
@@ -138,17 +145,22 @@ braces = between (symbol "{") (symbol "}")
 semi :: Parser ()
 semi = void $ symbol ";"
 
-number :: Parser Integer
-number = try hexadecimal <|> decimal <?> "number"
+number :: Parser IntLiteral
+number = try hexadecimal <|> decimal <|> decimal0 <?> "number"
 
-decimal :: Parser Integer
-decimal = lexeme L.decimal
+decimal :: Parser IntLiteral
+decimal = DecLit <$> do
+    void $ lookAhead $ oneOf "123456789"
+    lexeme L.decimal
 
-hexadecimal :: Parser Integer
-hexadecimal = char '0' >> char 'x' >> lexeme L.hexadecimal
+decimal0 :: Parser IntLiteral
+decimal0 = DecLit 0 <$ char '0' <* sc
+
+hexadecimal :: Parser IntLiteral
+hexadecimal = HexLit <$> (char '0' >> oneOf ['x','X'] >> lexeme L.hexadecimal)
 
 reserved :: String -> Parser ()
-reserved w = void (lexeme $ try (string w <* notFollowedBy identLetter))
+reserved w = void $ lexeme $ (string w <* notFollowedBy identLetter)
 
 reservedWords :: [String]
 reservedWords =
@@ -200,3 +212,6 @@ identifier = (lexeme . try) (p >>= check)
       if x `elem` reservedWords
         then fail (x ++ " is reserved")
         else return x
+
+lvalue :: Parser String
+lvalue = try identifier <|> parens lvalue <?> "lvalue"

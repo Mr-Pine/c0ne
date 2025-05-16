@@ -8,6 +8,8 @@ import qualified Compile.IR.SSA as SSA
 import Control.Monad.State (State, execState, modify, gets)
 import qualified Data.Map as Map
 import Prelude hiding (print)
+import Data.Maybe (fromMaybe)
+import Text.Pretty.Simple (pPrint, pShow, pShowNoColor)
 
 type CodeGen a = State CodeGenState a
 
@@ -23,12 +25,12 @@ codeGen schedule = code $ execState (genNodes schedule) initialState
     initialState = CodeGenState registerMap (prologue $ overflowCount registerMap)
 
 prologue :: Int -> [String]
-prologue overflow = [".intel_syntax noprefix", ".global _start", ".text", "", "_start:", "call main", "mov edi, eax", "mov rax, 0x3c", "syscall", "", ".global main", "main:", "ENTER " ++ show (overflow * 4) ++ ", 0"]
+prologue overflow = [".intel_syntax noprefix", ".global _main", ".text", "", "_main:", "call main", "mov edi, eax", "mov rax, 0x3c", "syscall", "", ".global main", "main:", "ENTER " ++ show (overflow * 4) ++ ", 0"]
 
 registerFor :: Node -> CodeGen Register
 registerFor node = do
     registerMap <- gets regMap
-    return $ registerMap Map.! node
+    return . fromMaybe (error $ "No reg for " ++ show (pShowNoColor node)) $ registerMap Map.!? node
 
 emit :: String -> CodeGen ()
 emit instr = modify $ \s -> s{code = code s ++ [instr]}
@@ -38,7 +40,7 @@ genNodes = mapM_ genNode
 
 genNode :: Node -> CodeGen ()
 genNode (Start _) = return ()
-genNode (Return result _) = do
+genNode (Return result _ _) = do
     resReg <- registerFor result
     emit $ "MOV eax, " ++ print resReg
     emit "LEAVE"
@@ -75,3 +77,5 @@ genNode node@(Value val _) = genValue val
             emit "IDIV r15d"
             emit $ "MOV " ++ print target ++ ", edx"
 
+needsRegister (Value _ _) = True
+needsRegister _ = False
