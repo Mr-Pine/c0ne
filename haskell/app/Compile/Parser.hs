@@ -23,9 +23,8 @@ import Text.Megaparsec
       Parsec,
       MonadParsec(try, eof, lookAhead, notFollowedBy) )
 import Text.Megaparsec.Char
-    ( alphaNumChar, char, letterChar, string )
+    ( char, string, digitChar )
 import qualified Text.Megaparsec.Char.Lexer as L
-import Debug.Pretty.Simple (pTraceShow)
 
 parseAST :: FilePath -> L1ExceptT AST
 parseAST path = do
@@ -212,10 +211,15 @@ operator = lexeme ((:) <$> opStart <*> many opLetter)
 
 -- Identifiers
 identStart :: Parser Char
-identStart = letterChar <|> char '_'
+identStart = asciiLetter <|> char '_'
 
 identLetter :: Parser Char
-identLetter = alphaNumChar <|> char '_'
+identLetter = asciiAlphaNum <|> char '_'
+
+asciiLetter :: Parser Char
+asciiLetter = oneOf (['A'..'Z'] ++ ['a'..'z'])
+asciiAlphaNum :: Parser Char
+asciiAlphaNum = asciiLetter <|> digitChar
 
 identifier :: Parser String
 identifier = (lexeme . try) (p >>= check)
