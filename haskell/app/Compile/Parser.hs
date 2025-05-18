@@ -10,8 +10,20 @@ import           Control.Monad.IO.Class (liftIO)
 import           Data.Functor (void)
 import           Data.Void (Void)
 
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
+import Text.Megaparsec
+    ( (<|>),
+      (<?>),
+      getSourcePos,
+      oneOf,
+      parse,
+      errorBundlePretty,
+      between,
+      many,
+      some,
+      Parsec,
+      MonadParsec(try, eof, lookAhead, notFollowedBy) )
+import Text.Megaparsec.Char
+    ( alphaNumChar, char, letterChar, string )
 import qualified Text.Megaparsec.Char.Lexer as L
 import Debug.Pretty.Simple (pTraceShow)
 
@@ -127,6 +139,7 @@ expr = try (makeExprParser expr' opTable) <?> "expression"
 sc :: Parser ()
 sc = L.space space1 lineComment blockComment
   where
+    space1 = void $ char ' ' <|> char '\n' <|> char '\r' <|> char '\t'
     lineComment = L.skipLineComment "//"
     blockComment = L.skipBlockCommentNested "/*" "*/"
 
