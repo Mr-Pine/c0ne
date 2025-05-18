@@ -18,9 +18,12 @@ data Node
     = Value {value :: Value, block :: Block, id :: Int}
     | Start {block :: Block, id :: Int}
     | Return {result :: Node, sideEffect :: Node, block :: Block, id :: Int}
-    deriving (Ord, Eq, Show)
+    deriving (Eq, Show)
 
-data Value = ConstInt Integer | BinaryOperation BinaryOperation deriving (Ord, Eq, Show)
+instance Ord Node where
+  compare n1 n2 = compare n1.id n2.id
+
+data Value = ConstInt Integer | BinaryOperation BinaryOperation deriving (Eq, Show)
 
 data BinaryOperation
     = Add {left :: Node, right :: Node}
