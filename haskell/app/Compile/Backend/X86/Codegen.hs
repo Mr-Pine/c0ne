@@ -39,14 +39,14 @@ genNodes :: [Node] -> CodeGen ()
 genNodes = mapM_ genNode
 
 genNode :: Node -> CodeGen ()
-genNode (Start _) = return ()
-genNode (Return result _ _) = do
+genNode (Start _ _) = return ()
+genNode (Return result _ _ _) = do
     resReg <- registerFor result
     emit $ "MOV eax, " ++ print resReg
     emit "LEAVE"
     emit "RET"
     return ()
-genNode node@(Value val _) = genValue val
+genNode node@(Value val _ _) = genValue val
     where
         genValue (ConstInt int) = do
             target <- registerFor node
@@ -77,5 +77,5 @@ genNode node@(Value val _) = genValue val
             emit "IDIV r15d"
             emit $ "MOV " ++ print target ++ ", edx"
 
-needsRegister (Value _ _) = True
+needsRegister (Value {}) = True
 needsRegister _ = False
