@@ -177,7 +177,7 @@ class Parser(private val tokenSource: TokenSource) {
         val operator = this.tokenSource.peekAs<Operator>()
         if (operator != null && precedence in operator.type.precedences) {
             this.tokenSource.consume()
-            val value = parsePrecedenceExpression(precedence - 1)
+            val value = parsePrecedenceExpression(precedence)
             return UnaryOperationTree(operator, value)
         }
         return parsePrecedenceExpression(precedence - 1)
