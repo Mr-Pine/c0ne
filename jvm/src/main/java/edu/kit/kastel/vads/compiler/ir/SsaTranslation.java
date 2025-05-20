@@ -83,7 +83,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(AssignmentTree assignmentTree, SsaTranslation data) {
             pushSpan(assignmentTree);
-            BinaryOperator<Node> desugar = switch (assignmentTree.operator().type()) {
+            BinaryOperator<Node> desugar = switch (assignmentTree.operator().type) {
                 case ASSIGN_MINUS -> data.constructor::newSub;
                 case ASSIGN_PLUS -> data.constructor::newAdd;
                 case ASSIGN_MUL -> data.constructor::newMul;
