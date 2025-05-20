@@ -147,6 +147,7 @@ class Parser(private val tokenSource: TokenSource) {
         if (operator == null || operator.type != Operator.OperatorType.TERNARY_QUESTION) {
             return lhs
         }
+        this.tokenSource.consume()
 
         val true_branch = parseExpression()
         tokenSource.expectOperator(Operator.OperatorType.TERNARY_COLON)
