@@ -7,26 +7,27 @@ import edu.kit.kastel.vads.compiler.ir.node.Node;
 import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfo;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper;
-import edu.kit.kastel.vads.compiler.parser.ast.AssignmentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.BinaryOperationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.BlockTree;
-import edu.kit.kastel.vads.compiler.parser.ast.DeclarationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
-import edu.kit.kastel.vads.compiler.parser.ast.StatementTree;
-import edu.kit.kastel.vads.compiler.parser.ast.Tree;
-import edu.kit.kastel.vads.compiler.parser.ast.TypeTree;
+import de.mr_pine.c0ne.parser.ast.AssignmentTree;
+import de.mr_pine.c0ne.parser.ast.BinaryOperationTree;
+import de.mr_pine.c0ne.parser.ast.BlockTree;
+import de.mr_pine.c0ne.parser.ast.DeclarationTree;
+import de.mr_pine.c0ne.parser.ast.FunctionTree;
+import de.mr_pine.c0ne.parser.ast.IdentExpressionTree;
+import de.mr_pine.c0ne.parser.ast.LValueIdentTree;
+import de.mr_pine.c0ne.parser.ast.LiteralTree;
+import de.mr_pine.c0ne.parser.ast.NameTree;
+import de.mr_pine.c0ne.parser.ast.UnaryOperationTree;
+import de.mr_pine.c0ne.parser.ast.ProgramTree;
+import de.mr_pine.c0ne.parser.ast.ReturnTree;
+import de.mr_pine.c0ne.parser.ast.StatementTree;
+import de.mr_pine.c0ne.parser.ast.Tree;
+import de.mr_pine.c0ne.parser.ast.TypeTree;
 import edu.kit.kastel.vads.compiler.parser.symbol.Name;
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 
@@ -43,7 +44,7 @@ public class SsaTranslation {
 
     public SsaTranslation(FunctionTree function, Optimizer optimizer) {
         this.function = function;
-        this.constructor = new GraphConstructor(optimizer, function.name().name().asString());
+        this.constructor = new GraphConstructor(optimizer, function.name.name.asString());
     }
 
     public IrGraph translate() {
@@ -73,7 +74,7 @@ public class SsaTranslation {
 
         private void pushSpan(Tree tree) {
             this.debugStack.push(DebugInfoHelper.getDebugInfo());
-            DebugInfoHelper.setDebugInfo(new DebugInfo.SourceInfo(tree.span()));
+            DebugInfoHelper.setDebugInfo(new DebugInfo.SourceInfo(tree.getSpan()));
         }
 
         private void popSpan() {
@@ -83,7 +84,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(AssignmentTree assignmentTree, SsaTranslation data) {
             pushSpan(assignmentTree);
-            BinaryOperator<Node> desugar = switch (assignmentTree.operator().type) {
+            BinaryOperator<Node> desugar = switch (assignmentTree.operator.type) {
                 case ASSIGN_MINUS -> data.constructor::newSub;
                 case ASSIGN_PLUS -> data.constructor::newAdd;
                 case ASSIGN_MUL -> data.constructor::newMul;
@@ -91,17 +92,18 @@ public class SsaTranslation {
                 case ASSIGN_MOD -> (lhs, rhs) -> projResultDivMod(data, data.constructor.newMod(lhs, rhs));
                 case ASSIGN -> null;
                 default ->
-                    throw new IllegalArgumentException("not an assignment operator " + assignmentTree.operator());
+                    throw new IllegalArgumentException("not an assignment operator " + assignmentTree.operator);
             };
 
-            switch (assignmentTree.lValue()) {
-                case LValueIdentTree(var name) -> {
-                    Node rhs = assignmentTree.expression().accept(this, data).orElseThrow();
+            switch (assignmentTree.lValue) {
+                case LValueIdentTree lValueIdentTree -> {
+                    Node rhs = assignmentTree.expression.accept(this, data).orElseThrow();
                     if (desugar != null) {
-                        rhs = desugar.apply(data.readVariable(name.name(), data.currentBlock()), rhs);
+                        rhs = desugar.apply(data.readVariable(lValueIdentTree.name.name, data.currentBlock()), rhs);
                     }
-                    data.writeVariable(name.name(), data.currentBlock(), rhs);
+                    data.writeVariable(lValueIdentTree.name.name, data.currentBlock(), rhs);
                 }
+                default -> throw new IllegalStateException("Unexpected value: " + assignmentTree.lValue);
             }
             popSpan();
             return NOT_AN_EXPRESSION;
@@ -110,16 +112,16 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(BinaryOperationTree binaryOperationTree, SsaTranslation data) {
             pushSpan(binaryOperationTree);
-            Node lhs = binaryOperationTree.lhs().accept(this, data).orElseThrow();
-            Node rhs = binaryOperationTree.rhs().accept(this, data).orElseThrow();
-            Node res = switch (binaryOperationTree.operatorType()) {
+            Node lhs = binaryOperationTree.getLhs().accept(this, data).orElseThrow();
+            Node rhs = binaryOperationTree.getRhs().accept(this, data).orElseThrow();
+            Node res = switch (binaryOperationTree.getOperatorType()) {
                 case MINUS -> data.constructor.newSub(lhs, rhs);
                 case PLUS -> data.constructor.newAdd(lhs, rhs);
                 case MUL -> data.constructor.newMul(lhs, rhs);
                 case DIV -> projResultDivMod(data, data.constructor.newDiv(lhs, rhs));
                 case MOD -> projResultDivMod(data, data.constructor.newMod(lhs, rhs));
                 default ->
-                    throw new IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType());
+                    throw new IllegalArgumentException("not a binary expression operator " + binaryOperationTree.getOperatorType());
             };
             popSpan();
             return Optional.of(res);
@@ -128,7 +130,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(BlockTree blockTree, SsaTranslation data) {
             pushSpan(blockTree);
-            for (StatementTree statement : blockTree.statements()) {
+            for (StatementTree statement : blockTree.getStatements()) {
                 statement.accept(this, data);
                 // skip everything after a return in a block
                 if (statement instanceof ReturnTree) {
@@ -142,9 +144,9 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(DeclarationTree declarationTree, SsaTranslation data) {
             pushSpan(declarationTree);
-            if (declarationTree.initializer() != null) {
-                Node rhs = declarationTree.initializer().accept(this, data).orElseThrow();
-                data.writeVariable(declarationTree.name().name(), data.currentBlock(), rhs);
+            if (declarationTree.initializer != null) {
+                Node rhs = declarationTree.initializer.accept(this, data).orElseThrow();
+                data.writeVariable(declarationTree.name.name, data.currentBlock(), rhs);
             }
             popSpan();
             return NOT_AN_EXPRESSION;
@@ -155,7 +157,7 @@ public class SsaTranslation {
             pushSpan(functionTree);
             Node start = data.constructor.newStart();
             data.constructor.writeCurrentSideEffect(data.constructor.newSideEffectProj(start));
-            functionTree.body().accept(this, data);
+            functionTree.body.accept(this, data);
             popSpan();
             return NOT_AN_EXPRESSION;
         }
@@ -163,7 +165,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(IdentExpressionTree identExpressionTree, SsaTranslation data) {
             pushSpan(identExpressionTree);
-            Node value = data.readVariable(identExpressionTree.name().name(), data.currentBlock());
+            Node value = data.readVariable(identExpressionTree.name.name, data.currentBlock());
             popSpan();
             return Optional.of(value);
         }
@@ -171,7 +173,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(LiteralTree literalTree, SsaTranslation data) {
             pushSpan(literalTree);
-            Node node = data.constructor.newConstInt((int) literalTree.parseValue().orElseThrow());
+            Node node = data.constructor.newConstInt(Objects.requireNonNull(literalTree.parseValue()).intValue());
             popSpan();
             return Optional.of(node);
         }
@@ -189,7 +191,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(UnaryOperationTree unaryOperationTree, SsaTranslation data) {
             pushSpan(unaryOperationTree);
-            Node node = unaryOperationTree.expression().accept(this, data).orElseThrow();
+            Node node = unaryOperationTree.expression.accept(this, data).orElseThrow();
             Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
             popSpan();
             return Optional.of(res);
@@ -203,7 +205,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(ReturnTree returnTree, SsaTranslation data) {
             pushSpan(returnTree);
-            Node node = returnTree.expression().accept(this, data).orElseThrow();
+            Node node = returnTree.expression.accept(this, data).orElseThrow();
             Node ret = data.constructor.newReturn(node);
             data.constructor.graph().endBlock().addPredecessor(ret);
             popSpan();

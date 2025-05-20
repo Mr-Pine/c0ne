@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.lexer
 
-import edu.kit.kastel.vads.compiler.Span
+import de.mr_pine.c0ne.Span
 import edu.kit.kastel.vads.compiler.lexer.KeywordType
 
 @JvmRecord

@@ -1,7 +1,8 @@
 package edu.kit.kastel.vads.compiler.semantic;
 
+import de.mr_pine.c0ne.semantic.IntegerLiteralRangeAnalysis;
 import de.mr_pine.c0ne.semantic.MainMethodAnalysis;
-import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
+import de.mr_pine.c0ne.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.visitor.RecursivePostorderVisitor;
 import kotlin.Unit;
 

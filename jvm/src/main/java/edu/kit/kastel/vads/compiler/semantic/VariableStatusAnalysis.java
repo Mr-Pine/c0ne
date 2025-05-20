@@ -1,10 +1,10 @@
 package edu.kit.kastel.vads.compiler.semantic;
 
-import edu.kit.kastel.vads.compiler.parser.ast.AssignmentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.DeclarationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
+import de.mr_pine.c0ne.parser.ast.AssignmentTree;
+import de.mr_pine.c0ne.parser.ast.DeclarationTree;
+import de.mr_pine.c0ne.parser.ast.IdentExpressionTree;
+import de.mr_pine.c0ne.parser.ast.LValueIdentTree;
+import de.mr_pine.c0ne.parser.ast.NameTree;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
 import org.jspecify.annotations.Nullable;
@@ -20,16 +20,17 @@ class VariableStatusAnalysis implements NoOpVisitor<Namespace<VariableStatusAnal
 
     @Override
     public Unit visit(AssignmentTree assignmentTree, Namespace<VariableStatus> data) {
-        switch (assignmentTree.lValue()) {
-            case LValueIdentTree(var name) -> {
-                VariableStatus status = data.get(name);
-                if (assignmentTree.operator().type.isSelfAssignOperator()) {
-                    checkInitialized(name, status);
+        switch (assignmentTree.lValue) {
+            case LValueIdentTree lValueIdentTree -> {
+                VariableStatus status = data.get(lValueIdentTree.name);
+                if (assignmentTree.operator.type.isSelfAssignOperator()) {
+                    checkInitialized(lValueIdentTree.name, status);
                 } else {
-                    checkDeclared(name, status);
+                    checkDeclared(lValueIdentTree.name, status);
                 }
-                data.put(name, VariableStatus.INITIALIZED, (_, replacement) -> replacement);
+                data.put(lValueIdentTree.name, VariableStatus.INITIALIZED, (_, replacement) -> replacement);
             }
+            default -> throw new IllegalStateException("Unexpected value: " + assignmentTree.lValue);
         }
         return NoOpVisitor.super.visit(assignmentTree, data);
     }
@@ -48,10 +49,10 @@ class VariableStatusAnalysis implements NoOpVisitor<Namespace<VariableStatusAnal
 
     @Override
     public Unit visit(DeclarationTree declarationTree, Namespace<VariableStatus> data) {
-        VariableStatus status = declarationTree.initializer() == null
+        VariableStatus status = declarationTree.initializer == null
                 ? VariableStatus.DECLARED
                 : VariableStatus.INITIALIZED;
-        data.put(declarationTree.name(), status, (existing, replacement) -> {
+        data.put(declarationTree.name, status, (existing, replacement) -> {
             throw new SemanticException("variable is already " + existing + ". Cannot be " + replacement + " here.");
         });
         return NoOpVisitor.super.visit(declarationTree, data);
@@ -59,8 +60,8 @@ class VariableStatusAnalysis implements NoOpVisitor<Namespace<VariableStatusAnal
 
     @Override
     public Unit visit(IdentExpressionTree identExpressionTree, Namespace<VariableStatus> data) {
-        VariableStatus status = data.get(identExpressionTree.name());
-        checkInitialized(identExpressionTree.name(), status);
+        VariableStatus status = data.get(identExpressionTree.name);
+        checkInitialized(identExpressionTree.name, status);
         return NoOpVisitor.super.visit(identExpressionTree, data);
     }
 

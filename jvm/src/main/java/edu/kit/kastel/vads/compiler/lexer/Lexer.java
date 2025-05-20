@@ -2,7 +2,7 @@ package edu.kit.kastel.vads.compiler.lexer;
 
 import de.mr_pine.c0ne.lexer.*;
 import edu.kit.kastel.vads.compiler.Position;
-import edu.kit.kastel.vads.compiler.Span;
+import de.mr_pine.c0ne.Span;
 import de.mr_pine.c0ne.lexer.Operator.OperatorType;
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType;
 import org.jspecify.annotations.Nullable;

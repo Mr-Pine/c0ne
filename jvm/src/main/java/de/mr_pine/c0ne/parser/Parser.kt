@@ -8,8 +8,23 @@ import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.lexer.Separator
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import de.mr_pine.c0ne.lexer.Token
+import de.mr_pine.c0ne.parser.ast.AssignmentTree
+import de.mr_pine.c0ne.parser.ast.BinaryOperationTree
+import de.mr_pine.c0ne.parser.ast.BlockTree
+import de.mr_pine.c0ne.parser.ast.DeclarationTree
+import de.mr_pine.c0ne.parser.ast.ExpressionTree
+import de.mr_pine.c0ne.parser.ast.FunctionTree
+import de.mr_pine.c0ne.parser.ast.IdentExpressionTree
+import de.mr_pine.c0ne.parser.ast.LValueIdentTree
+import de.mr_pine.c0ne.parser.ast.LValueTree
+import de.mr_pine.c0ne.parser.ast.LiteralTree
+import de.mr_pine.c0ne.parser.ast.NameTree
+import de.mr_pine.c0ne.parser.ast.ProgramTree
+import de.mr_pine.c0ne.parser.ast.ReturnTree
+import de.mr_pine.c0ne.parser.ast.StatementTree
+import de.mr_pine.c0ne.parser.ast.TypeTree
+import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
 import edu.kit.kastel.vads.compiler.parser.ParseException
-import edu.kit.kastel.vads.compiler.parser.ast.*
 import edu.kit.kastel.vads.compiler.parser.symbol.Name
 import edu.kit.kastel.vads.compiler.parser.type.BasicType
 
@@ -119,7 +134,7 @@ class Parser(private val tokenSource: TokenSource) {
     private fun parseReturn(): StatementTree {
         val ret = this.tokenSource.expectKeyword(KeywordType.RETURN)
         val expression = parseExpression()
-        return ReturnTree(expression, ret.span.start())
+        return ReturnTree(expression, ret.span.start)
     }
 
     private fun parseExpression(): ExpressionTree {

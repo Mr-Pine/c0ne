@@ -1,20 +1,20 @@
 package edu.kit.kastel.vads.compiler.parser;
 
-import edu.kit.kastel.vads.compiler.parser.ast.AssignmentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.BinaryOperationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.BlockTree;
-import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
-import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
-import edu.kit.kastel.vads.compiler.parser.ast.Tree;
-import edu.kit.kastel.vads.compiler.parser.ast.DeclarationTree;
-import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
-import edu.kit.kastel.vads.compiler.parser.ast.StatementTree;
-import edu.kit.kastel.vads.compiler.parser.ast.TypeTree;
+import de.mr_pine.c0ne.parser.ast.AssignmentTree;
+import de.mr_pine.c0ne.parser.ast.BinaryOperationTree;
+import de.mr_pine.c0ne.parser.ast.BlockTree;
+import de.mr_pine.c0ne.parser.ast.IdentExpressionTree;
+import de.mr_pine.c0ne.parser.ast.LValueIdentTree;
+import de.mr_pine.c0ne.parser.ast.LiteralTree;
+import de.mr_pine.c0ne.parser.ast.NameTree;
+import de.mr_pine.c0ne.parser.ast.UnaryOperationTree;
+import de.mr_pine.c0ne.parser.ast.ReturnTree;
+import de.mr_pine.c0ne.parser.ast.Tree;
+import de.mr_pine.c0ne.parser.ast.DeclarationTree;
+import de.mr_pine.c0ne.parser.ast.FunctionTree;
+import de.mr_pine.c0ne.parser.ast.ProgramTree;
+import de.mr_pine.c0ne.parser.ast.StatementTree;
+import de.mr_pine.c0ne.parser.ast.TypeTree;
 
 import java.util.List;
 
@@ -42,74 +42,75 @@ public class Printer {
 
     private void printTree(Tree tree) {
         switch (tree) {
-            case BlockTree(List<StatementTree> statements, _) -> {
+            case BlockTree blockTree -> {
                 print("{");
                 lineBreak();
                 this.indentDepth++;
-                for (StatementTree statement : statements) {
+                for (StatementTree statement : blockTree.getStatements()) {
                     printTree(statement);
                 }
                 this.indentDepth--;
                 print("}");
             }
-            case FunctionTree(var returnType, var name, var body) -> {
-                printTree(returnType);
+            case FunctionTree functionTree -> {
+                printTree(functionTree.returnType);
                 space();
-                printTree(name);
+                printTree(functionTree.name);
                 print("()");
                 space();
-                printTree(body);
+                printTree(functionTree.body);
             }
-            case NameTree(var name, _) -> print(name.asString());
-            case ProgramTree(var topLevelTrees) -> {
-                for (FunctionTree function : topLevelTrees) {
+            case NameTree nameTree -> print(nameTree.name.asString());
+            case ProgramTree programTree -> {
+                for (FunctionTree function : programTree.getTopLevelTrees()) {
                     printTree(function);
                     lineBreak();
                 }
             }
-            case TypeTree(var type, _) -> print(type.asString());
-            case BinaryOperationTree(var lhs, var rhs, var op) -> {
+            case TypeTree typeTree -> print(typeTree.type().asString());
+            case BinaryOperationTree binaryOperationTree -> {
                 print("(");
-                printTree(lhs);
+                printTree(binaryOperationTree.getLhs());
                 print(")");
                 space();
-                this.builder.append(op);
+                this.builder.append(binaryOperationTree.getOperatorType());
                 space();
                 print("(");
-                printTree(rhs);
+                printTree(binaryOperationTree.getRhs());
                 print(")");
             }
-            case LiteralTree(var value, _, _) -> this.builder.append(value);
-            case UnaryOperationTree(_, var expression) -> {
+            case LiteralTree literalTree -> this.builder.append(literalTree.value);
+            case UnaryOperationTree unaryOperationTree -> {
                 print("-(");
-                printTree(expression);
+                printTree(unaryOperationTree.expression);
                 print(")");
             }
-            case AssignmentTree(var lValue, var op, var expression) -> {
-                printTree(lValue);
+            case AssignmentTree assignmentTree -> {
+                printTree(assignmentTree.lValue);
                 space();
-                this.builder.append(op);
+                this.builder.append(assignmentTree.operator);
                 space();
-                printTree(expression);
+                printTree(assignmentTree.expression);
                 semicolon();
             }
-            case DeclarationTree(var type, var name, var initializer) -> {
-                printTree(type);
+            case DeclarationTree declarationTree -> {
+                printTree(declarationTree.type);
                 space();
-                printTree(name);
-                if (initializer != null) {
+                printTree(declarationTree.name);
+                if (declarationTree.initializer != null) {
                     print(" = ");
-                    printTree(initializer);
+                    printTree(declarationTree.initializer);
                 }
                 semicolon();
             }
-            case ReturnTree(var expr, _) -> {
+            case ReturnTree returnTree -> {
                 print("return ");
-                printTree(expr);
+                printTree(returnTree.expression);
                 semicolon();
             }
-            case LValueIdentTree(var name) -> printTree(name);
-            case IdentExpressionTree(var name) -> printTree(name);
+            case LValueIdentTree lValueIdentTree -> printTree(lValueIdentTree.name);
+            case IdentExpressionTree identExpressionTree -> printTree(identExpressionTree.name);
+            default -> throw new IllegalStateException("Unexpected value: " + tree);
         }
     }
 

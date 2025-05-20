@@ -1,7 +1,7 @@
 package edu.kit.kastel.vads.compiler.semantic;
 
-import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
-import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
+import de.mr_pine.c0ne.parser.ast.FunctionTree;
+import de.mr_pine.c0ne.parser.ast.ReturnTree;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
 
@@ -22,7 +22,7 @@ class ReturnAnalysis implements NoOpVisitor<ReturnAnalysis.ReturnState> {
     @Override
     public Unit visit(FunctionTree functionTree, ReturnState data) {
         if (!data.returns) {
-            throw new SemanticException("function " + functionTree.name() + " does not return");
+            throw new SemanticException("function " + functionTree.name + " does not return");
         }
         data.returns = false;
         return NoOpVisitor.super.visit(functionTree, data);
