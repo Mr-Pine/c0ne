@@ -3,7 +3,7 @@ import edu.kit.kastel.vads.compiler.ir.SsaTranslation
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
 import edu.kit.kastel.vads.compiler.lexer.Lexer
 import de.mr_pine.c0ne.parser.Parser
-import edu.kit.kastel.vads.compiler.parser.TokenSource
+import de.mr_pine.c0ne.parser.TokenSource
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis
 import java.nio.file.attribute.PosixFilePermission
