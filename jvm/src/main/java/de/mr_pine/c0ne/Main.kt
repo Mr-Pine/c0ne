@@ -11,7 +11,7 @@ import edu.kit.kastel.vads.compiler.ir.SsaTranslation
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
 import edu.kit.kastel.vads.compiler.lexer.Lexer
 import edu.kit.kastel.vads.compiler.parser.ParseException
-import edu.kit.kastel.vads.compiler.parser.Parser
+import de.mr_pine.c0ne.parser.Parser
 import edu.kit.kastel.vads.compiler.parser.TokenSource
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis
 import edu.kit.kastel.vads.compiler.semantic.SemanticException
