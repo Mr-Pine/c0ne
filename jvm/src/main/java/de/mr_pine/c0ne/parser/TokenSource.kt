@@ -47,7 +47,7 @@ class TokenSource {
         return token
     }
 
-    fun expectOperator(type: Operator.OperatorType?): Operator {
+    fun expectOperator(type: Operator.OperatorType): Operator {
         val token = peek()
         if (token !is Operator || token.type != type) {
             throw ParseException("expected operator '$type' but got $token")

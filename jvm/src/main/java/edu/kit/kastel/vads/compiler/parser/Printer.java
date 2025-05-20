@@ -7,7 +7,7 @@ import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NegateTree;
+import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
 import edu.kit.kastel.vads.compiler.parser.ast.Tree;
 import edu.kit.kastel.vads.compiler.parser.ast.DeclarationTree;
@@ -80,7 +80,7 @@ public class Printer {
                 print(")");
             }
             case LiteralTree(var value, _, _) -> this.builder.append(value);
-            case NegateTree(var expression, _) -> {
+            case UnaryOperationTree(_, var expression) -> {
                 print("-(");
                 printTree(expression);
                 print(")");
