@@ -31,6 +31,7 @@ class Lexer private constructor(private val source: String) {
             '/' -> singleOrWithEquals(Operator.OperatorType.DIV, Operator.OperatorType.ASSIGN_DIV)
             '%' -> singleOrWithEquals(Operator.OperatorType.MOD, Operator.OperatorType.ASSIGN_MOD)
             '!' -> singleOrWithEquals(Operator.OperatorType.LOGICAL_NOT, Operator.OperatorType.NOT_EQUALS)
+            '=' -> singleOrWithEquals(Operator.OperatorType.ASSIGN, Operator.OperatorType.EQUALS)
             '&' -> singleOrDoubleOrWithEquals(
                 '&',
                 Operator.OperatorType.BITWISE_AND,
@@ -72,7 +73,6 @@ class Lexer private constructor(private val source: String) {
                 Operator(Operator.OperatorType.GREATER_THAN, buildSpan(1))
             }
 
-            '=' -> Operator(Operator.OperatorType.ASSIGN, buildSpan(1))
             '~' -> Operator(Operator.OperatorType.BITWISE_NOT, buildSpan(1))
             '?' -> Operator(Operator.OperatorType.TERNARY_QUESTION, buildSpan(1))
             ':' -> Operator(Operator.OperatorType.TERNARY_COLON, buildSpan(1))
