@@ -7,7 +7,6 @@ import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.lexer.Separator
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import edu.kit.kastel.vads.compiler.parser.ParseException
-import edu.kit.kastel.vads.compiler.parser.TokenSource
 import edu.kit.kastel.vads.compiler.parser.ast.*
 import edu.kit.kastel.vads.compiler.parser.symbol.Name
 import edu.kit.kastel.vads.compiler.parser.type.BasicType

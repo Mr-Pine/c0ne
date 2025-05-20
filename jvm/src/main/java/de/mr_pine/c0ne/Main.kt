@@ -12,7 +12,7 @@ import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
 import edu.kit.kastel.vads.compiler.lexer.Lexer
 import edu.kit.kastel.vads.compiler.parser.ParseException
 import de.mr_pine.c0ne.parser.Parser
-import edu.kit.kastel.vads.compiler.parser.TokenSource
+import de.mr_pine.c0ne.parser.TokenSource
 import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis
 import edu.kit.kastel.vads.compiler.semantic.SemanticException
 import java.nio.file.Path
