@@ -1,19 +1,6 @@
 package edu.kit.kastel.vads.compiler.parser.visitor;
 
-import de.mr_pine.c0ne.parser.ast.AssignmentTree;
-import de.mr_pine.c0ne.parser.ast.BinaryOperationTree;
-import de.mr_pine.c0ne.parser.ast.BlockTree;
-import de.mr_pine.c0ne.parser.ast.DeclarationTree;
-import de.mr_pine.c0ne.parser.ast.FunctionTree;
-import de.mr_pine.c0ne.parser.ast.IdentExpressionTree;
-import de.mr_pine.c0ne.parser.ast.LValueIdentTree;
-import de.mr_pine.c0ne.parser.ast.LiteralTree;
-import de.mr_pine.c0ne.parser.ast.NameTree;
-import de.mr_pine.c0ne.parser.ast.UnaryOperationTree;
-import de.mr_pine.c0ne.parser.ast.ProgramTree;
-import de.mr_pine.c0ne.parser.ast.ReturnTree;
-import de.mr_pine.c0ne.parser.ast.StatementTree;
-import de.mr_pine.c0ne.parser.ast.TypeTree;
+import de.mr_pine.c0ne.parser.ast.*;
 
 /// A visitor that traverses a tree in postorder
 /// @param <T> a type for additional data
@@ -71,6 +58,14 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
         r = functionTree.body.accept(this, accumulate(data, r));
         r = this.visitor.visit(functionTree, accumulate(data, r));
         return r;
+    }
+
+    @Override
+    public R visit(TernaryOperationTree ternaryOperationTree, T data) {
+        R r = ternaryOperationTree.getCondition().accept(this, data);
+        r = ternaryOperationTree.getThenExpression().accept(this, accumulate(data, r));
+        r = ternaryOperationTree.getElseExpression().accept(this, accumulate(data, r));
+        return this.visitor.visit(ternaryOperationTree, accumulate(data, r));
     }
 
     @Override

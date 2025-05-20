@@ -22,6 +22,7 @@ import de.mr_pine.c0ne.parser.ast.NameTree
 import de.mr_pine.c0ne.parser.ast.ProgramTree
 import de.mr_pine.c0ne.parser.ast.ReturnTree
 import de.mr_pine.c0ne.parser.ast.StatementTree
+import de.mr_pine.c0ne.parser.ast.TernaryOperationTree
 import de.mr_pine.c0ne.parser.ast.TypeTree
 import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
 import edu.kit.kastel.vads.compiler.parser.ParseException
@@ -149,13 +150,11 @@ class Parser(private val tokenSource: TokenSource) {
         }
         this.tokenSource.consume()
 
-        val true_branch = parseExpression()
+        val trueBranch = parseExpression()
         tokenSource.expectOperator(Operator.OperatorType.TERNARY_COLON)
-        val false_branch = parseExpression()
+        val falseBranch = parseExpression()
 
-        return TODO()
-
-
+        return TernaryOperationTree(lhs, trueBranch, falseBranch)
     }
 
     private fun parsePrecedenceExpression(precedence: Int): ExpressionTree {

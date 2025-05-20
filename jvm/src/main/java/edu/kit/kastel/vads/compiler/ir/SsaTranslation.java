@@ -1,5 +1,6 @@
 package edu.kit.kastel.vads.compiler.ir;
 
+import de.mr_pine.c0ne.parser.ast.*;
 import edu.kit.kastel.vads.compiler.ir.node.Block;
 import edu.kit.kastel.vads.compiler.ir.node.DivNode;
 import edu.kit.kastel.vads.compiler.ir.node.ModNode;
@@ -7,21 +8,6 @@ import edu.kit.kastel.vads.compiler.ir.node.Node;
 import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfo;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper;
-import de.mr_pine.c0ne.parser.ast.AssignmentTree;
-import de.mr_pine.c0ne.parser.ast.BinaryOperationTree;
-import de.mr_pine.c0ne.parser.ast.BlockTree;
-import de.mr_pine.c0ne.parser.ast.DeclarationTree;
-import de.mr_pine.c0ne.parser.ast.FunctionTree;
-import de.mr_pine.c0ne.parser.ast.IdentExpressionTree;
-import de.mr_pine.c0ne.parser.ast.LValueIdentTree;
-import de.mr_pine.c0ne.parser.ast.LiteralTree;
-import de.mr_pine.c0ne.parser.ast.NameTree;
-import de.mr_pine.c0ne.parser.ast.UnaryOperationTree;
-import de.mr_pine.c0ne.parser.ast.ProgramTree;
-import de.mr_pine.c0ne.parser.ast.ReturnTree;
-import de.mr_pine.c0ne.parser.ast.StatementTree;
-import de.mr_pine.c0ne.parser.ast.Tree;
-import de.mr_pine.c0ne.parser.ast.TypeTree;
 import edu.kit.kastel.vads.compiler.parser.symbol.Name;
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
 import kotlin.NotImplementedError;
@@ -169,6 +155,11 @@ public class SsaTranslation {
             Node value = data.readVariable(identExpressionTree.name.name, data.currentBlock());
             popSpan();
             return Optional.of(value);
+        }
+
+        @Override
+        public Optional<Node> visit(TernaryOperationTree ternaryOperationTree, SsaTranslation data) {
+            throw new NotImplementedError("ternary ssa");
         }
 
         @Override
