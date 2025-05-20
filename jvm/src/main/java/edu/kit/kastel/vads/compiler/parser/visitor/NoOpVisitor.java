@@ -49,7 +49,7 @@ public interface NoOpVisitor<T> extends Visitor<T, Unit> {
     }
 
     @Override
-    default Unit visit(LiteralTree literalTree, T data) {
+    default Unit visit(LiteralTree.LiteralIntTree literalTree, T data) {
         return Unit.INSTANCE;
     }
 

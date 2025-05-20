@@ -79,7 +79,7 @@ public class Printer {
                 printTree(binaryOperationTree.getRhs());
                 print(")");
             }
-            case LiteralTree literalTree -> this.builder.append(literalTree.value);
+            case LiteralTree.LiteralIntTree literalIntTree -> this.builder.append(literalIntTree.value);
             case UnaryOperationTree unaryOperationTree -> {
                 print("-(");
                 printTree(unaryOperationTree.expression);

@@ -28,7 +28,7 @@ public interface Visitor<T, R> {
 
     R visit(IdentExpressionTree identExpressionTree, T data);
 
-    R visit(LiteralTree literalTree, T data);
+    R visit(LiteralTree.LiteralIntTree literalIntTree, T data);
 
     R visit(LValueIdentTree lValueIdentTree, T data);
 

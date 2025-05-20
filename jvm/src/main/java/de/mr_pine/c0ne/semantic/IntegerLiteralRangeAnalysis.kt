@@ -7,8 +7,8 @@ import edu.kit.kastel.vads.compiler.semantic.Namespace
 import edu.kit.kastel.vads.compiler.semantic.SemanticException
 
 class IntegerLiteralRangeAnalysis : NoOpVisitor<Namespace<Void?>> {
-    override fun visit(literalTree: LiteralTree, data: Namespace<Void?>): Unit? {
-        literalTree.parseValue() ?: throw SemanticException("invalid integer literal " + literalTree.value)
-        return super.visit(literalTree, data)
+    override fun visit(literalIntTree: LiteralTree.LiteralIntTree, data: Namespace<Void?>): Unit? {
+        literalIntTree.parseValue() ?: throw SemanticException("invalid integer literal " + literalIntTree.value)
+        return super.visit(literalIntTree, data)
     }
 }
