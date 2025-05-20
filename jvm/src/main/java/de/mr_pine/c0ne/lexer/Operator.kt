@@ -28,16 +28,17 @@ data class Operator(@JvmField val type: OperatorType, override val span: Span) :
         LESS_THAN_OR_EQUAL("<=", listOf(5), false),
         GREATER_THAN(">", listOf(5), false),
         GREATER_THAN_OR_EQUAL(">=", listOf(5), false),
-        EQUALS("==", listOf(5), false),
-        NOT_EQUALS("!=", listOf(5), false),
 
-        BITWISE_AND("&", listOf(6), false),
-        BITWISE_XOR("^", listOf(7), false),
-        BITWISE_OR("|", listOf(8), false),
+        EQUALS("==", listOf(6), false),
+        NOT_EQUALS("!=", listOf(6), false),
 
-        LOGICAL_AND("&&", listOf(9), false),
+        BITWISE_AND("&", listOf(7), false),
+        BITWISE_XOR("^", listOf(8), false),
+        BITWISE_OR("|", listOf(9), false),
 
-        LOGICAL_OR("||", listOf(10), false),
+        LOGICAL_AND("&&", listOf(10), false),
+
+        LOGICAL_OR("||", listOf(11), false),
 
         TERNARY_QUESTION("?", listOf(), false),
         TERNARY_COLON(":", listOf(), false),
