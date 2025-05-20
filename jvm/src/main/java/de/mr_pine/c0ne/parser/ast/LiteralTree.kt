@@ -2,7 +2,7 @@ package de.mr_pine.c0ne.parser.ast
 
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.lexer.Keyword
-import edu.kit.kastel.vads.compiler.lexer.KeywordType
+import de.mr_pine.c0ne.lexer.KeywordType
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor
 import java.lang.Long.parseLong
 

@@ -2,7 +2,7 @@ package de.mr_pine.c0ne.parser
 
 import de.mr_pine.c0ne.lexer.Identifier
 import de.mr_pine.c0ne.lexer.Keyword
-import edu.kit.kastel.vads.compiler.lexer.KeywordType
+import de.mr_pine.c0ne.lexer.KeywordType
 import de.mr_pine.c0ne.lexer.NumberLiteral
 import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.lexer.Separator

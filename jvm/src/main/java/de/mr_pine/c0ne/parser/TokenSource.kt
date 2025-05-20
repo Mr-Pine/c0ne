@@ -2,8 +2,8 @@ package de.mr_pine.c0ne.parser
 
 import de.mr_pine.c0ne.lexer.*
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
-import edu.kit.kastel.vads.compiler.lexer.KeywordType
-import edu.kit.kastel.vads.compiler.lexer.Lexer
+import de.mr_pine.c0ne.lexer.KeywordType
+import de.mr_pine.c0ne.lexer.Lexer
 import edu.kit.kastel.vads.compiler.parser.ParseException
 import java.util.*
 
@@ -13,8 +13,6 @@ class TokenSource {
 
     constructor(lexer: Lexer) {
         this.tokens = generateSequence(lexer::nextToken)
-            .takeWhile(Optional<Token>::isPresent)
-            .map(Optional<Token>::orElseThrow)
             .toList()
     }
 

@@ -2,7 +2,6 @@ package de.mr_pine.c0ne.lexer
 
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import de.mr_pine.c0ne.Span
-import edu.kit.kastel.vads.compiler.lexer.KeywordType
 
 sealed interface Token {
     val span: Span
