@@ -27,14 +27,16 @@ class TokenSource {
         return peek() as? T
     }
 
-    fun expectKeyword(type: KeywordType?): Keyword {
+    fun expectAnyKeyword(keywords: List<KeywordType>): Keyword {
         val token = peek()
-        if (token !is Keyword || token.type != type) {
-            throw ParseException("expected keyword '$type' but got $token")
+        if (token !is Keyword || token.type !in keywords) {
+            throw ParseException("expected any keyword of ${keywords.joinToString()} but got $token")
         }
         this.idx++
         return token
     }
+
+    fun expectKeyword(type: KeywordType) = expectAnyKeyword(listOf(type))
 
     fun expectSeparator(type: SeparatorType?): Separator {
         val token = peek()
