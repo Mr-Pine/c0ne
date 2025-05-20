@@ -23,6 +23,10 @@ class TokenSource {
         return this.tokens[this.idx]
     }
 
+    inline fun <reified T: Token> peekAs(): T? {
+        return peek() as? T
+    }
+
     fun expectKeyword(type: KeywordType?): Keyword {
         val token = peek()
         if (token !is Keyword || token.type != type) {

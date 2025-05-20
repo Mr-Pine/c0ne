@@ -6,6 +6,7 @@ import de.mr_pine.c0ne.lexer.NumberLiteral
 import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.lexer.Separator
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
+import de.mr_pine.c0ne.lexer.Token
 import edu.kit.kastel.vads.compiler.parser.ParseException
 import edu.kit.kastel.vads.compiler.parser.ast.*
 import edu.kit.kastel.vads.compiler.parser.symbol.Name
@@ -45,22 +46,25 @@ class Parser(private val tokenSource: TokenSource) {
 
     private fun parseBlock(): BlockTree {
         val bodyOpen = this.tokenSource.expectSeparator(SeparatorType.BRACE_OPEN)
-        val statements = mutableListOf<StatementTree>()
-        while (!this.tokenSource.peek().let { it is Separator && it.type == SeparatorType.BRACE_CLOSE }) {
-            statements.add(parseStatement())
+        val statements = buildList {
+            while (this@Parser.tokenSource.peekAs<Separator>()?.let { it.type == SeparatorType.BRACE_CLOSE } != true) {
+                add(parseStatement())
+            }
         }
         val bodyClose = this.tokenSource.expectSeparator(SeparatorType.BRACE_CLOSE)
         return BlockTree(statements, bodyOpen.span.merge(bodyClose.span))
     }
 
+    val Token.isType
+        get() = listOf(KeywordType.INT, KeywordType.BOOL).any { isKeyword(it) }
+
     private fun parseStatement(): StatementTree {
-        val statement: StatementTree
-        if (this.tokenSource.peek().isKeyword(KeywordType.INT)) {
-            statement = parseDeclaration()
+        val statement = if (this.tokenSource.peek().isType) {
+            parseDeclaration()
         } else if (this.tokenSource.peek().isKeyword(KeywordType.RETURN)) {
-            statement = parseReturn()
+            parseReturn()
         } else {
-            statement = parseSimple()
+            parseSimple()
         }
         this.tokenSource.expectSeparator(SeparatorType.SEMICOLON)
         return statement
@@ -69,12 +73,13 @@ class Parser(private val tokenSource: TokenSource) {
     private fun parseDeclaration(): StatementTree {
         val type = this.tokenSource.expectKeyword(KeywordType.INT)
         val ident = this.tokenSource.expectIdentifier()
-        var expr: ExpressionTree? = null
-        if (this.tokenSource.peek().isOperator(Operator.OperatorType.ASSIGN)) {
+        val init = if (this.tokenSource.peek().isOperator(Operator.OperatorType.ASSIGN)) {
             this.tokenSource.expectOperator(Operator.OperatorType.ASSIGN)
-            expr = parseExpression()
+            parseExpression()
+        } else {
+            null
         }
-        return DeclarationTree(TypeTree(BasicType.INT, type.span), name(ident), expr)
+        return DeclarationTree(TypeTree(BasicType.INT, type.span), name(ident), init)
     }
 
     private fun parseSimple(): StatementTree {
@@ -85,15 +90,15 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseAssignmentOperator(): Operator {
-        val next = this.tokenSource.peek()
-        if (next is Operator) {
-            return when (next.type) {
+        val operator = tokenSource.peekAs<Operator>()
+        if (operator != null) {
+            return when (operator.type) {
                 Operator.OperatorType.ASSIGN, Operator.OperatorType.ASSIGN_DIV, Operator.OperatorType.ASSIGN_MINUS, Operator.OperatorType.ASSIGN_MOD, Operator.OperatorType.ASSIGN_MUL, Operator.OperatorType.ASSIGN_PLUS -> {
                     this.tokenSource.consume()
-                    next
+                    operator
                 }
 
-                else -> throw ParseException("expected assignment but got " + next.type)
+                else -> throw ParseException("expected assignment but got " + operator.type)
             }
         }
         throw ParseException("expected assignment but got " + this.tokenSource.peek())
@@ -116,33 +121,33 @@ class Parser(private val tokenSource: TokenSource) {
         return ReturnTree(expression, ret.span.start())
     }
 
-    private fun parseExpression(): ExpressionTree? {
+    private fun parseExpression(): ExpressionTree {
         var lhs = parseTerm()
         while (true) {
-            val next = this.tokenSource.peek()
-            if (next is Operator && (next.type == Operator.OperatorType.PLUS || next.type == Operator.OperatorType.MINUS)) {
+            val nextOp = this.tokenSource.peekAs<Operator>()
+            if (nextOp != null && (nextOp.type == Operator.OperatorType.PLUS || nextOp.type == Operator.OperatorType.MINUS)) {
                 this.tokenSource.consume()
-                lhs = BinaryOperationTree(lhs, parseTerm(), next.type)
+                lhs = BinaryOperationTree(lhs, parseTerm(), nextOp.type)
             } else {
                 return lhs
             }
         }
     }
 
-    private fun parseTerm(): ExpressionTree? {
+    private fun parseTerm(): ExpressionTree {
         var lhs = parseFactor()
         while (true) {
-            val next = this.tokenSource.peek()
-            if (next is Operator && (next.type == Operator.OperatorType.MUL || next.type == Operator.OperatorType.DIV || next.type == Operator.OperatorType.MOD)) {
+            val nextOperator = this.tokenSource.peekAs<Operator>()
+            if (nextOperator != null && (nextOperator.type == Operator.OperatorType.MUL || nextOperator.type == Operator.OperatorType.DIV || nextOperator.type == Operator.OperatorType.MOD)) {
                 this.tokenSource.consume()
-                lhs = BinaryOperationTree(lhs, parseFactor(), next.type)
+                lhs = BinaryOperationTree(lhs, parseFactor(), nextOperator.type)
             } else {
                 return lhs
             }
         }
     }
 
-    private fun parseFactor(): ExpressionTree? {
+    private fun parseFactor(): ExpressionTree {
         val next = this.tokenSource.peek()
         return when (next) {
             is Separator if next.type == SeparatorType.PAREN_OPEN -> {
@@ -167,7 +172,7 @@ class Parser(private val tokenSource: TokenSource) {
                 LiteralTree(next.value, next.base, next.span)
             }
 
-            else -> throw ParseException("invalid factor " + next)
+            else -> throw ParseException("invalid factor $next")
         }
     }
 
