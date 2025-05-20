@@ -56,7 +56,7 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     val Token.isType
-        get() = listOf(KeywordType.INT, KeywordType.BOOL).any { isKeyword(it) }
+        get() = TYPE_KEYWORDS.any { isKeyword(it) }
 
     private fun parseStatement(): StatementTree {
         val statement = if (this.tokenSource.peek().isType) {
@@ -71,7 +71,7 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseDeclaration(): StatementTree {
-        val type = this.tokenSource.expectKeyword(KeywordType.INT)
+        val type = this.tokenSource.expectAnyKeyword(TYPE_KEYWORDS)
         val ident = this.tokenSource.expectIdentifier()
         val init = if (this.tokenSource.peek().isOperator(Operator.OperatorType.ASSIGN)) {
             this.tokenSource.expectOperator(Operator.OperatorType.ASSIGN)
@@ -177,6 +177,7 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     companion object {
+        private val TYPE_KEYWORDS = listOf(KeywordType.INT, KeywordType.BOOL)
         private fun name(ident: Identifier): NameTree {
             return NameTree(Name.forIdentifier(ident), ident.span)
         }
