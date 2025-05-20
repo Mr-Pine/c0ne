@@ -4,30 +4,33 @@ import de.mr_pine.c0ne.Span
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor
 import java.lang.Long.parseLong
 
-@JvmRecord
-data class LiteralTree(@JvmField val value: String, val base: Int, override val span: Span) : ExpressionTree {
+sealed interface LiteralTree : ExpressionTree {
 
-    override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
-        return visitor.visit(this, data)
-    }
+    @JvmRecord
+    data class LiteralIntTree(@JvmField val value: String, val base: Int, override val span: Span) : LiteralTree {
 
-    fun parseValue(): Long? {
-        var begin = 0
-        val end = value.length
-        if (base == 16) {
-            begin = 2 // ignore 0x
+        override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
+            return visitor.visit(this, data)
         }
-        val l = try {
-            parseLong(value.substring(begin, end), base)
-        } catch (_: NumberFormatException) {
-            return null
+
+        fun parseValue(): Long? {
+            var begin = 0
+            val end = value.length
+            if (base == 16) {
+                begin = 2 // ignore 0x
+            }
+            val l = try {
+                parseLong(value.substring(begin, end), base)
+            } catch (_: NumberFormatException) {
+                return null
+            }
+            val isNegative = l < 0
+            val validPositiveInt = l <= Integer.toUnsignedLong(Int.Companion.MIN_VALUE)
+            val validInt = l <= Integer.toUnsignedLong(-1)
+            if (isNegative || (!validPositiveInt && base != 16) || !validInt) {
+                return null
+            }
+            return l
         }
-        val isNegative = l < 0
-        val validPositiveInt = l <= Integer.toUnsignedLong(Int.Companion.MIN_VALUE)
-        val validInt = l <= Integer.toUnsignedLong(-1)
-        if (isNegative || (!validPositiveInt && base != 16) || !validInt) {
-            return null
-        }
-        return l
     }
 }
