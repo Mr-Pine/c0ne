@@ -84,6 +84,10 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
     public R visit(LiteralTree.LiteralIntTree literalIntTree, T data) {
         return this.visitor.visit(literalIntTree, data);
     }
+    @Override
+    public R visit(LiteralTree.LiteralBoolTree literalBoolTree, T data) {
+        return this.visitor.visit(literalBoolTree, data);
+    }
 
     @Override
     public R visit(LValueIdentTree lValueIdentTree, T data) {

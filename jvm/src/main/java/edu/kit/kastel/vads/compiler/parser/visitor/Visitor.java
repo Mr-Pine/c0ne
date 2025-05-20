@@ -30,6 +30,8 @@ public interface Visitor<T, R> {
 
     R visit(LiteralTree.LiteralIntTree literalIntTree, T data);
 
+    R visit(LiteralTree.LiteralBoolTree literalBoolTree, T data);
+
     R visit(LValueIdentTree lValueIdentTree, T data);
 
     R visit(NameTree nameTree, T data);
