@@ -1,14 +1,14 @@
 package edu.kit.kastel.vads.compiler.parser;
 
-import edu.kit.kastel.vads.compiler.lexer.Identifier;
-import edu.kit.kastel.vads.compiler.lexer.Keyword;
+import de.mr_pine.c0ne.lexer.Identifier;
+import de.mr_pine.c0ne.lexer.Keyword;
 import edu.kit.kastel.vads.compiler.lexer.KeywordType;
 import edu.kit.kastel.vads.compiler.lexer.Lexer;
-import edu.kit.kastel.vads.compiler.lexer.Operator;
-import edu.kit.kastel.vads.compiler.lexer.Operator.OperatorType;
-import edu.kit.kastel.vads.compiler.lexer.Separator;
-import edu.kit.kastel.vads.compiler.lexer.Separator.SeparatorType;
-import edu.kit.kastel.vads.compiler.lexer.Token;
+import de.mr_pine.c0ne.lexer.Operator;
+import de.mr_pine.c0ne.lexer.Operator.OperatorType;
+import de.mr_pine.c0ne.lexer.Separator;
+import de.mr_pine.c0ne.lexer.Separator.SeparatorType;
+import de.mr_pine.c0ne.lexer.Token;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +36,7 @@ public class TokenSource {
 
     public Keyword expectKeyword(KeywordType type) {
         Token token = peek();
-        if (!(token instanceof Keyword kw) || kw.type() != type) {
+        if (!(token instanceof Keyword kw) || kw.type != type) {
             throw new ParseException("expected keyword '" + type + "' but got " + token);
         }
         this.idx++;
@@ -45,7 +45,7 @@ public class TokenSource {
 
     public Separator expectSeparator(SeparatorType type) {
         Token token = peek();
-        if (!(token instanceof Separator sep) || sep.type() != type) {
+        if (!(token instanceof Separator sep) || sep.type != type) {
             throw new ParseException("expected separator '" + type + "' but got " + token);
         }
         this.idx++;
@@ -54,7 +54,7 @@ public class TokenSource {
 
     public Operator expectOperator(OperatorType type) {
         Token token = peek();
-        if (!(token instanceof Operator op) || op.type() != type) {
+        if (!(token instanceof Operator op) || op.type != type) {
             throw new ParseException("expected operator '" + type + "' but got " + token);
         }
         this.idx++;

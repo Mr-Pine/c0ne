@@ -1,11 +1,11 @@
 package de.mr_pine.c0ne.parser
 
-import edu.kit.kastel.vads.compiler.lexer.Identifier
+import de.mr_pine.c0ne.lexer.Identifier
 import edu.kit.kastel.vads.compiler.lexer.KeywordType
-import edu.kit.kastel.vads.compiler.lexer.NumberLiteral
-import edu.kit.kastel.vads.compiler.lexer.Operator
-import edu.kit.kastel.vads.compiler.lexer.Separator
-import edu.kit.kastel.vads.compiler.lexer.Separator.SeparatorType
+import de.mr_pine.c0ne.lexer.NumberLiteral
+import de.mr_pine.c0ne.lexer.Operator
+import de.mr_pine.c0ne.lexer.Separator
+import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import edu.kit.kastel.vads.compiler.parser.ParseException
 import edu.kit.kastel.vads.compiler.parser.TokenSource
 import edu.kit.kastel.vads.compiler.parser.ast.*
@@ -154,7 +154,7 @@ class Parser(private val tokenSource: TokenSource) {
             }
 
             is Operator if next.type == Operator.OperatorType.MINUS -> {
-                val span = this.tokenSource.consume().span()
+                val span = this.tokenSource.consume().span
                 NegateTree(parseFactor(), span)
             }
 
