@@ -1,18 +1,6 @@
 package edu.kit.kastel.vads.compiler.parser.visitor;
 
-import de.mr_pine.c0ne.parser.ast.AssignmentTree;
-import de.mr_pine.c0ne.parser.ast.BinaryOperationTree;
-import de.mr_pine.c0ne.parser.ast.BlockTree;
-import de.mr_pine.c0ne.parser.ast.DeclarationTree;
-import de.mr_pine.c0ne.parser.ast.FunctionTree;
-import de.mr_pine.c0ne.parser.ast.IdentExpressionTree;
-import de.mr_pine.c0ne.parser.ast.LValueIdentTree;
-import de.mr_pine.c0ne.parser.ast.LiteralTree;
-import de.mr_pine.c0ne.parser.ast.NameTree;
-import de.mr_pine.c0ne.parser.ast.UnaryOperationTree;
-import de.mr_pine.c0ne.parser.ast.ProgramTree;
-import de.mr_pine.c0ne.parser.ast.ReturnTree;
-import de.mr_pine.c0ne.parser.ast.TypeTree;
+import de.mr_pine.c0ne.parser.ast.*;
 
 public interface Visitor<T, R> {
 
@@ -27,6 +15,8 @@ public interface Visitor<T, R> {
     R visit(FunctionTree functionTree, T data);
 
     R visit(IdentExpressionTree identExpressionTree, T data);
+
+    R visit(TernaryOperationTree ternaryOperationTree, T data);
 
     R visit(LiteralTree.LiteralIntTree literalIntTree, T data);
 
