@@ -9,7 +9,7 @@ import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NegateTree;
+import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
 import edu.kit.kastel.vads.compiler.parser.ast.TypeTree;
@@ -34,7 +34,7 @@ public interface Visitor<T, R> {
 
     R visit(NameTree nameTree, T data);
 
-    R visit(NegateTree negateTree, T data);
+    R visit(UnaryOperationTree unaryOperationTree, T data);
 
     R visit(ProgramTree programTree, T data);
 

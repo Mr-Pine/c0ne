@@ -16,7 +16,7 @@ import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NegateTree;
+import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
 import edu.kit.kastel.vads.compiler.parser.ast.StatementTree;
@@ -187,9 +187,9 @@ public class SsaTranslation {
         }
 
         @Override
-        public Optional<Node> visit(NegateTree negateTree, SsaTranslation data) {
-            pushSpan(negateTree);
-            Node node = negateTree.expression().accept(this, data).orElseThrow();
+        public Optional<Node> visit(UnaryOperationTree unaryOperationTree, SsaTranslation data) {
+            pushSpan(unaryOperationTree);
+            Node node = unaryOperationTree.expression().accept(this, data).orElseThrow();
             Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
             popSpan();
             return Optional.of(res);

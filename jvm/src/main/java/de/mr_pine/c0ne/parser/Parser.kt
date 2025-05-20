@@ -1,6 +1,7 @@
 package de.mr_pine.c0ne.parser
 
 import de.mr_pine.c0ne.lexer.Identifier
+import de.mr_pine.c0ne.lexer.Keyword
 import edu.kit.kastel.vads.compiler.lexer.KeywordType
 import de.mr_pine.c0ne.lexer.NumberLiteral
 import de.mr_pine.c0ne.lexer.Operator
@@ -122,62 +123,81 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseExpression(): ExpressionTree {
-        var lhs = parseTerm()
+        // TODO: Handle nested ternary operators
+        val lhs = parsePrecedenceExpression(Operator.OperatorType.MAX_PRECEDENCE)
+        val operator = this.tokenSource.peekAs<Operator>()
+        if (operator == null || operator.type != Operator.OperatorType.TERNARY_QUESTION) {
+            return lhs
+        }
+
+        val true_branch = parseExpression()
+        tokenSource.expectOperator(Operator.OperatorType.TERNARY_COLON)
+        val false_branch = parseExpression()
+
+        return TODO()
+
+
+    }
+
+    private fun parsePrecedenceExpression(precedence: Int): ExpressionTree {
+        if (precedence == Operator.OperatorType.UNARY_PRECEDENCE_LEVEL)  {
+            return parseUnaryExpression(precedence)
+        } else if (precedence == 0) {
+            return parseBasicExpression()
+        }
+
+        var lhs = parsePrecedenceExpression(precedence - 1)
         while (true) {
             val nextOp = this.tokenSource.peekAs<Operator>()
-            if (nextOp != null && (nextOp.type == Operator.OperatorType.PLUS || nextOp.type == Operator.OperatorType.MINUS)) {
+            if (nextOp != null && precedence in nextOp.type.precedences) {
                 this.tokenSource.consume()
-                lhs = BinaryOperationTree(lhs, parseTerm(), nextOp.type)
+                lhs = BinaryOperationTree(lhs, parsePrecedenceExpression(precedence - 1), nextOp.type)
             } else {
                 return lhs
             }
         }
     }
 
-    private fun parseTerm(): ExpressionTree {
-        var lhs = parseFactor()
-        while (true) {
-            val nextOperator = this.tokenSource.peekAs<Operator>()
-            if (nextOperator != null && (nextOperator.type == Operator.OperatorType.MUL || nextOperator.type == Operator.OperatorType.DIV || nextOperator.type == Operator.OperatorType.MOD)) {
-                this.tokenSource.consume()
-                lhs = BinaryOperationTree(lhs, parseFactor(), nextOperator.type)
-            } else {
-                return lhs
-            }
+    fun parseUnaryExpression(precedence: Int): ExpressionTree {
+        val operator = this.tokenSource.peekAs<Operator>()
+        if (operator != null && precedence in operator.type.precedences) {
+            this.tokenSource.consume()
+            val value = parsePrecedenceExpression(precedence - 1)
+            return UnaryOperationTree(operator, value)
         }
+        return parsePrecedenceExpression(precedence - 1)
     }
 
-    private fun parseFactor(): ExpressionTree {
-        val next = this.tokenSource.peek()
-        return when (next) {
-            is Separator if next.type == SeparatorType.PAREN_OPEN -> {
+    val Token.isBooleanLiteral
+        get() = BOOLEAN_LITERAL_KEYWORDS.any { isKeyword(it) }
+    fun parseBasicExpression(): ExpressionTree {
+        val nextToken = this.tokenSource.peek()
+        return when (nextToken) {
+            is Separator if nextToken.type == SeparatorType.PAREN_OPEN -> {
                 this.tokenSource.consume()
                 val expression = parseExpression()
                 this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
                 expression
             }
-
-            is Operator if next.type == Operator.OperatorType.MINUS -> {
-                val span = this.tokenSource.consume().span
-                NegateTree(parseFactor(), span)
-            }
-
-            is Identifier -> {
-                this.tokenSource.consume()
-                IdentExpressionTree(name(next))
-            }
-
             is NumberLiteral -> {
                 this.tokenSource.consume()
-                LiteralTree(next.value, next.base, next.span)
+                LiteralTree(nextToken.value, nextToken.base, nextToken.span)
             }
-
-            else -> throw ParseException("invalid factor $next")
+            is Keyword if nextToken.isBooleanLiteral -> {
+                this.tokenSource.consume()
+                TODO()
+            }
+            is Identifier -> {
+                this.tokenSource.consume()
+                IdentExpressionTree(name(nextToken))
+            }
+            else -> throw ParseException("invalid expression starting at $nextToken")
         }
     }
 
     companion object {
         private val TYPE_KEYWORDS = listOf(KeywordType.INT, KeywordType.BOOL)
+        private val BOOLEAN_LITERAL_KEYWORDS = listOf(KeywordType.TRUE, KeywordType.FALSE)
         private fun name(ident: Identifier): NameTree {
             return NameTree(Name.forIdentifier(ident), ident.span)
         }
