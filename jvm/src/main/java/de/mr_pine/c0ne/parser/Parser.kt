@@ -75,11 +75,14 @@ class Parser(private val tokenSource: TokenSource) {
         get() = TYPE_KEYWORDS.any { isKeyword(it) }
 
     private fun parseStatement(): StatementTree {
-        val statement = if (this.tokenSource.peek().isType) {
+        val nextToken = this.tokenSource.peek()
+        val statement = if (nextToken.isType) {
             parseDeclaration()
-        } else if (this.tokenSource.peek().isKeyword(KeywordType.RETURN)) {
+        } else if (nextToken.isKeyword(KeywordType.RETURN)) {
             parseReturn()
-        } else {
+        } else if (nextToken.isSeparator(SeparatorType.BRACE_OPEN)) {
+            return parseBlock()
+        } else{
             parseSimple()
         }
         this.tokenSource.expectSeparator(SeparatorType.SEMICOLON)
