@@ -200,7 +200,7 @@ class Parser(private val tokenSource: TokenSource) {
             }
             is Keyword if nextToken.isBooleanLiteral -> {
                 this.tokenSource.consume()
-                TODO()
+                LiteralTree.LiteralBoolTree(nextToken)
             }
             is Identifier -> {
                 this.tokenSource.consume()

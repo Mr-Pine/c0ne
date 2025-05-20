@@ -24,6 +24,7 @@ import de.mr_pine.c0ne.parser.ast.Tree;
 import de.mr_pine.c0ne.parser.ast.TypeTree;
 import edu.kit.kastel.vads.compiler.parser.symbol.Name;
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
+import kotlin.NotImplementedError;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -176,6 +177,12 @@ public class SsaTranslation {
             Node node = data.constructor.newConstInt(Objects.requireNonNull(literalIntTree.parseValue()).intValue());
             popSpan();
             return Optional.of(node);
+        }
+
+        @Override
+        public Optional<Node> visit(LiteralTree.LiteralBoolTree literalBoolTree, SsaTranslation data) {
+            pushSpan(literalBoolTree);
+            throw new NotImplementedError("bool ssa");
         }
 
         @Override
