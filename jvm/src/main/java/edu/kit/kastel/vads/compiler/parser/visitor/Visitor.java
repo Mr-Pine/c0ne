@@ -30,6 +30,8 @@ public interface Visitor<T, R> {
 
     R visit(ProgramTree programTree, T data);
 
+    R visit(IfTree ifTree, T data);
+
     R visit(ReturnTree returnTree, T data);
 
     R visit(TypeTree typeTree, T data);
