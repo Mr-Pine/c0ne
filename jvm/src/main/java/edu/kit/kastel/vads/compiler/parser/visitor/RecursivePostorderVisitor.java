@@ -3,6 +3,7 @@ package edu.kit.kastel.vads.compiler.parser.visitor;
 import de.mr_pine.c0ne.parser.ast.*;
 
 /// A visitor that traverses a tree in postorder
+///
 /// @param <T> a type for additional data
 /// @param <R> a type for a return type
 public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
@@ -79,6 +80,7 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
     public R visit(LiteralTree.LiteralIntTree literalIntTree, T data) {
         return this.visitor.visit(literalIntTree, data);
     }
+
     @Override
     public R visit(LiteralTree.LiteralBoolTree literalBoolTree, T data) {
         return this.visitor.visit(literalBoolTree, data);
@@ -131,6 +133,23 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
         R r = whileTree.getCondition().accept(this, data);
         r = whileTree.getLoopBody().accept(this, accumulate(data, r));
         r = this.visitor.visit(whileTree, accumulate(data, r));
+        return r;
+    }
+
+    @Override
+    public R visit(ForTree forTree, T data) {
+        R r;
+        if (forTree.getInitializer() != null) {
+            r = forTree.getInitializer().accept(this, data);
+            r = forTree.getCondition().accept(this, accumulate(data, r));
+        } else {
+            r = forTree.getCondition().accept(this, data);
+        }
+        if (forTree.getStep() != null) {
+            r = forTree.getStep().accept(this, accumulate(data, r));
+        }
+        r = forTree.getLoopBody().accept(this, accumulate(data, r));
+        r = this.visitor.visit(forTree, accumulate(data, r));
         return r;
     }
 

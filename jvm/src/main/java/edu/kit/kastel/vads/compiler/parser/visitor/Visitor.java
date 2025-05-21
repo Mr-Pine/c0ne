@@ -34,6 +34,8 @@ public interface Visitor<T, R> {
 
     R visit(WhileTree whileTree, T data);
 
+    R visit(ForTree forTree, T data);
+
     R visit(BreakTree breakTree, T data);
 
     R visit(ContinueTree continueTree, T data);

@@ -16,6 +16,7 @@ import de.mr_pine.c0ne.parser.ast.ContinueTree
 import de.mr_pine.c0ne.parser.ast.ControlTree
 import de.mr_pine.c0ne.parser.ast.DeclarationTree
 import de.mr_pine.c0ne.parser.ast.ExpressionTree
+import de.mr_pine.c0ne.parser.ast.ForTree
 import de.mr_pine.c0ne.parser.ast.FunctionTree
 import de.mr_pine.c0ne.parser.ast.IdentExpressionTree
 import de.mr_pine.c0ne.parser.ast.IfTree
@@ -169,9 +170,32 @@ class Parser(private val tokenSource: TokenSource) {
                 WhileTree(condition, body, keyword.span.start)
             }
             KeywordType.FOR -> {
-                tokenSource.consume()
+                val keyword = tokenSource.consume()
+                fun parseSimpopt(): StatementTree? {
+                    val separator = tokenSource.peekAs<Separator>()
+                    return if (separator != null) {
+                        null
+                    } else {
+                        val nextToken = tokenSource.peek()
+                        if (nextToken.isType) {
+                            parseDeclaration()
+                        } else {
+                            parseSimple()
+                        }
+                    }
+                }
+
                 tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
-                TODO("For parse")
+                val initializer = parseSimpopt()
+                tokenSource.expectSeparator(SeparatorType.SEMICOLON)
+                val condition = parseExpression()
+                tokenSource.expectSeparator(SeparatorType.SEMICOLON)
+                val step = parseSimpopt()
+                tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
+
+                val loopBody = parseStatement()
+
+                ForTree(initializer, condition, step, loopBody, keyword.span.start)
             }
             KeywordType.CONTINUE -> {
                 val keyword = tokenSource.expectKeyword(KeywordType.CONTINUE)
@@ -194,7 +218,6 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseExpression(): ExpressionTree {
-        // TODO: Handle nested ternary operators
         val lhs = parsePrecedenceExpression(Operator.OperatorType.MAX_PRECEDENCE)
         val operator = this.tokenSource.peekAs<Operator>()
         if (operator == null || operator.type != Operator.OperatorType.TERNARY_QUESTION) {

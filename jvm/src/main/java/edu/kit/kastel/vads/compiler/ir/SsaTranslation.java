@@ -211,6 +211,11 @@ public class SsaTranslation {
         }
 
         @Override
+        public Optional<Node> visit(ForTree forTree, SsaTranslation data) {
+            throw new NotImplementedError("for ssa");
+        }
+
+        @Override
         public Optional<Node> visit(BreakTree breakTree, SsaTranslation data) {
             throw new NotImplementedError("break ssa");
         }
