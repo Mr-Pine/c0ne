@@ -211,6 +211,16 @@ public class SsaTranslation {
         }
 
         @Override
+        public Optional<Node> visit(BreakTree breakTree, SsaTranslation data) {
+            throw new NotImplementedError("break ssa");
+        }
+
+        @Override
+        public Optional<Node> visit(ContinueTree continueTree, SsaTranslation data) {
+            throw new NotImplementedError("continue ssa");
+        }
+
+        @Override
         public Optional<Node> visit(ReturnTree returnTree, SsaTranslation data) {
             pushSpan(returnTree);
             Node node = returnTree.expression.accept(this, data).orElseThrow();
