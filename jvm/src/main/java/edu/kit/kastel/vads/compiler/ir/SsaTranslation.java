@@ -201,6 +201,11 @@ public class SsaTranslation {
         }
 
         @Override
+        public Optional<Node> visit(IfTree ifTree, SsaTranslation data) {
+            throw new NotImplementedError("if ssa");
+        }
+
+        @Override
         public Optional<Node> visit(ReturnTree returnTree, SsaTranslation data) {
             pushSpan(returnTree);
             Node node = returnTree.expression.accept(this, data).orElseThrow();
