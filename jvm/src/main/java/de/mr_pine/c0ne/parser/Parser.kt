@@ -11,6 +11,8 @@ import de.mr_pine.c0ne.lexer.Token
 import de.mr_pine.c0ne.parser.ast.AssignmentTree
 import de.mr_pine.c0ne.parser.ast.BinaryOperationTree
 import de.mr_pine.c0ne.parser.ast.BlockTree
+import de.mr_pine.c0ne.parser.ast.BreakTree
+import de.mr_pine.c0ne.parser.ast.ContinueTree
 import de.mr_pine.c0ne.parser.ast.ControlTree
 import de.mr_pine.c0ne.parser.ast.DeclarationTree
 import de.mr_pine.c0ne.parser.ast.ExpressionTree
@@ -172,12 +174,14 @@ class Parser(private val tokenSource: TokenSource) {
                 TODO("For parse")
             }
             KeywordType.CONTINUE -> {
+                val keyword = tokenSource.expectKeyword(KeywordType.CONTINUE)
                 tokenSource.expectSeparator(SeparatorType.SEMICOLON)
-                TODO("Continue parse")
+                ContinueTree(keyword.span)
             }
             KeywordType.BREAK -> {
+                val keyword = tokenSource.expectKeyword(KeywordType.BREAK)
                 tokenSource.expectSeparator(SeparatorType.SEMICOLON)
-                TODO("Break parse")
+                BreakTree(keyword.span)
             }
             KeywordType.RETURN -> {
                 val ret = tokenSource.expectKeyword(KeywordType.RETURN)

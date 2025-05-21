@@ -82,6 +82,16 @@ public interface NoOpVisitor<T> extends Visitor<T, Unit> {
     }
 
     @Override
+    default Unit visit(BreakTree breakTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(ContinueTree continueTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
     default Unit visit(ReturnTree returnTree, T data) {
         return Unit.INSTANCE;
     }

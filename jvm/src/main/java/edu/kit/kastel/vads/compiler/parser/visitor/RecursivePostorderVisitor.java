@@ -135,6 +135,16 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
     }
 
     @Override
+    public R visit(BreakTree breakTree, T data) {
+        return this.visitor.visit(breakTree, data);
+    }
+
+    @Override
+    public R visit(ContinueTree continueTree, T data) {
+        return this.visitor.visit(continueTree, data);
+    }
+
+    @Override
     public R visit(ReturnTree returnTree, T data) {
         R r = returnTree.expression.accept(this, data);
         r = this.visitor.visit(returnTree, accumulate(data, r));
