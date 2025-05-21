@@ -127,6 +127,14 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
     }
 
     @Override
+    public R visit(WhileTree whileTree, T data) {
+        R r = whileTree.getCondition().accept(this, data);
+        r = whileTree.getLoopBody().accept(this, accumulate(data, r));
+        r = this.visitor.visit(whileTree, accumulate(data, r));
+        return r;
+    }
+
+    @Override
     public R visit(ReturnTree returnTree, T data) {
         R r = returnTree.expression.accept(this, data);
         r = this.visitor.visit(returnTree, accumulate(data, r));

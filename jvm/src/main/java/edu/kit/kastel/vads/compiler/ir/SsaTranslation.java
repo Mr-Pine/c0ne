@@ -206,6 +206,11 @@ public class SsaTranslation {
         }
 
         @Override
+        public Optional<Node> visit(WhileTree whileTree, SsaTranslation data) {
+            throw new NotImplementedError("while ssa");
+        }
+
+        @Override
         public Optional<Node> visit(ReturnTree returnTree, SsaTranslation data) {
             pushSpan(returnTree);
             Node node = returnTree.expression.accept(this, data).orElseThrow();
