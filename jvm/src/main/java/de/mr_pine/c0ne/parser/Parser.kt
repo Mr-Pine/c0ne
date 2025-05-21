@@ -27,6 +27,7 @@ import de.mr_pine.c0ne.parser.ast.StatementTree
 import de.mr_pine.c0ne.parser.ast.TernaryOperationTree
 import de.mr_pine.c0ne.parser.ast.TypeTree
 import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
+import de.mr_pine.c0ne.parser.ast.WhileTree
 import edu.kit.kastel.vads.compiler.parser.ParseException
 import edu.kit.kastel.vads.compiler.parser.symbol.Name
 import edu.kit.kastel.vads.compiler.parser.type.BasicType
@@ -157,13 +158,13 @@ class Parser(private val tokenSource: TokenSource) {
                 IfTree(condition, thenBranch, elseBranch, keyword.span.start)
             }
             KeywordType.WHILE -> {
-                tokenSource.consume()
+                val keyword = tokenSource.expectKeyword(KeywordType.WHILE)
                 tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
                 val condition = parseExpression()
                 tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
                 val body = parseStatement()
 
-                TODO("While tree")
+                WhileTree(condition, body, keyword.span.start)
             }
             KeywordType.FOR -> {
                 tokenSource.consume()
