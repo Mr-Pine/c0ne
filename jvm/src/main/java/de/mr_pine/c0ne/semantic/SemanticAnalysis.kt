@@ -2,8 +2,8 @@ package de.mr_pine.c0ne.semantic
 
 import de.mr_pine.c0ne.parser.ast.ProgramTree
 import edu.kit.kastel.vads.compiler.parser.visitor.RecursivePostorderVisitor
-import edu.kit.kastel.vads.compiler.semantic.ReturnAnalysis
-import edu.kit.kastel.vads.compiler.semantic.ReturnAnalysis.ReturnState
+import de.mr_pine.c0ne.parser.visitor.ReturnAnalysis
+import de.mr_pine.c0ne.parser.visitor.ReturnAnalysis.ReturnState
 
 class SemanticAnalysis(private val program: ProgramTree) {
     fun analyze() {
