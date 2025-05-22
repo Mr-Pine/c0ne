@@ -9,7 +9,7 @@ import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfo;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper;
 import edu.kit.kastel.vads.compiler.parser.symbol.Name;
-import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
+import de.mr_pine.c0ne.parser.visitor.Visitor;
 import kotlin.NotImplementedError;
 
 import java.util.ArrayDeque;

@@ -1,6 +1,7 @@
 package edu.kit.kastel.vads.compiler.parser.visitor;
 
 import de.mr_pine.c0ne.parser.ast.*;
+import de.mr_pine.c0ne.parser.visitor.Visitor;
 
 /// A visitor that traverses a tree in postorder
 ///

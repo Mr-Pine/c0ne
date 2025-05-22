@@ -3,7 +3,7 @@ package de.mr_pine.c0ne.parser.ast
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.lexer.Keyword
 import de.mr_pine.c0ne.lexer.KeywordType
-import edu.kit.kastel.vads.compiler.parser.visitor.Visitor
+import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.lang.Long.parseLong
 
 sealed interface LiteralTree<T> : ExpressionTree {
