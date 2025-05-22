@@ -5,7 +5,7 @@ import de.mr_pine.c0ne.lexer.Lexer
 import de.mr_pine.c0ne.parser.Parser
 import de.mr_pine.c0ne.parser.TokenSource
 import de.mr_pine.c0ne.parser.ast.ProgramTree
-import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis
+import de.mr_pine.c0ne.semantic.SemanticAnalysis
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
 import kotlin.io.path.*

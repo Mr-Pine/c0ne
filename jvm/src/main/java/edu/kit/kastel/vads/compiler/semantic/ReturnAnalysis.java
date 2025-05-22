@@ -2,14 +2,15 @@ package edu.kit.kastel.vads.compiler.semantic;
 
 import de.mr_pine.c0ne.parser.ast.FunctionTree;
 import de.mr_pine.c0ne.parser.ast.ReturnTree;
+import de.mr_pine.c0ne.semantic.SemanticException;
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor;
 import edu.kit.kastel.vads.compiler.parser.visitor.Unit;
 
 /// Checks that functions return.
 /// Currently only works for straight-line code.
-class ReturnAnalysis implements NoOpVisitor<ReturnAnalysis.ReturnState> {
+public class ReturnAnalysis implements NoOpVisitor<ReturnAnalysis.ReturnState> {
 
-    static class ReturnState {
+    public static class ReturnState {
         boolean returns = false;
     }
 
