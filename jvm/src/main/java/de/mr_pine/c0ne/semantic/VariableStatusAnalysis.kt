@@ -7,7 +7,6 @@ import de.mr_pine.c0ne.parser.ast.LValueIdentTree
 import de.mr_pine.c0ne.parser.ast.NameTree
 import de.mr_pine.c0ne.semantic.VariableStatusAnalysis.VariableStatus
 import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor
-import edu.kit.kastel.vads.compiler.parser.visitor.Unit
 import edu.kit.kastel.vads.compiler.semantic.Namespace
 import java.util.*
 import java.util.function.BinaryOperator
@@ -18,7 +17,7 @@ import java.util.function.BinaryOperator
  * - not initialized twice
  * - assigned before referenced */
 class VariableStatusAnalysis : NoOpVisitor<Namespace<VariableStatus?>> {
-    override fun visit(assignmentTree: AssignmentTree, data: Namespace<VariableStatus?>): Unit? {
+    override fun visit(assignmentTree: AssignmentTree, data: Namespace<VariableStatus?>) {
         val lValue = assignmentTree.lValue
         when (lValue) {
             is LValueIdentTree -> {
@@ -39,7 +38,7 @@ class VariableStatusAnalysis : NoOpVisitor<Namespace<VariableStatus?>> {
         return super.visit(assignmentTree, data)
     }
 
-    override fun visit(declarationTree: DeclarationTree, data: Namespace<VariableStatus?>): Unit? {
+    override fun visit(declarationTree: DeclarationTree, data: Namespace<VariableStatus?>) {
         val status = if (declarationTree.initializer == null)
             VariableStatus.DECLARED
         else
@@ -53,7 +52,7 @@ class VariableStatusAnalysis : NoOpVisitor<Namespace<VariableStatus?>> {
         return super.visit(declarationTree, data)
     }
 
-    override fun visit(identExpressionTree: IdentExpressionTree, data: Namespace<VariableStatus?>): Unit? {
+    override fun visit(identExpressionTree: IdentExpressionTree, data: Namespace<VariableStatus?>) {
         val status = data.get(identExpressionTree.name)
         checkInitialized(identExpressionTree.name, status)
         return super.visit(identExpressionTree, data)
