@@ -112,7 +112,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         unaryOperationTree: UnaryOperationTree,
         data: VariableStatus
     ): VariableStatus {
-        return unaryOperationTree.accept(this, data)
+        return unaryOperationTree.expression.accept(this, data)
     }
 
     override fun visit(
