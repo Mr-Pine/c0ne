@@ -1,6 +1,7 @@
 package edu.kit.kastel.vads.compiler.parser.visitor;
 
 import de.mr_pine.c0ne.parser.ast.*;
+import kotlin.Unit;
 
 /// A visitor that does nothing and returns [Unit#INSTANCE] by default.
 /// This can be used to implement operations only for specific tree types.
