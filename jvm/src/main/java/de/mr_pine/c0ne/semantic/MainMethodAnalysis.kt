@@ -2,7 +2,7 @@ package de.mr_pine.c0ne.semantic
 
 import de.mr_pine.c0ne.parser.ast.FunctionTree
 import de.mr_pine.c0ne.parser.ast.ProgramTree
-import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor
+import de.mr_pine.c0ne.parser.visitor.NoOpVisitor
 
 class MainMethodAnalysis : NoOpVisitor<Unit> {
     override fun visit(
