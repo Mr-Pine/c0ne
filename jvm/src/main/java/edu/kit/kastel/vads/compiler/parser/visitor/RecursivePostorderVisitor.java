@@ -44,10 +44,10 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
 
     @Override
     public R visit(DeclarationTree declarationTree, T data) {
-        R r = declarationTree.type.accept(this, data);
-        r = declarationTree.name.accept(this, accumulate(data, r));
-        if (declarationTree.initializer != null) {
-            r = declarationTree.initializer.accept(this, accumulate(data, r));
+        R r = declarationTree.getTypeDeclaration().accept(this, data);
+        r = declarationTree.getName().accept(this, accumulate(data, r));
+        if (declarationTree.getInitializer() != null) {
+            r = declarationTree.getInitializer().accept(this, accumulate(data, r));
         }
         r = this.visitor.visit(declarationTree, accumulate(data, r));
         return r;
@@ -72,7 +72,7 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
 
     @Override
     public R visit(IdentExpressionTree identExpressionTree, T data) {
-        R r = identExpressionTree.name.accept(this, data);
+        R r = identExpressionTree.getName().accept(this, data);
         r = this.visitor.visit(identExpressionTree, accumulate(data, r));
         return r;
     }
@@ -101,7 +101,7 @@ public class RecursivePostorderVisitor<T, R> implements Visitor<T, R> {
 
     @Override
     public R visit(UnaryOperationTree unaryOperationTree, T data) {
-        R r = unaryOperationTree.expression.accept(this, data);
+        R r = unaryOperationTree.getExpression().accept(this, data);
         r = this.visitor.visit(unaryOperationTree, accumulate(data, r));
         return r;
     }

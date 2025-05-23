@@ -3,14 +3,17 @@ package de.mr_pine.c0ne.parser.ast
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.lexer.Keyword
 import de.mr_pine.c0ne.lexer.KeywordType
+import de.mr_pine.c0ne.parser.type.BasicType
+import de.mr_pine.c0ne.parser.type.Type
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.lang.Long.parseLong
 
 sealed interface LiteralTree<T> : ExpressionTree {
     fun parseValue(): T?
 
-    @JvmRecord
-    data class LiteralIntTree(@JvmField val value: String, val base: Int, override val span: Span) : LiteralTree<Long> {
+    data class LiteralIntTree(val value: String, val base: Int, override val span: Span) : LiteralTree<Long> {
+
+        override val type = BasicType.Integer
 
         override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
             return visitor.visit(this, data)
@@ -38,6 +41,8 @@ sealed interface LiteralTree<T> : ExpressionTree {
     }
 
     data class LiteralBoolTree(val value: Keyword) : LiteralTree<Boolean> {
+        override val type = BasicType.Boolean
+
         override val span: Span
             get() = value.span
 
