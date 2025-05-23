@@ -19,6 +19,9 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         if (assignmentTree.lValue !is LValueIdentTree) {
             throw NotImplementedError("Only assignments to variables are currently supported")
         }
+        if (assignmentTree.operator.type.isSelfAssignOperator) {
+            data.checkUsage(assignmentTree.lValue.name, assignmentTree.span)
+        }
         return status.addDefinition(Definition(assignmentTree.lValue.name.name), assignmentTree.span, assignmentTree)
     }
 
