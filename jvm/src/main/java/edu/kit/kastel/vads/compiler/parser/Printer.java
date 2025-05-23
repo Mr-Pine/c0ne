@@ -16,8 +16,6 @@ import de.mr_pine.c0ne.parser.ast.ProgramTree;
 import de.mr_pine.c0ne.parser.ast.StatementTree;
 import de.mr_pine.c0ne.parser.ast.TypeTree;
 
-import java.util.List;
-
 /// This is a utility class to help with debugging the parser.
 public class Printer {
 
@@ -60,7 +58,7 @@ public class Printer {
                 space();
                 printTree(functionTree.body);
             }
-            case NameTree nameTree -> print(nameTree.name.asString());
+            case NameTree nameTree -> print(nameTree.getName().asString());
             case ProgramTree programTree -> {
                 for (FunctionTree function : programTree.getTopLevelTrees()) {
                     printTree(function);
@@ -79,10 +77,10 @@ public class Printer {
                 printTree(binaryOperationTree.getRhs());
                 print(")");
             }
-            case LiteralTree.LiteralIntTree literalIntTree -> this.builder.append(literalIntTree.value);
+            case LiteralTree.LiteralIntTree literalIntTree -> this.builder.append(literalIntTree.getValue());
             case UnaryOperationTree unaryOperationTree -> {
                 print("-(");
-                printTree(unaryOperationTree.expression);
+                printTree(unaryOperationTree.getExpression());
                 print(")");
             }
             case AssignmentTree assignmentTree -> {
@@ -94,12 +92,12 @@ public class Printer {
                 semicolon();
             }
             case DeclarationTree declarationTree -> {
-                printTree(declarationTree.type);
+                printTree(declarationTree.getTypeDeclaration());
                 space();
-                printTree(declarationTree.name);
-                if (declarationTree.initializer != null) {
+                printTree(declarationTree.getName());
+                if (declarationTree.getInitializer() != null) {
                     print(" = ");
-                    printTree(declarationTree.initializer);
+                    printTree(declarationTree.getInitializer());
                 }
                 semicolon();
             }
@@ -109,7 +107,7 @@ public class Printer {
                 semicolon();
             }
             case LValueIdentTree lValueIdentTree -> printTree(lValueIdentTree.name);
-            case IdentExpressionTree identExpressionTree -> printTree(identExpressionTree.name);
+            case IdentExpressionTree identExpressionTree -> printTree(identExpressionTree.getName());
             default -> throw new IllegalStateException("Unexpected value: " + tree);
         }
     }

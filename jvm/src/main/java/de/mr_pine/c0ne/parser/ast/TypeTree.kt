@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.parser.ast
 
 import de.mr_pine.c0ne.Span
-import edu.kit.kastel.vads.compiler.parser.type.Type
+import de.mr_pine.c0ne.parser.type.Type
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
 @JvmRecord

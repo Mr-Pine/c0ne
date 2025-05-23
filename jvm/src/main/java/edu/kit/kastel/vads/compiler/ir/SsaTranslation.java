@@ -31,7 +31,7 @@ public class SsaTranslation {
 
     public SsaTranslation(FunctionTree function, Optimizer optimizer) {
         this.function = function;
-        this.constructor = new GraphConstructor(optimizer, function.name.name.asString());
+        this.constructor = new GraphConstructor(optimizer, function.name.getName().asString());
     }
 
     public IrGraph translate() {
@@ -86,9 +86,9 @@ public class SsaTranslation {
                 case LValueIdentTree lValueIdentTree -> {
                     Node rhs = assignmentTree.expression.accept(this, data).orElseThrow();
                     if (desugar != null) {
-                        rhs = desugar.apply(data.readVariable(lValueIdentTree.name.name, data.currentBlock()), rhs);
+                        rhs = desugar.apply(data.readVariable(lValueIdentTree.name.getName(), data.currentBlock()), rhs);
                     }
-                    data.writeVariable(lValueIdentTree.name.name, data.currentBlock(), rhs);
+                    data.writeVariable(lValueIdentTree.name.getName(), data.currentBlock(), rhs);
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + assignmentTree.lValue);
             }
@@ -131,9 +131,9 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(DeclarationTree declarationTree, SsaTranslation data) {
             pushSpan(declarationTree);
-            if (declarationTree.initializer != null) {
-                Node rhs = declarationTree.initializer.accept(this, data).orElseThrow();
-                data.writeVariable(declarationTree.name.name, data.currentBlock(), rhs);
+            if (declarationTree.getInitializer() != null) {
+                Node rhs = declarationTree.getInitializer().accept(this, data).orElseThrow();
+                data.writeVariable(declarationTree.getName().getName(), data.currentBlock(), rhs);
             }
             popSpan();
             return NOT_AN_EXPRESSION;
@@ -152,7 +152,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(IdentExpressionTree identExpressionTree, SsaTranslation data) {
             pushSpan(identExpressionTree);
-            Node value = data.readVariable(identExpressionTree.name.name, data.currentBlock());
+            Node value = data.readVariable(identExpressionTree.getName().getName(), data.currentBlock());
             popSpan();
             return Optional.of(value);
         }
@@ -189,7 +189,7 @@ public class SsaTranslation {
         @Override
         public Optional<Node> visit(UnaryOperationTree unaryOperationTree, SsaTranslation data) {
             pushSpan(unaryOperationTree);
-            Node node = unaryOperationTree.expression.accept(this, data).orElseThrow();
+            Node node = unaryOperationTree.getExpression().accept(this, data).orElseThrow();
             Node res = data.constructor.newSub(data.constructor.newConstInt(0), node);
             popSpan();
             return Optional.of(res);

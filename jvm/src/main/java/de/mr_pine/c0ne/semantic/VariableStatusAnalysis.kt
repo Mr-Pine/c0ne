@@ -13,19 +13,17 @@ import edu.kit.kastel.vads.compiler.parser.symbol.Name
 class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, VariableStatusAnalysis.VariableStatus> {
 
     override fun visit(
-        assignmentTree: AssignmentTree,
-        data: VariableStatus
+        assignmentTree: AssignmentTree, data: VariableStatus
     ): VariableStatus {
         val status = assignmentTree.expression.accept(this, data)
         if (assignmentTree.lValue !is LValueIdentTree) {
             throw NotImplementedError("Only assignments to variables are currently supported")
         }
-        return status.addDefinition(Definition(assignmentTree.lValue.name.name), assignmentTree.span)
+        return status.addDefinition(Definition(assignmentTree.lValue.name.name), assignmentTree.span, assignmentTree)
     }
 
     override fun visit(
-        blockTree: BlockTree,
-        data: VariableStatus
+        blockTree: BlockTree, data: VariableStatus
     ): VariableStatus {
         var status = data.enterNewScope()
         for (statement in blockTree.statements) {
@@ -35,8 +33,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        binaryOperationTree: BinaryOperationTree,
-        data: VariableStatus
+        binaryOperationTree: BinaryOperationTree, data: VariableStatus
     ): VariableStatus {
         var data = binaryOperationTree.lhs.accept(this, data)
         data = binaryOperationTree.rhs.accept(this, data)
@@ -44,35 +41,31 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        declarationTree: DeclarationTree,
-        data: VariableStatus
+        declarationTree: DeclarationTree, data: VariableStatus
     ): VariableStatus {
         var status = data.addDeclaration(Declaration(declarationTree.name.name, declarationTree))
         if (declarationTree.initializer != null) {
             status = declarationTree.initializer.accept(this, status)
-            status = status.addDefinition(Definition(declarationTree.name.name), declarationTree.span)
+            status = status.addDefinition(Definition(declarationTree.name.name), declarationTree.span, null)
         }
         return status
     }
 
     override fun visit(
-        functionTree: FunctionTree,
-        data: VariableStatus
+        functionTree: FunctionTree, data: VariableStatus
     ): VariableStatus {
         return functionTree.body.accept(this, data)
     }
 
     override fun visit(
-        identExpressionTree: IdentExpressionTree,
-        data: VariableStatus
+        identExpressionTree: IdentExpressionTree, data: VariableStatus
     ): VariableStatus {
-        data.checkUsage(identExpressionTree.name.name, identExpressionTree.span)
+        data.checkUsage(identExpressionTree.name, identExpressionTree.span)
         return data
     }
 
     override fun visit(
-        ternaryOperationTree: TernaryOperationTree,
-        data: VariableStatus
+        ternaryOperationTree: TernaryOperationTree, data: VariableStatus
     ): VariableStatus {
         var status = ternaryOperationTree.condition.accept(this, data)
         status = ternaryOperationTree.thenExpression.accept(this, status)
@@ -81,43 +74,37 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        literalIntTree: LiteralTree.LiteralIntTree,
-        data: VariableStatus
+        literalIntTree: LiteralTree.LiteralIntTree, data: VariableStatus
     ): VariableStatus {
         return data
     }
 
     override fun visit(
-        literalBoolTree: LiteralTree.LiteralBoolTree,
-        data: VariableStatus
+        literalBoolTree: LiteralTree.LiteralBoolTree, data: VariableStatus
     ): VariableStatus {
         return data
     }
 
     override fun visit(
-        lValueIdentTree: LValueIdentTree,
-        data: VariableStatus
+        lValueIdentTree: LValueIdentTree, data: VariableStatus
     ): VariableStatus {
         return data
     }
 
     override fun visit(
-        nameTree: NameTree,
-        data: VariableStatus
+        nameTree: NameTree, data: VariableStatus
     ): VariableStatus {
         return data
     }
 
     override fun visit(
-        unaryOperationTree: UnaryOperationTree,
-        data: VariableStatus
+        unaryOperationTree: UnaryOperationTree, data: VariableStatus
     ): VariableStatus {
         return unaryOperationTree.expression.accept(this, data)
     }
 
     override fun visit(
-        programTree: ProgramTree,
-        data: VariableStatus
+        programTree: ProgramTree, data: VariableStatus
     ): VariableStatus {
         var status = data
         for (function in programTree.topLevelTrees) {
@@ -127,8 +114,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        ifTree: IfTree,
-        data: VariableStatus
+        ifTree: IfTree, data: VariableStatus
     ): VariableStatus {
         val status = ifTree.condition.accept(this, data).enterNewScope()
         val afterThenStatus = ifTree.thenTree.accept(this, status).exitScope()
@@ -138,8 +124,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        whileTree: WhileTree,
-        data: VariableStatus
+        whileTree: WhileTree, data: VariableStatus
     ): VariableStatus {
         var status = whileTree.condition.accept(this, data)
         status = status.enterNewScope()
@@ -148,8 +133,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        forTree: ForTree,
-        data: VariableStatus
+        forTree: ForTree, data: VariableStatus
     ): VariableStatus {
         var status = data.enterNewScope()
         status = forTree.initializer?.accept(this, status) ?: status
@@ -162,30 +146,26 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        breakTree: BreakTree,
-        data: VariableStatus
+        breakTree: BreakTree, data: VariableStatus
     ): VariableStatus {
         return data.defineAllUndefined()
     }
 
     override fun visit(
-        continueTree: ContinueTree,
-        data: VariableStatus
+        continueTree: ContinueTree, data: VariableStatus
     ): VariableStatus {
         return data.defineAllUndefined()
     }
 
     override fun visit(
-        returnTree: ReturnTree,
-        data: VariableStatus
+        returnTree: ReturnTree, data: VariableStatus
     ): VariableStatus {
         val status = returnTree.expression.accept(this, data)
         return status.defineAllUndefined()
     }
 
     override fun visit(
-        typeTree: TypeTree,
-        data: VariableStatus
+        typeTree: TypeTree, data: VariableStatus
     ): VariableStatus {
         return data
     }
@@ -194,8 +174,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     data class Definition(val name: Name)
 
     private data class ScopeStatus(
-        val declarations: Set<Declaration>,
-        val definitions: Set<Definition>
+        val declarations: Set<Declaration>, val definitions: Set<Definition>
     )
 
     @ConsistentCopyVisibility
@@ -225,28 +204,32 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             }
             return VariableStatus(
                 scopes.dropLast(1) + ScopeStatus(
-                    scopes.last().declarations + declaration,
-                    scopes.last().definitions
+                    scopes.last().declarations + declaration, scopes.last().definitions
                 )
             )
         }
 
-        fun addDefinition(definition: Definition, span: Span): VariableStatus {
+        fun addDefinition(definition: Definition, span: Span, assignmentTree: AssignmentTree?): VariableStatus {
             val existingDeclaration = declarationFor(definition.name)
             if (existingDeclaration == null) {
                 throw SemanticException("Variable ${definition.name.asString()} defined but not declared at $span")
             }
+            (assignmentTree?.lValue as? LValueIdentTree)?.apply { name.references = existingDeclaration.declaration }
             return VariableStatus(
                 scopes.dropLast(1) + ScopeStatus(
-                    scopes.last().declarations,
-                    scopes.last().definitions + definition
+                    scopes.last().declarations, scopes.last().definitions + definition
                 )
             )
         }
 
-        fun checkUsage(name: Name, span: Span) {
-            if (definitionFor(name) == null) {
-                throw SemanticException("Variable ${name.asString()} used but not declared at $span")
+        fun checkUsage(name: NameTree, span: Span) {
+            val declaration = declarationFor(name.name)
+            if (declaration == null) {
+                throw SemanticException("Variable ${name.name.asString()} used but not defined at $span")
+            }
+            name.references = declaration.declaration
+            if (definitionFor(name.name) == null) {
+                throw SemanticException("Variable ${name.name.asString()} used but not declared at $span")
             }
         }
 

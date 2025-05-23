@@ -2,6 +2,7 @@ package de.mr_pine.c0ne.semantic
 
 import de.mr_pine.c0ne.parser.ast.FunctionTree
 import de.mr_pine.c0ne.parser.ast.ProgramTree
+import de.mr_pine.c0ne.parser.type.BasicType
 import de.mr_pine.c0ne.parser.visitor.NoOpVisitor
 
 class MainMethodAnalysis : NoOpVisitor<Unit> {
@@ -10,8 +11,12 @@ class MainMethodAnalysis : NoOpVisitor<Unit> {
         data: Unit
     ) {
         val functions: List<FunctionTree> = programTree.topLevelTrees
-        if (functions.none { it.name.name.asString() == "main" }) {
+        val mainFunction = functions.find { it.name.name.asString() == "main" }
+        if (mainFunction == null) {
             throw SemanticException("No main method defined")
+        }
+        if (mainFunction.returnType.type != BasicType.Integer) {
+            throw SemanticException("main method must return integer")
         }
         return super.visit(programTree, data)
     }

@@ -31,9 +31,9 @@ import de.mr_pine.c0ne.parser.ast.TernaryOperationTree
 import de.mr_pine.c0ne.parser.ast.TypeTree
 import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
 import de.mr_pine.c0ne.parser.ast.WhileTree
+import de.mr_pine.c0ne.parser.type.BasicType
 import edu.kit.kastel.vads.compiler.parser.ParseException
 import edu.kit.kastel.vads.compiler.parser.symbol.Name
-import edu.kit.kastel.vads.compiler.parser.type.BasicType
 
 class Parser(private val tokenSource: TokenSource) {
     fun parseProgram(): ProgramTree {
@@ -53,7 +53,7 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseFunction(): FunctionTree {
-        val returnType = this.tokenSource.expectKeyword(KeywordType.INT)
+        val type = parseType()
         val identifier = this.tokenSource.expectIdentifier()
         // Remove with more functions
         if (identifier.asString() != "main") {
@@ -62,9 +62,7 @@ class Parser(private val tokenSource: TokenSource) {
         this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
         this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
         val body = parseBlock()
-        return FunctionTree(
-            TypeTree(BasicType.INT, returnType.span), name(identifier), body
-        )
+        return FunctionTree(type, name(identifier), body)
     }
 
     private fun parseBlock(): BlockTree {
@@ -99,7 +97,8 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseDeclaration(): StatementTree {
-        val type = this.tokenSource.expectAnyKeyword(TYPE_KEYWORDS)
+        val type = parseType()
+
         val ident = this.tokenSource.expectIdentifier()
         val init = if (this.tokenSource.peek().isOperator(Operator.OperatorType.ASSIGN)) {
             this.tokenSource.expectOperator(Operator.OperatorType.ASSIGN)
@@ -107,7 +106,18 @@ class Parser(private val tokenSource: TokenSource) {
         } else {
             null
         }
-        return DeclarationTree(TypeTree(BasicType.INT, type.span), name(ident), init)
+        return DeclarationTree(type, name(ident), init)
+    }
+
+    private fun parseType(): TypeTree {
+        val typeKeyword = this.tokenSource.expectAnyKeyword(TYPE_KEYWORDS)
+        val type = when (typeKeyword.type) {
+            KeywordType.INT -> BasicType.Integer
+            KeywordType.BOOL -> BasicType.Boolean
+            else -> throw ParseException("expected type but got $typeKeyword")
+        }
+
+        return TypeTree(type, typeKeyword.span)
     }
 
     private fun parseSimple(): StatementTree {
@@ -160,6 +170,7 @@ class Parser(private val tokenSource: TokenSource) {
                 }
                 IfTree(condition, thenBranch, elseBranch, keyword.span.start)
             }
+
             KeywordType.WHILE -> {
                 val keyword = tokenSource.expectKeyword(KeywordType.WHILE)
                 tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
@@ -169,6 +180,7 @@ class Parser(private val tokenSource: TokenSource) {
 
                 WhileTree(condition, body, keyword.span.start)
             }
+
             KeywordType.FOR -> {
                 val keyword = tokenSource.consume()
                 fun parseSimpopt(): StatementTree? {
@@ -197,22 +209,26 @@ class Parser(private val tokenSource: TokenSource) {
 
                 ForTree(initializer, condition, step, loopBody, keyword.span.start)
             }
+
             KeywordType.CONTINUE -> {
                 val keyword = tokenSource.expectKeyword(KeywordType.CONTINUE)
                 tokenSource.expectSeparator(SeparatorType.SEMICOLON)
                 ContinueTree(keyword.span)
             }
+
             KeywordType.BREAK -> {
                 val keyword = tokenSource.expectKeyword(KeywordType.BREAK)
                 tokenSource.expectSeparator(SeparatorType.SEMICOLON)
                 BreakTree(keyword.span)
             }
+
             KeywordType.RETURN -> {
                 val ret = tokenSource.expectKeyword(KeywordType.RETURN)
                 val expression = parseExpression()
                 tokenSource.expectSeparator(SeparatorType.SEMICOLON)
                 return ReturnTree(expression, ret.span.start)
             }
+
             else -> throw ParseException("expected control statement but got $nextToken")
         }
     }
