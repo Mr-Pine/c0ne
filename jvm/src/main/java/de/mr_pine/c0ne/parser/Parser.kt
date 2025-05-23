@@ -58,6 +58,8 @@ class Parser(private val tokenSource: TokenSource) {
         // Remove with more functions
         if (identifier.asString() != "main") {
             throw ParseException("Only main function allowed")
+        } else if (type.type != BasicType.Integer) {
+            throw ParseException("Main function must return integer")
         }
         this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
         this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
