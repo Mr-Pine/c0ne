@@ -16,7 +16,7 @@ class SemanticAnalysis(private val program: ProgramTree) {
             VariableStatusAnalysis(), VariableStatusAnalysis.VariableStatus.initial
         )
         this.program.accept(
-            RecursivePostorderVisitor(TypeCheckAnalysis()), listOf()
+            RecursivePostorderVisitor(TypeCheckAnalysis()), mutableListOf()
         )
         this.program.accept(
             RecursivePostorderVisitor(ReturnAnalysis()), ReturnState()
