@@ -16,6 +16,7 @@ import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
 import de.mr_pine.c0ne.ir.node.ReturnNode
 import de.mr_pine.c0ne.ir.node.StartNode
 import de.mr_pine.c0ne.ir.node.UnaryOperationNode
+import de.mr_pine.c0ne.ir.node.UndefNode
 import java.util.*
 
 class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.RegisterAllocation<*>?) {
@@ -173,6 +174,9 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
         if (isSideeffect) {
             extraProps.addFirst("color: ${VcgColor.MEMORY.id()}")
         }
+        if (edge.src is IfNode) {
+            extraProps.addFirst("color: ${VcgColor.CONTROL_FLOW.id()}")
+        }
         """
             edge: {
               sourcename: "${nodeTitle(edge.src)}"
@@ -202,10 +206,14 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
                     VcgColor.MEMORY
                 } else if (node.projectionInfo() == SimpleProjectionInfo.RESULT) {
                     VcgColor.NORMAL
+                } else if (node.projectionInfo() == SimpleProjectionInfo.IF_TRUE || node.projectionInfo() == SimpleProjectionInfo.IF_FALSE) {
+                    VcgColor.CONTROL_FLOW
                 } else {
                     VcgColor.NORMAL
                 }
             }
+
+            is UndefNode -> VcgColor.SPECIAL
 
             is ReturnNode -> VcgColor.CONTROL_FLOW
             is StartNode -> VcgColor.CONTROL_FLOW
