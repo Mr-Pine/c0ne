@@ -11,6 +11,7 @@ import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.DivNode
 import de.mr_pine.c0ne.ir.node.ModNode
 import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.ProjNode
 import de.mr_pine.c0ne.ir.util.DebugInfo
 import de.mr_pine.c0ne.ir.util.DebugInfo.SourceInfo
 import de.mr_pine.c0ne.ir.util.DebugInfoHelper
@@ -29,7 +30,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
     fun translate(): IrGraph {
         val visitor = SsaTranslationVisitor()
         this.function.accept(visitor, this)
-        return this.constructor.graph()
+        return this.constructor.graph
     }
 
     private fun writeVariable(variable: Name, block: Block, value: Node) {
@@ -41,7 +42,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
     }
 
     private fun currentBlock(): Block {
-        return this.constructor.currentBlock()
+        return this.constructor.currentBlock
     }
 
     private class SsaTranslationVisitor : Visitor<SsaTranslation, Node?> {
@@ -113,6 +114,24 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                     data,
                     data.constructor.newMod(lhs, rhs)
                 )
+
+                Operator.OperatorType.LEFT_SHIFT -> TODO() //data.constructor.newLeftShift(lhs, rhs)
+                Operator.OperatorType.RIGHT_SHIFT -> TODO() //data.constructor.newRightShift(lhs, rhs)
+
+                Operator.OperatorType.BITWISE_AND -> TODO() //data.constructor.newBitwiseAnd(lhs, rhs)
+                Operator.OperatorType.BITWISE_XOR -> TODO() //data.constructor.newBitwiseXor(lhs, rhs)
+                Operator.OperatorType.BITWISE_OR -> TODO() //data.constructor.newBitwiseOr(lhs, rhs)
+
+                Operator.OperatorType.LESS_THAN -> data.constructor.newLessThan(lhs, rhs)
+                Operator.OperatorType.LESS_THAN_OR_EQUAL -> data.constructor.newLessThanOrEqual(lhs, rhs)
+                Operator.OperatorType.GREATER_THAN -> data.constructor.newGreaterThan(lhs, rhs)
+                Operator.OperatorType.GREATER_THAN_OR_EQUAL -> data.constructor.newGreaterThanOrEqual(lhs, rhs)
+
+                Operator.OperatorType.EQUALS -> data.constructor.newEquals(lhs, rhs)
+                Operator.OperatorType.NOT_EQUALS -> TODO() //data.constructor.newNotEquals(lhs, rhs)
+
+                Operator.OperatorType.LOGICAL_AND -> TODO() //data.constructor.newLogicalAnd(lhs, rhs)
+                Operator.OperatorType.LOGICAL_OR -> TODO() //data.constructor.newLogicalOr(lhs, rhs)
 
                 else -> throw java.lang.IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType)
             }
@@ -204,7 +223,31 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
         }
 
         override fun visit(ifTree: IfTree, data: SsaTranslation): Node? {
-            throw NotImplementedError("if ssa")
+            pushSpan(ifTree)
+            val condition = ifTree.condition.accept(this, data)!!
+            val ifNode = data.constructor.newIf(condition)
+            data.constructor.sealBlock(data.constructor.currentBlock)
+
+            fun processBranch(branch: StatementTree?, projection: ProjNode): Node? {
+                val block = data.constructor.writeNewBlock()
+                block.addPredecessor(projection)
+                data.constructor.sealBlock(block)
+                branch?.accept(this, data)
+                return data.constructor.newJump()
+            }
+
+            val trueProj = data.constructor.newIfTrueProjection(ifNode)
+            val falseProj = data.constructor.newIfFalseProjection(ifNode)
+            val trueControl = processBranch(ifTree.thenTree, trueProj)
+            val falseControl = processBranch(ifTree.elseTree, falseProj)
+
+            val nextBlock = data.constructor.writeNewBlock()
+            trueControl?.let { nextBlock.addPredecessor(it) }
+            falseControl?.let { nextBlock.addPredecessor(it) }
+            data.constructor.sealBlock(nextBlock)
+
+            popSpan()
+            return NOT_AN_EXPRESSION
         }
 
         override fun visit(whileTree: WhileTree, data: SsaTranslation): Node? {
@@ -227,7 +270,8 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
             pushSpan(returnTree)
             val node = returnTree.expression.accept(this, data)!!
             val ret = data.constructor.newReturn(node)
-            data.constructor.graph().endBlock().addPredecessor(ret)
+            data.constructor.graph.endBlock.addPredecessor(ret)
+            data.constructor.sealBlock(data.constructor.writeNewBlock())
             popSpan()
             return NOT_AN_EXPRESSION
         }

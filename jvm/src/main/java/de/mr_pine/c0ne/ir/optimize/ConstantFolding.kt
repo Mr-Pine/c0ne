@@ -25,15 +25,16 @@ class ConstantFolding: Optimizer {
         val left = (node.left as ConstIntNode).value
         val right = (node.right as ConstIntNode).value
         return when (node) {
-            is AddNode -> ConstIntNode(node.block(), left + right)
-            is MulNode -> ConstIntNode(node.block(), left * right)
-            is SubNode -> ConstIntNode(node.block(), left - right)
+            is AddNode -> ConstIntNode(node.graph.startBlock, left + right)
+            is MulNode -> ConstIntNode(node.graph.startBlock, left * right)
+            is SubNode -> ConstIntNode(node.graph.startBlock, left - right)
             is DivNode -> if (right == 0) {
-                DivNode(node.block(), node.right, node.right, node.sideEffect)
-            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.block(), left / right)
+                DivNode(node.block, node.right, node.right, node.sideEffect)
+            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.block, left / right)
             is ModNode -> if (right == 0) {
-                DivNode(node.block(), node.right, node.right, node.sideEffect)
-            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.block(), left % right)
+                DivNode(node.block, node.right, node.right, node.sideEffect)
+            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.block, left % right)
+            else -> node // TODO
         }
     }
 }

@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.ir.node
 
-sealed class BinaryOperationNode : Node {
+sealed class BinaryOperationNode : Node, ValueNode {
     protected constructor(block: Block, left: Node, right: Node) : super(block, left, right)
 
     protected constructor(block: Block, left: Node, right: Node, sideEffect: Node) : super(
@@ -29,7 +29,7 @@ sealed class BinaryOperationNode : Node {
 
         @JvmStatic
         protected fun commutativeHashCode(node: BinaryOperationNode): Int {
-            var h = node.block().hashCode()
+            var h = node.block.hashCode()
             // commutative operation: we want h(op(x, y)) == h(op(y, x))
             h += 31 * (predecessorHash(node, LEFT) xor predecessorHash(node, RIGHT))
             return h

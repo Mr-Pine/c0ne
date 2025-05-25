@@ -7,8 +7,8 @@ import java.util.SequencedSet
 
 class IrGraph(private val name: String) {
     private val successors: MutableMap<Node, SequencedSet<Node>> = IdentityHashMap()
-    private val startBlock: Block = Block(this)
-    private val endBlock: Block = Block(this)
+    val startBlock: Block = Block(this)
+    val endBlock: Block = Block(this)
 
     fun registerSuccessor(node: Node, successor: Node) {
         this.successors.computeIfAbsent(node) { LinkedHashSet() }
@@ -27,14 +27,6 @@ class IrGraph(private val name: String) {
             return setOf()
         }
         return successors.toSet()
-    }
-
-    fun startBlock(): Block {
-        return this.startBlock
-    }
-
-    fun endBlock(): Block {
-        return this.endBlock
     }
 
     /** {@return the name of this graph} */

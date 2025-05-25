@@ -4,13 +4,22 @@ import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.ir.util.YCompPrinter
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.AddNode
+import de.mr_pine.c0ne.ir.node.ArithmeticLeftShift
+import de.mr_pine.c0ne.ir.node.ArithmeticRightShift
+import de.mr_pine.c0ne.ir.node.BitwiseNotNode
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.DivNode
+import de.mr_pine.c0ne.ir.node.EqualsNode
+import de.mr_pine.c0ne.ir.node.IfNode
+import de.mr_pine.c0ne.ir.node.JumpNode
+import de.mr_pine.c0ne.ir.node.LessThanEqNode
+import de.mr_pine.c0ne.ir.node.LessThanNode
 import de.mr_pine.c0ne.ir.node.ModNode
 import de.mr_pine.c0ne.ir.node.MulNode
 import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.NotNode
 import de.mr_pine.c0ne.ir.node.Phi
 import de.mr_pine.c0ne.ir.node.ProjNode
 import de.mr_pine.c0ne.ir.node.ReturnNode
@@ -59,12 +68,21 @@ interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>
                 is ModNode -> processNode(node)
                 is MulNode -> processNode(node)
                 is SubNode -> processNode(node)
+                is ArithmeticLeftShift -> TODO()
+                is ArithmeticRightShift -> TODO()
+                is EqualsNode -> TODO()
+                is LessThanEqNode -> TODO()
+                is LessThanNode -> TODO()
+                is BitwiseNotNode -> TODO()
+                is NotNode -> TODO()
                 is Block -> processNode(node)
                 is ConstIntNode -> processNode(node)
                 is ConstBoolNode -> TODO()
                 is Phi -> processNode(node)
                 is ProjNode -> processNode(node)
                 is ReturnNode -> processNode(node)
+                is IfNode -> TODO()
+                is JumpNode -> TODO()
                 is StartNode -> processNode(node)
             }
         }

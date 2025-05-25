@@ -5,7 +5,7 @@ import de.mr_pine.c0ne.ir.node.Node
 
 fun IrGraph.nodesInControlFlowOrder(): List<Node> {
     val controlFlowOrder = mutableListOf<Node>()
-    scan(endBlock(), mutableSetOf(endBlock()), controlFlowOrder)
+    scan(endBlock, mutableSetOf(endBlock), controlFlowOrder)
     return controlFlowOrder
 }
 
@@ -27,13 +27,13 @@ abstract class BackwardsControlFlow<InValue, OutValue>: BackwardsFlow<InValue, O
     }
 
     override fun predecessors(node: Node): List<Node> {
-        val nodes = controlFlowOrders[node.graph()]!!
+        val nodes = controlFlowOrders[node.graph]!!
         val currentIndex = nodes.indexOf(node)
         return listOfNotNull(nodes.getOrNull(currentIndex - 1))
     }
 
     override fun successors(node: Node): List<Node> {
-        val nodes = controlFlowOrders[node.graph()]!!
+        val nodes = controlFlowOrders[node.graph]!!
         val currentIndex = nodes.indexOf(node)
         return listOfNotNull(nodes.getOrNull(currentIndex + 1))
     }

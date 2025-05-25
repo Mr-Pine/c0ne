@@ -12,7 +12,7 @@ class ProjNode(block: Block, input: Node, private val projectionInfo: Projection
     interface ProjectionInfo
 
     enum class SimpleProjectionInfo : ProjectionInfo {
-        RESULT, SIDE_EFFECT
+        RESULT, SIDE_EFFECT, IF_TRUE, IF_FALSE
     }
 
     companion object {

@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.ir.node
 
-class MulNode(block: Block, left: Node, right: Node) : BinaryOperationNode(block, left, right), ValueNode {
+class EqualsNode(block: Block, left: Node, right: Node) : BinaryOperationNode(block, left, right) {
     override fun equals(other: Any?): Boolean {
         return commutativeEquals(this, other)
     }

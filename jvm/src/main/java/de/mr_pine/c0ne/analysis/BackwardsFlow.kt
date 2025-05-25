@@ -18,7 +18,7 @@ abstract class BackwardsFlow<InValue, OutValue> {
 
     open fun analyze(graph: IrGraph) {
         with(graph) {
-            analyzeNode(graph.endBlock())
+            analyzeNode(graph.endBlock)
         }
     }
 

@@ -6,13 +6,13 @@ import de.mr_pine.c0ne.ir.util.DebugInfoHelper
 
 /** The base class for all nodes. */
 sealed class Node {
-    private val graph: IrGraph
-    private val block: Block
+    val graph: IrGraph
+    val block: Block
     private val predecessors: MutableList<Node> = mutableListOf()
     private val debugInfo: DebugInfo
 
     protected constructor(block: Block, vararg predecessors: Node) {
-        this.graph = block.graph()
+        this.graph = block.graph
         this.block = block
         this.predecessors.addAll(predecessors.toList())
         for (predecessor in predecessors) {
@@ -28,16 +28,8 @@ sealed class Node {
         this.debugInfo = DebugInfo.NoInfo.INSTANCE
     }
 
-    fun graph(): IrGraph {
-        return this.graph
-    }
-
-    fun block(): Block {
-        return this.block
-    }
-
-    fun predecessors(): MutableList<out Node> {
-        return this.predecessors.toMutableList()
+    fun predecessors(): List<Node> {
+        return this.predecessors.toList()
     }
 
     fun setPredecessor(idx: Int, node: Node) {

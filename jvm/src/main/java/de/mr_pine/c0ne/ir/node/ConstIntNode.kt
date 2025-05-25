@@ -4,7 +4,7 @@ class ConstIntNode(block: Block, val value: Int) : Node(block), ValueNode {
 
     override fun equals(other: Any?): Boolean {
         if (other is ConstIntNode) {
-            return this.block() == other.block() && other.value == this.value
+            return this.block == other.block && other.value == this.value
         }
         return false
     }
