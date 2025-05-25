@@ -1,7 +1,7 @@
 package edu.kit.kastel.vads.compiler.ir.node;
 
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfo;
-import edu.kit.kastel.vads.compiler.ir.IrGraph;
+import de.mr_pine.c0ne.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper;
 
 import java.util.ArrayList;

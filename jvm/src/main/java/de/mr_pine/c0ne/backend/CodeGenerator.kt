@@ -2,7 +2,7 @@ package de.mr_pine.c0ne.backend
 
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.ir.util.YCompPrinter
-import edu.kit.kastel.vads.compiler.ir.IrGraph
+import de.mr_pine.c0ne.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.*
 import java.io.File
 

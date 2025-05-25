@@ -1,6 +1,6 @@
 package edu.kit.kastel.vads.compiler.ir.node;
 
-import edu.kit.kastel.vads.compiler.ir.IrGraph;
+import de.mr_pine.c0ne.ir.IrGraph;
 
 public final class Block extends Node {
 

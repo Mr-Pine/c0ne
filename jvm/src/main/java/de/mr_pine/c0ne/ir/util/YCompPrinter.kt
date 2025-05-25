@@ -2,7 +2,7 @@ package de.mr_pine.c0ne.ir.util
 
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.backend.RegisterAllocator
-import edu.kit.kastel.vads.compiler.ir.IrGraph
+import de.mr_pine.c0ne.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.*
 import edu.kit.kastel.vads.compiler.ir.node.ProjNode.SimpleProjectionInfo
 import java.util.*

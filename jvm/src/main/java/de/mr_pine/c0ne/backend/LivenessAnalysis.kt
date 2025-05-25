@@ -5,7 +5,7 @@ import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.ir.left
 import de.mr_pine.c0ne.ir.result
 import de.mr_pine.c0ne.ir.right
-import edu.kit.kastel.vads.compiler.ir.IrGraph
+import de.mr_pine.c0ne.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.BinaryOperationNode
 import edu.kit.kastel.vads.compiler.ir.node.ConstIntNode
 import edu.kit.kastel.vads.compiler.ir.node.Node

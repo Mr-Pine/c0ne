@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.analysis
 
-import edu.kit.kastel.vads.compiler.ir.IrGraph
+import de.mr_pine.c0ne.ir.IrGraph
 import edu.kit.kastel.vads.compiler.ir.node.Node
 
 abstract class BackwardsFlow<InValue, OutValue> {

@@ -1,5 +1,6 @@
 package edu.kit.kastel.vads.compiler.ir;
 
+import de.mr_pine.c0ne.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.node.AddNode;
 import edu.kit.kastel.vads.compiler.ir.node.Block;
 import edu.kit.kastel.vads.compiler.ir.node.ConstIntNode;
