@@ -186,6 +186,11 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             if (replacement is Phi) {
                 return tryRemoveTrivialPhi(replacement)
             }
+            for (succ in graph.successors(phi)) {
+                for((idx, _) in succ.predecessors().withIndex().filter { it.value == phi }) {
+                    succ.setPredecessor(idx, replacement)
+                }
+            }
             return replacement
         }
 
@@ -221,7 +226,8 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             return
         }
         for ((variable, phi) in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
-            addPhiOperands(variable, phi)
+            val result = addPhiOperands(variable, phi)
+            currentDef[variable]!![block] = result
         }
         this.sealedBlocks.add(block)
     }
