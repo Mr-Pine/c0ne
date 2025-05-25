@@ -8,7 +8,7 @@ import edu.kit.kastel.vads.compiler.ir.node.Node;
 import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfo;
 import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper;
-import edu.kit.kastel.vads.compiler.parser.symbol.Name;
+import de.mr_pine.c0ne.parser.symbol.Name;
 import de.mr_pine.c0ne.parser.visitor.Visitor;
 import kotlin.NotImplementedError;
 

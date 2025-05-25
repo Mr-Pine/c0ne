@@ -3,7 +3,7 @@ package de.mr_pine.c0ne.semantic
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.visitor.Visitor
-import edu.kit.kastel.vads.compiler.parser.symbol.Name
+import de.mr_pine.c0ne.parser.symbol.Name
 
 /** Checks that variables are
  * - declared before assignment

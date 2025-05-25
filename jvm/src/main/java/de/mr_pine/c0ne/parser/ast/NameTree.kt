@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.parser.ast
 
 import de.mr_pine.c0ne.Span
-import edu.kit.kastel.vads.compiler.parser.symbol.Name
+import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
 data class NameTree(val name: Name, override val span: Span) : Tree {
