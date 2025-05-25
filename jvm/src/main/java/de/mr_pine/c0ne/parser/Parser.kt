@@ -32,7 +32,6 @@ import de.mr_pine.c0ne.parser.ast.TypeTree
 import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
 import de.mr_pine.c0ne.parser.ast.WhileTree
 import de.mr_pine.c0ne.parser.type.BasicType
-import edu.kit.kastel.vads.compiler.parser.ParseException
 import edu.kit.kastel.vads.compiler.parser.symbol.Name
 
 class Parser(private val tokenSource: TokenSource) {

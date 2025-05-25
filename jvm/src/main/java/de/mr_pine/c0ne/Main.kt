@@ -10,7 +10,7 @@ import de.mr_pine.c0ne.ir.optimize.MultiOptimizer
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
 import de.mr_pine.c0ne.lexer.Lexer
-import edu.kit.kastel.vads.compiler.parser.ParseException
+import de.mr_pine.c0ne.parser.ParseException
 import de.mr_pine.c0ne.parser.Parser
 import de.mr_pine.c0ne.parser.TokenSource
 import de.mr_pine.c0ne.semantic.SemanticAnalysis
