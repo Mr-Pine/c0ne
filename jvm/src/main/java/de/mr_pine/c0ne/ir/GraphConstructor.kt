@@ -19,6 +19,7 @@ import de.mr_pine.c0ne.ir.node.ProjNode
 import de.mr_pine.c0ne.ir.node.ReturnNode
 import de.mr_pine.c0ne.ir.node.StartNode
 import de.mr_pine.c0ne.ir.node.SubNode
+import de.mr_pine.c0ne.ir.node.UndefNode
 import de.mr_pine.c0ne.ir.optimize.Optimizer
 import de.mr_pine.c0ne.parser.symbol.Name
 
@@ -168,22 +169,33 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
 
     fun addPhiOperands(variable: Name, phi: Phi): Node {
         for (pred in phi.block.predecessors()) {
-            phi.appendOperand(readVariable(variable, pred.block))
+            val operand = readVariable(variable, pred.block)
+            if (operand !is UndefNode) {
+                phi.appendOperand(operand)
+            }
         }
         return tryRemoveTrivialPhi(phi)
     }
 
     fun tryRemoveTrivialPhi(phi: Phi): Node {
-        // TODO: the paper shows how to remove trivial phis.
-        // as this is not a problem in Lab 1 and it is just
-        // a simplification, we recommend to implement this
-        // part yourself.
+        val other = phi.predecessors().toSet() - phi
+
+        if (other.isEmpty()) {
+            return UndefNode(currentBlock)
+        } else if (other.size == 1) {
+            val replacement = other.first()
+            if (replacement is Phi) {
+                return tryRemoveTrivialPhi(replacement)
+            }
+            return replacement
+        }
+
         return phi
     }
 
     fun sealBlock(block: Block) {
-        for (entry in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
-            addPhiOperands(entry.key, entry.value)
+        for ((variable, phi) in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
+            addPhiOperands(variable, phi)
         }
         this.sealedBlocks.add(block)
     }
@@ -227,7 +239,10 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
 
     fun addPhiOperands(phi: Phi): Node {
         for (pred in phi.block.predecessors()) {
-            phi.appendOperand(readSideEffect(pred.block))
+            val operand = readSideEffect(pred.block)
+            if (operand !is UndefNode) {
+                phi.appendOperand(operand)
+            }
         }
         return tryRemoveTrivialPhi(phi)
     }

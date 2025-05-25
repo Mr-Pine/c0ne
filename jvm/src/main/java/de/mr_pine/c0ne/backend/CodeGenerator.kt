@@ -25,6 +25,7 @@ import de.mr_pine.c0ne.ir.node.ProjNode
 import de.mr_pine.c0ne.ir.node.ReturnNode
 import de.mr_pine.c0ne.ir.node.StartNode
 import de.mr_pine.c0ne.ir.node.SubNode
+import de.mr_pine.c0ne.ir.node.UndefNode
 import java.io.File
 
 interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>> {
@@ -84,6 +85,7 @@ interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>
                 is IfNode -> TODO()
                 is JumpNode -> TODO()
                 is StartNode -> processNode(node)
+                is UndefNode -> {}
             }
         }
     }
