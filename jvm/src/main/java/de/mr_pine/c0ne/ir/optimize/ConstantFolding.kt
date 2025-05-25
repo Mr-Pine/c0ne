@@ -22,8 +22,8 @@ class ConstantFolding: Optimizer {
     }
 
     private fun foldConstants(node: BinaryOperationNode): Node {
-        val left = (node.left as ConstIntNode).value()
-        val right = (node.right as ConstIntNode).value()
+        val left = (node.left as ConstIntNode).value
+        val right = (node.right as ConstIntNode).value
         return when (node) {
             is AddNode -> ConstIntNode(node.block(), left + right)
             is MulNode -> ConstIntNode(node.block(), left * right)

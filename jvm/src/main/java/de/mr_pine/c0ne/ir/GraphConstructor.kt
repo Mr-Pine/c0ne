@@ -2,6 +2,7 @@ package de.mr_pine.c0ne.ir
 
 import de.mr_pine.c0ne.ir.node.AddNode
 import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.DivNode
 import de.mr_pine.c0ne.ir.node.ModNode
@@ -62,6 +63,12 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         // always move const into start block, this allows better deduplication
         // and resultingly in better value numbering
         return this.optimizer.transform(ConstIntNode(this.graph.startBlock(), value))
+    }
+
+    fun newConstBool(value: Boolean): Node {
+        // always move const into start block, this allows better deduplication
+        // and resultingly in better value numbering
+        return this.optimizer.transform(ConstBoolNode(this.graph.startBlock(), value))
     }
 
     fun newSideEffectProj(node: Node): Node {

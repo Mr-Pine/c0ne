@@ -175,7 +175,9 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
 
         override fun visit(literalBoolTree: LiteralBoolTree, data: SsaTranslation): Node? {
             pushSpan(literalBoolTree)
-            throw NotImplementedError("bool ssa")
+            val node = data.constructor.newConstBool(literalBoolTree.parseValue())
+            popSpan()
+            return node
         }
 
         override fun visit(lValueIdentTree: LValueIdentTree, data: SsaTranslation): Node? {

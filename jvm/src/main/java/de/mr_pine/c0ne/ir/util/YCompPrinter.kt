@@ -5,6 +5,7 @@ import de.mr_pine.c0ne.backend.RegisterAllocator
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.BinaryOperationNode
 import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.Node
 import de.mr_pine.c0ne.ir.node.Phi
@@ -183,7 +184,7 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
 
     private fun nodeColor(node: Node): VcgColor {
         return when (node) {
-            is BinaryOperationNode, is Block, is ConstIntNode -> VcgColor.NORMAL
+            is BinaryOperationNode, is Block, is ConstIntNode, is ConstBoolNode -> VcgColor.NORMAL
             is Phi -> VcgColor.PHI
             is ProjNode -> {
                 if (node.projectionInfo() == SimpleProjectionInfo.SIDE_EFFECT) {

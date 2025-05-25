@@ -160,4 +160,4 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
 
 context(registers: Allocation)
 val Node.registerOrConstValue
-    get() = if (this is ConstIntNode) value() else registers[this]
+    get() = if (this is ConstIntNode) value else registers[this]

@@ -88,7 +88,7 @@ class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.A
     override fun processNode(node: ConstIntNode) {
         builder.indent()
             .append(registers[node])
-            .append(" = const ${node.value()}")
+            .append(" = const ${node.value}")
             .appendLine()
     }
 
@@ -114,5 +114,5 @@ class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.A
 
     context(registers: AasmRegisterAllocator.AasmRegisterAllocation)
     val Node.registerOrConstValue
-        get() = if (this is ConstIntNode) value() else registers[this]
+        get() = if (this is ConstIntNode) value else registers[this]
 }
