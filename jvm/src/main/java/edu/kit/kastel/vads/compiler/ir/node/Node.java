@@ -1,8 +1,8 @@
 package edu.kit.kastel.vads.compiler.ir.node;
 
-import edu.kit.kastel.vads.compiler.ir.util.DebugInfo;
+import de.mr_pine.c0ne.ir.util.DebugInfo;
 import de.mr_pine.c0ne.ir.IrGraph;
-import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper;
+import de.mr_pine.c0ne.ir.util.DebugInfoHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ public sealed abstract class Node permits BinaryOperationNode, Block, ConstIntNo
         for (Node predecessor : predecessors) {
             graph.registerSuccessor(predecessor, this);
         }
-        this.debugInfo = DebugInfoHelper.getDebugInfo();
+        this.debugInfo = DebugInfoHelper.INSTANCE.getDebugInfo();
     }
 
     protected Node(IrGraph graph) {

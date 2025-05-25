@@ -11,9 +11,9 @@ import edu.kit.kastel.vads.compiler.ir.node.Block
 import edu.kit.kastel.vads.compiler.ir.node.DivNode
 import edu.kit.kastel.vads.compiler.ir.node.ModNode
 import edu.kit.kastel.vads.compiler.ir.node.Node
-import edu.kit.kastel.vads.compiler.ir.util.DebugInfo
-import edu.kit.kastel.vads.compiler.ir.util.DebugInfo.SourceInfo
-import edu.kit.kastel.vads.compiler.ir.util.DebugInfoHelper
+import de.mr_pine.c0ne.ir.util.DebugInfo
+import de.mr_pine.c0ne.ir.util.DebugInfo.SourceInfo
+import de.mr_pine.c0ne.ir.util.DebugInfoHelper
 import java.util.*
 
 /** SSA translation as described in
@@ -45,15 +45,15 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
     }
 
     private class SsaTranslationVisitor : Visitor<SsaTranslation, Node?> {
-        private val debugStack: Deque<DebugInfo?> = ArrayDeque<DebugInfo?>()
+        private val debugStack: Deque<DebugInfo> = ArrayDeque<DebugInfo>()
 
         fun pushSpan(tree: Tree) {
-            this.debugStack.push(DebugInfoHelper.getDebugInfo())
-            DebugInfoHelper.setDebugInfo(SourceInfo(tree.span))
+            this.debugStack.push(DebugInfoHelper.debugInfo)
+            DebugInfoHelper.debugInfo = SourceInfo(tree.span)
         }
 
         fun popSpan() {
-            DebugInfoHelper.setDebugInfo(this.debugStack.pop())
+            DebugInfoHelper.debugInfo = this.debugStack.pop()
         }
 
         override fun visit(assignmentTree: AssignmentTree, data: SsaTranslation): Node? {

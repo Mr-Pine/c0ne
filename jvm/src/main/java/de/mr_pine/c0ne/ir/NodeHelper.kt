@@ -5,7 +5,7 @@ import edu.kit.kastel.vads.compiler.ir.node.DivNode
 import edu.kit.kastel.vads.compiler.ir.node.ModNode
 import edu.kit.kastel.vads.compiler.ir.node.Node
 import edu.kit.kastel.vads.compiler.ir.node.ReturnNode
-import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
+import de.mr_pine.c0ne.ir.util.NodeSupport
 
 val ReturnNode.result: Node
     get() = NodeSupport.predecessorSkipProj(this, ReturnNode.RESULT)

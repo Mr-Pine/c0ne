@@ -5,7 +5,6 @@ import de.mr_pine.c0ne.ir.left
 import de.mr_pine.c0ne.ir.result
 import de.mr_pine.c0ne.ir.right
 import edu.kit.kastel.vads.compiler.ir.node.*
-import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
 
 
 class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.AasmRegisterAllocation> {
