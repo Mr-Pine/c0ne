@@ -9,6 +9,7 @@ import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.DivNode
+import de.mr_pine.c0ne.ir.node.IfNode
 import de.mr_pine.c0ne.ir.node.ModNode
 import de.mr_pine.c0ne.ir.node.Node
 import de.mr_pine.c0ne.ir.node.ProjNode
@@ -213,7 +214,10 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                 this,
                 data
             )!!
-            val res = data.constructor.newSub(data.constructor.newConstInt(0), node)
+            val res = when (unaryOperationTree.operator.type) {
+                Operator.OperatorType.MINUS -> data.constructor.newSub(data.constructor.newConstInt(0), node)
+                else -> TODO("Unsupported ${unaryOperationTree.operator.type}")
+            }
             popSpan()
             return res
         }
@@ -222,26 +226,35 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
             throw UnsupportedOperationException()
         }
 
+        data class IfProjections(val trueProj: ProjNode, val falseProj: ProjNode)
+        private fun projectedIfNode(data: SsaTranslation, condition: Node): IfProjections {
+            val ifNode = data.constructor.newIf(condition)
+            val trueProj = data.constructor.newIfTrueProjection(ifNode)
+            val falseProj = data.constructor.newIfFalseProjection(ifNode)
+            return IfProjections(trueProj, falseProj)
+        }
+
         override fun visit(ifTree: IfTree, data: SsaTranslation): Node? {
             pushSpan(ifTree)
             val condition = ifTree.condition.accept(this, data)!!
-            val ifNode = data.constructor.newIf(condition)
-            data.constructor.sealBlock(data.constructor.currentBlock)
 
-            fun processBranch(branch: StatementTree?, projection: ProjNode): Node? {
-                val block = data.constructor.writeNewBlock()
+            fun processBranch(branch: StatementTree?, projection: ProjNode, label: String): Node? {
+                val block = data.constructor.newBlock("if-body-$label")
+                data.constructor.currentBlock = block
                 block.addPredecessor(projection)
                 data.constructor.sealBlock(block)
                 branch?.accept(this, data)
                 return data.constructor.newJump()
             }
 
-            val trueProj = data.constructor.newIfTrueProjection(ifNode)
-            val falseProj = data.constructor.newIfFalseProjection(ifNode)
-            val trueControl = processBranch(ifTree.thenTree, trueProj)
-            val falseControl = processBranch(ifTree.elseTree, falseProj)
+            val (trueProj, falseProj) = projectedIfNode(data, condition)
+            data.constructor.sealBlock(data.constructor.currentBlock)
 
-            val nextBlock = data.constructor.writeNewBlock()
+            val trueControl = processBranch(ifTree.thenTree, trueProj, "true")
+            val falseControl = processBranch(ifTree.elseTree, falseProj, "false")
+
+            val nextBlock = data.constructor.newBlock("following-if")
+            data.constructor.currentBlock = nextBlock
             trueControl?.let { nextBlock.addPredecessor(it) }
             falseControl?.let { nextBlock.addPredecessor(it) }
             data.constructor.sealBlock(nextBlock)
@@ -251,7 +264,41 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
         }
 
         override fun visit(whileTree: WhileTree, data: SsaTranslation): Node? {
-            throw NotImplementedError("while ssa")
+            pushSpan(whileTree)
+
+            data.constructor.sealBlock(data.constructor.currentBlock)
+            val exitJump = data.constructor.newJump()
+
+            val whileBlock = data.constructor.newBlock("while")
+            whileBlock.addPredecessor(exitJump)
+            data.constructor.currentBlock = whileBlock
+            data.constructor.pushLoopBlock(whileBlock)
+            val condition = whileTree.condition.accept(this, data)!!
+
+            val (trueProj, falseProj) = projectedIfNode(data, condition)
+
+            val followBlock = data.constructor.newBlock("following-while")
+            followBlock.addPredecessor(falseProj)
+            data.constructor.pushLoopFollow(followBlock)
+
+            val bodyBlock = data.constructor.newBlock("while-body")
+            bodyBlock.addPredecessor(trueProj)
+            data.constructor.sealBlock(bodyBlock)
+            data.constructor.currentBlock = bodyBlock
+            whileTree.loopBody.accept(this, data)
+            val continueJump = data.constructor.newJump()
+            data.constructor.sealBlock(data.constructor.currentBlock)
+            whileBlock.addPredecessor(continueJump)
+
+            data.constructor.popLoopBlock(whileBlock)
+            data.constructor.sealBlock(whileBlock)
+            data.constructor.popLoopFollow(followBlock)
+            data.constructor.sealBlock(followBlock)
+
+            data.constructor.currentBlock = followBlock
+
+            popSpan()
+            return NOT_AN_EXPRESSION
         }
 
         override fun visit(forTree: ForTree, data: SsaTranslation): Node? {
@@ -259,11 +306,25 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
         }
 
         override fun visit(breakTree: BreakTree, data: SsaTranslation): Node? {
-            throw NotImplementedError("break ssa")
+            pushSpan(breakTree)
+            val breakNode = data.constructor.newJump()
+            data.constructor.getLoopFollow().addPredecessor(breakNode)
+            data.constructor.sealBlock(data.constructor.currentBlock)
+            data.constructor.currentBlock = data.constructor.newBlock("following-break")
+
+            popSpan()
+            return NOT_AN_EXPRESSION
         }
 
         override fun visit(continueTree: ContinueTree, data: SsaTranslation): Node? {
-            throw NotImplementedError("continue ssa")
+            pushSpan(continueTree)
+            val breakNode = data.constructor.newJump()
+            data.constructor.getLoopBlock().addPredecessor(breakNode)
+            data.constructor.sealBlock(data.constructor.currentBlock)
+            data.constructor.currentBlock = data.constructor.newBlock("following-continue")
+
+            popSpan()
+            return NOT_AN_EXPRESSION
         }
 
         override fun visit(returnTree: ReturnTree, data: SsaTranslation): Node? {
@@ -271,7 +332,9 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
             val node = returnTree.expression.accept(this, data)!!
             val ret = data.constructor.newReturn(node)
             data.constructor.graph.endBlock.addPredecessor(ret)
-            data.constructor.sealBlock(data.constructor.writeNewBlock())
+            val followBlock = data.constructor.newBlock("following-return")
+            data.constructor.currentBlock = followBlock
+            data.constructor.sealBlock(followBlock)
             popSpan()
             return NOT_AN_EXPRESSION
         }

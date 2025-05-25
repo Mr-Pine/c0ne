@@ -31,7 +31,8 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     private val incompleteSideEffectPhis: MutableMap<Block, Phi> = mutableMapOf()
     private val sealedBlocks: MutableSet<Block> = mutableSetOf()
     var currentBlock = this.graph.startBlock
-        private set
+    private val loopBlockStack: MutableList<Block> = mutableListOf()
+    private val loopFollowStack: MutableList<Block> = mutableListOf()
 
     init {
         // the start block never gets any more predecessors
@@ -43,10 +44,8 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return StartNode(currentBlock)
     }
 
-    fun writeNewBlock(): Block {
-        val block = Block(graph)
-        currentBlock = block
-        return block
+    fun newBlock(label: String): Block {
+        return Block(graph, label)
     }
 
     fun newAdd(left: Node, right: Node): Node {
@@ -193,7 +192,34 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return phi
     }
 
+    fun pushLoopBlock(block: Block) {
+        this.loopBlockStack.add(block)
+    }
+
+    fun popLoopBlock(block: Block) {
+        assert(this.loopBlockStack.removeLast() == block) { "popped block is not the last one on the stack" }
+    }
+
+    fun getLoopBlock(): Block {
+        return this.loopBlockStack.last()
+    }
+
+    fun pushLoopFollow(block: Block) {
+        this.loopFollowStack.add(block)
+    }
+
+    fun popLoopFollow(block: Block) {
+        assert(this.loopFollowStack.removeLast() == block) { "popped block is not the last one on the stack" }
+    }
+
+    fun getLoopFollow(): Block {
+        return this.loopFollowStack.last()
+    }
+
     fun sealBlock(block: Block) {
+        if (block in sealedBlocks) {
+            return
+        }
         for ((variable, phi) in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
             addPhiOperands(variable, phi)
         }
@@ -229,7 +255,7 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         } else if (block.predecessors().size == 1) {
             value = readSideEffect(block.predecessors().first().block)
         } else {
-            value = newPhi()
+            value = Phi(block)
             writeSideEffect(block, value)
             value = addPhiOperands(value)
         }

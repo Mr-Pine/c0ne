@@ -235,10 +235,8 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
     }
 
     private fun nodeLabel(node: Node): String {
-        if (node === this.graph.startBlock) {
-            return "start-block"
-        } else if (node === this.graph.endBlock) {
-            return "end-block"
+        if (node is Block) {
+            return "block ${node.label}"
         } else if (registers != null && registers.getOrNull(node) != null) {
             return "${node}\n${registers[node]}"
         }

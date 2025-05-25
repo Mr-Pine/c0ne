@@ -37,7 +37,7 @@ class C0ne : CliktCommand() {
             exitProcess(ExitCodes.SEMANTIC_ERROR.code)
         }
         val graphs = program.topLevelTrees.map { function ->
-            val optimizer = MultiOptimizer(ConstantFolding(), LocalValueNumbering())
+            val optimizer = MultiOptimizer(/*ConstantFolding(), */LocalValueNumbering())
             val translation = SsaTranslation(function, optimizer)
             translation.translate()
         }
