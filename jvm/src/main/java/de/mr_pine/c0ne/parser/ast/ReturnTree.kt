@@ -5,8 +5,7 @@ import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.Span.SimpleSpan
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
-@JvmRecord
-data class ReturnTree(@JvmField val expression: ExpressionTree, val start: Position) : ControlTree {
+data class ReturnTree(val expression: ExpressionTree, val start: Position) : ControlTree {
     override val span: Span
         get() = SimpleSpan(this.start, this.expression.span.end)
 

@@ -2,8 +2,7 @@ package de.mr_pine.c0ne.lexer
 
 import de.mr_pine.c0ne.Span
 
-@JvmRecord
-data class Separator(@JvmField val type: SeparatorType, override val span: Span) : Token {
+data class Separator(val type: SeparatorType, override val span: Span) : Token {
     override fun isSeparator(separatorType: SeparatorType): Boolean {
         return this.type == separatorType
     }

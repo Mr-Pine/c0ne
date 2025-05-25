@@ -3,8 +3,7 @@ package de.mr_pine.c0ne.parser.ast
 import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
-@JvmRecord
-data class AssignmentTree(@JvmField val lValue: LValueTree, @JvmField val operator: Operator, @JvmField val expression: ExpressionTree) :
+data class AssignmentTree(val lValue: LValueTree, val operator: Operator, val expression: ExpressionTree) :
     StatementTree {
     override val span
         get() = this.lValue.span merge this.expression.span

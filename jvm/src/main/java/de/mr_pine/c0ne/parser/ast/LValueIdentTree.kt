@@ -3,8 +3,7 @@ package de.mr_pine.c0ne.parser.ast
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
-@JvmRecord
-data class LValueIdentTree(@JvmField val name: NameTree) : LValueTree {
+data class LValueIdentTree(val name: NameTree) : LValueTree {
     override val span: Span
         get() = name.span
 

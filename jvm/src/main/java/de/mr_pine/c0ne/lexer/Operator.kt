@@ -2,8 +2,7 @@ package de.mr_pine.c0ne.lexer
 
 import de.mr_pine.c0ne.Span
 
-@JvmRecord
-data class Operator(@JvmField val type: OperatorType, override val span: Span) : Token {
+data class Operator(val type: OperatorType, override val span: Span) : Token {
     override fun isOperator(operatorType: OperatorType): Boolean {
         return this.type == operatorType
     }

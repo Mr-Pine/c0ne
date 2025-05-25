@@ -8,6 +8,5 @@ interface DebugInfo {
         INSTANCE
     }
 
-    @JvmRecord
     data class SourceInfo(val span: Span) : DebugInfo
 }
