@@ -132,7 +132,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         var status = whileTree.condition.accept(this, data)
         status = status.enterNewScope()
         status = whileTree.loopBody.accept(this, status)
-        return status.exitScope()
+        return status.exitScopeWithoutDefs()
     }
 
     override fun visit(
@@ -143,7 +143,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         status = forTree.condition.accept(this, status)
         status = status.enterNewScope().enterNewScope()
         status = forTree.loopBody.accept(this, status)
-        status = status.exitScope()
+        status = status.exitScopeWithoutDefs()
         status = forTree.step?.accept(this, status) ?: status
         return status.exitScope().exitScope()
     }
@@ -198,6 +198,9 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             val definitions = scopes.last().definitions
             val updatedPrevious = scopes[scopes.size - 2].let { it.copy(definitions = it.definitions + definitions) }
             return copy(scopes = scopes.dropLast(2) + updatedPrevious)
+        }
+        fun exitScopeWithoutDefs(): VariableStatus {
+            return copy(scopes = scopes.dropLast(1))
         }
 
         fun addDeclaration(declaration: Declaration): VariableStatus {
