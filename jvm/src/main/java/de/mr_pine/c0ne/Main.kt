@@ -7,7 +7,7 @@ import com.github.ajalt.clikt.parameters.types.path
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import de.mr_pine.c0ne.ir.optimize.ConstantFolding
 import de.mr_pine.c0ne.ir.optimize.MultiOptimizer
-import edu.kit.kastel.vads.compiler.ir.SsaTranslation
+import de.mr_pine.c0ne.ir.SsaTranslation
 import de.mr_pine.c0ne.ir.optimize.LocalValueNumbering
 import de.mr_pine.c0ne.lexer.Lexer
 import de.mr_pine.c0ne.parser.ParseException
