@@ -12,7 +12,7 @@ import edu.kit.kastel.vads.compiler.ir.node.ProjNode;
 import edu.kit.kastel.vads.compiler.ir.node.ReturnNode;
 import edu.kit.kastel.vads.compiler.ir.node.StartNode;
 import edu.kit.kastel.vads.compiler.ir.node.SubNode;
-import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer;
+import de.mr_pine.c0ne.ir.optimize.Optimizer;
 import de.mr_pine.c0ne.parser.symbol.Name;
 
 import java.util.HashMap;

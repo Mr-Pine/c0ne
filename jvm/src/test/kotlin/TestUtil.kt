@@ -1,6 +1,6 @@
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation
-import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
+import de.mr_pine.c0ne.ir.optimize.LocalValueNumbering
 import de.mr_pine.c0ne.lexer.Lexer
 import de.mr_pine.c0ne.parser.Parser
 import de.mr_pine.c0ne.parser.TokenSource

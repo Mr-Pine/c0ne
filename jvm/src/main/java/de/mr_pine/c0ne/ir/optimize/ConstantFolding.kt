@@ -11,7 +11,6 @@ import edu.kit.kastel.vads.compiler.ir.node.ModNode
 import edu.kit.kastel.vads.compiler.ir.node.MulNode
 import edu.kit.kastel.vads.compiler.ir.node.Node
 import edu.kit.kastel.vads.compiler.ir.node.SubNode
-import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer
 
 class ConstantFolding: Optimizer {
     override fun transform(node: Node): Node {
