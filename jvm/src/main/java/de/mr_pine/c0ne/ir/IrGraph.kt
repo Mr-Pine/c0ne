@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.ir
 
-import edu.kit.kastel.vads.compiler.ir.node.Block
-import edu.kit.kastel.vads.compiler.ir.node.Node
+import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.Node
 import java.util.IdentityHashMap
 import java.util.SequencedSet
 

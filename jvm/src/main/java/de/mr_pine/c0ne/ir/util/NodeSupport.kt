@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.ir.util
 
-import edu.kit.kastel.vads.compiler.ir.node.Node
-import edu.kit.kastel.vads.compiler.ir.node.ProjNode
+import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.ProjNode
 
 object NodeSupport {
     fun predecessorSkipProj(node: Node, predIdx: Int): Node {

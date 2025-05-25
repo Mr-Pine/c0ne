@@ -1,10 +1,10 @@
 package de.mr_pine.c0ne.ir
 
-import edu.kit.kastel.vads.compiler.ir.node.BinaryOperationNode
-import edu.kit.kastel.vads.compiler.ir.node.DivNode
-import edu.kit.kastel.vads.compiler.ir.node.ModNode
-import edu.kit.kastel.vads.compiler.ir.node.Node
-import edu.kit.kastel.vads.compiler.ir.node.ReturnNode
+import de.mr_pine.c0ne.ir.node.BinaryOperationNode
+import de.mr_pine.c0ne.ir.node.DivNode
+import de.mr_pine.c0ne.ir.node.ModNode
+import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.ReturnNode
 import de.mr_pine.c0ne.ir.util.NodeSupport
 
 val ReturnNode.result: Node

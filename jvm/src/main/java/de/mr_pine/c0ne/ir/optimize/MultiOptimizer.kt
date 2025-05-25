@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.ir.optimize
 
-import edu.kit.kastel.vads.compiler.ir.node.Node
+import de.mr_pine.c0ne.ir.node.Node
 
 class MultiOptimizer(val optimizers: List<Optimizer>) : Optimizer {
     constructor(vararg optimizers: Optimizer) : this(optimizers.toList())

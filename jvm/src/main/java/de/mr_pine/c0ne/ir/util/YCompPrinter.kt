@@ -3,8 +3,15 @@ package de.mr_pine.c0ne.ir.util
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.backend.RegisterAllocator
 import de.mr_pine.c0ne.ir.IrGraph
-import edu.kit.kastel.vads.compiler.ir.node.*
-import edu.kit.kastel.vads.compiler.ir.node.ProjNode.SimpleProjectionInfo
+import de.mr_pine.c0ne.ir.node.BinaryOperationNode
+import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.ConstIntNode
+import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.Phi
+import de.mr_pine.c0ne.ir.node.ProjNode
+import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
+import de.mr_pine.c0ne.ir.node.ReturnNode
+import de.mr_pine.c0ne.ir.node.StartNode
 import java.util.*
 
 class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.RegisterAllocation<*>?) {

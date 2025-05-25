@@ -1,8 +1,19 @@
 package de.mr_pine.c0ne.ir
 
+import de.mr_pine.c0ne.ir.node.AddNode
+import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.ConstIntNode
+import de.mr_pine.c0ne.ir.node.DivNode
+import de.mr_pine.c0ne.ir.node.ModNode
+import de.mr_pine.c0ne.ir.node.MulNode
+import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.Phi
+import de.mr_pine.c0ne.ir.node.ProjNode
+import de.mr_pine.c0ne.ir.node.ReturnNode
+import de.mr_pine.c0ne.ir.node.StartNode
+import de.mr_pine.c0ne.ir.node.SubNode
 import de.mr_pine.c0ne.ir.optimize.Optimizer
 import de.mr_pine.c0ne.parser.symbol.Name
-import edu.kit.kastel.vads.compiler.ir.node.*
 
 internal class GraphConstructor(private val optimizer: Optimizer, name: String) {
     private val graph: IrGraph = IrGraph(name)

@@ -4,7 +4,7 @@ import de.mr_pine.c0ne.backend.AllocationInterferenceGraph
 import de.mr_pine.c0ne.backend.RegisterAllocator
 import de.mr_pine.c0ne.backend.needsRegister
 import de.mr_pine.c0ne.ir.IrGraph
-import edu.kit.kastel.vads.compiler.ir.node.Node
+import de.mr_pine.c0ne.ir.node.Node
 
 class X86ColoringRegisterAllocator :
     RegisterAllocator<X86Register, X86ColoringRegisterAllocator.X86ColoringRegisterAllocation> {

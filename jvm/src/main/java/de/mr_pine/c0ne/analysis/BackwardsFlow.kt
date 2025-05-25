@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.analysis
 
 import de.mr_pine.c0ne.ir.IrGraph
-import edu.kit.kastel.vads.compiler.ir.node.Node
+import de.mr_pine.c0ne.ir.node.Node
 
 abstract class BackwardsFlow<InValue, OutValue> {
     private val computedInputs = mutableMapOf<Node, List<InValue?>>()

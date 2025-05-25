@@ -7,10 +7,10 @@ import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralBoolTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.visitor.Visitor
-import edu.kit.kastel.vads.compiler.ir.node.Block
-import edu.kit.kastel.vads.compiler.ir.node.DivNode
-import edu.kit.kastel.vads.compiler.ir.node.ModNode
-import edu.kit.kastel.vads.compiler.ir.node.Node
+import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.DivNode
+import de.mr_pine.c0ne.ir.node.ModNode
+import de.mr_pine.c0ne.ir.node.Node
 import de.mr_pine.c0ne.ir.util.DebugInfo
 import de.mr_pine.c0ne.ir.util.DebugInfo.SourceInfo
 import de.mr_pine.c0ne.ir.util.DebugInfoHelper
