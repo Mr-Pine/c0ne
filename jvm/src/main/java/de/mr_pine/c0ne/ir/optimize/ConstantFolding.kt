@@ -30,10 +30,10 @@ class ConstantFolding: Optimizer {
             is SubNode -> ConstIntNode(node.graph.startBlock, left - right)
             is DivNode -> if (right == 0) {
                 DivNode(node.block, node.right, node.right, node.sideEffect)
-            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.block, left / right)
+            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.graph.startBlock, left / right)
             is ModNode -> if (right == 0) {
                 DivNode(node.block, node.right, node.right, node.sideEffect)
-            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.block, left % right)
+            } else if (left == Int.MIN_VALUE && right == -1) node else ConstIntNode(node.graph.startBlock, left % right)
             else -> node // TODO
         }
     }
