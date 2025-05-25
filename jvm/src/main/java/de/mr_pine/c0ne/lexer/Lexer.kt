@@ -3,8 +3,7 @@ package de.mr_pine.c0ne.lexer
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.Span.SimpleSpan
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
-import edu.kit.kastel.vads.compiler.Position.SimplePosition
-import java.util.*
+import de.mr_pine.c0ne.Position.SimplePosition
 
 class Lexer private constructor(private val source: String) {
     private var pos = 0

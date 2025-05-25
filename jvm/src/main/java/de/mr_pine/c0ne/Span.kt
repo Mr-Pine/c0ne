@@ -1,7 +1,5 @@
 package de.mr_pine.c0ne
 
-import edu.kit.kastel.vads.compiler.Position
-
 interface Span {
     val start: Position
     val end: Position
