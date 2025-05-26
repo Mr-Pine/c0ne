@@ -3,20 +3,8 @@ package de.mr_pine.c0ne.ir.util
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.backend.RegisterAllocator
 import de.mr_pine.c0ne.ir.IrGraph
-import de.mr_pine.c0ne.ir.node.BinaryOperationNode
-import de.mr_pine.c0ne.ir.node.Block
-import de.mr_pine.c0ne.ir.node.ConstBoolNode
-import de.mr_pine.c0ne.ir.node.ConstIntNode
-import de.mr_pine.c0ne.ir.node.IfNode
-import de.mr_pine.c0ne.ir.node.JumpNode
-import de.mr_pine.c0ne.ir.node.Node
-import de.mr_pine.c0ne.ir.node.Phi
-import de.mr_pine.c0ne.ir.node.ProjNode
+import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
-import de.mr_pine.c0ne.ir.node.ReturnNode
-import de.mr_pine.c0ne.ir.node.StartNode
-import de.mr_pine.c0ne.ir.node.UnaryOperationNode
-import de.mr_pine.c0ne.ir.node.UndefNode
 import java.util.*
 
 class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.RegisterAllocation<*>?) {
@@ -166,10 +154,21 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
             }
         """.trimIndent()
 
+    private fun Phi.checkSideeffect(visited: MutableSet<Phi>): Boolean {
+        visited.add(this)
+        return predecessors().any { it.isDirectSideeffect } || predecessors().filter { it !in visited }
+            .mapNotNull { it as? Phi }.any { it.checkSideeffect(visited) }
+    }
+
+    private val Node.isDirectSideeffect
+        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT
+    private val Node.isSideeffect: Boolean
+        get() = isDirectSideeffect || this is Phi && this.checkSideeffect(mutableSetOf())
+
     private fun formatEdges(edges: Collection<Edge>, additionalProps: List<String>) = edges.joinToString("\n") { edge ->
         // edge: {sourcename: "n74" targetname: "n71" label: "0" class:14 priority:50 color:blue}
-        val isSideeffect =
-            edge.src is ProjNode && edge.src.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || edge.dst is ProjNode && edge.dst.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT
+        val isSideeffect = edge.src.isSideeffect || edge.dst.isSideeffect
+
         val extraProps = additionalProps.toMutableList()
         if (isSideeffect) {
             extraProps.addFirst("color: ${VcgColor.MEMORY.id()}")

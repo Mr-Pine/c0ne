@@ -1,21 +1,16 @@
 package de.mr_pine.c0ne.ir
 
+import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.optimize.Optimizer
+import de.mr_pine.c0ne.ir.util.DebugInfo
+import de.mr_pine.c0ne.ir.util.DebugInfo.SourceInfo
+import de.mr_pine.c0ne.ir.util.DebugInfoHelper
 import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralBoolTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.visitor.Visitor
-import de.mr_pine.c0ne.ir.node.Block
-import de.mr_pine.c0ne.ir.node.DivNode
-import de.mr_pine.c0ne.ir.node.IfNode
-import de.mr_pine.c0ne.ir.node.ModNode
-import de.mr_pine.c0ne.ir.node.Node
-import de.mr_pine.c0ne.ir.node.ProjNode
-import de.mr_pine.c0ne.ir.util.DebugInfo
-import de.mr_pine.c0ne.ir.util.DebugInfo.SourceInfo
-import de.mr_pine.c0ne.ir.util.DebugInfoHelper
 import java.util.*
 
 /** SSA translation as described in
@@ -84,8 +79,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
 
             when (assignmentTree.lValue) {
                 is LValueIdentTree -> {
-                    var rhs =
-                        assignmentTree.expression.accept(this, data)!!
+                    var rhs = assignmentTree.expression.accept(this, data)!!
                     if (desugar != null) {
                         rhs = desugar(data.readVariable(assignmentTree.lValue.name.name, data.currentBlock()), rhs)
                     }
@@ -227,6 +221,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
         }
 
         data class IfProjections(val trueProj: ProjNode, val falseProj: ProjNode)
+
         private fun projectedIfNode(data: SsaTranslation, condition: Node): IfProjections {
             val ifNode = data.constructor.newIf(condition)
             val trueProj = data.constructor.newIfTrueProjection(ifNode)
@@ -244,6 +239,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                 block.addPredecessor(projection)
                 data.constructor.sealBlock(block)
                 branch?.accept(this, data)
+                data.constructor.sealBlock(data.constructor.currentBlock)
                 return data.constructor.newJump()
             }
 
@@ -302,7 +298,49 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
         }
 
         override fun visit(forTree: ForTree, data: SsaTranslation): Node? {
-            throw NotImplementedError("for ssa")
+            pushSpan(forTree)
+            forTree.initializer?.accept(this, data)
+            data.constructor.sealBlock(data.constructor.currentBlock)
+            val entryJump = data.constructor.newJump()
+
+            val forBlock = data.constructor.newBlock("for")
+            forBlock.addPredecessor(entryJump)
+
+            val followBlock = data.constructor.newBlock("following-for")
+            val bodyBlock = data.constructor.newBlock("for-body")
+            val stepBlock = data.constructor.newBlock("for-step")
+            data.constructor.pushLoopBlock(stepBlock)
+            data.constructor.pushLoopFollow(followBlock)
+
+            data.constructor.currentBlock = forBlock
+            val condition = forTree.condition.accept(this, data)!!
+            val (trueProj, falseProj) = projectedIfNode(data, condition)
+            bodyBlock.addPredecessor(trueProj)
+            followBlock.addPredecessor(falseProj)
+
+            data.constructor.currentBlock = bodyBlock
+            forTree.loopBody.accept(this, data)
+            val normalLoopExit = data.constructor.newJump()
+            stepBlock.addPredecessor(normalLoopExit)
+
+            data.constructor.currentBlock = stepBlock
+            forTree.step?.accept(this, data)
+            val stepExit = data.constructor.newJump()
+            forBlock.addPredecessor(stepExit)
+
+
+            data.constructor.sealBlock(forBlock)
+            data.constructor.sealBlock(followBlock)
+            data.constructor.sealBlock(stepBlock)
+            data.constructor.sealBlock(bodyBlock)
+
+            data.constructor.popLoopFollow(followBlock)
+            data.constructor.popLoopBlock(stepBlock)
+
+            data.constructor.currentBlock = followBlock
+
+            popSpan()
+            return NOT_AN_EXPRESSION
         }
 
         override fun visit(breakTree: BreakTree, data: SsaTranslation): Node? {

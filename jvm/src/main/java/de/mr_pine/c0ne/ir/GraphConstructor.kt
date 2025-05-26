@@ -1,25 +1,6 @@
 package de.mr_pine.c0ne.ir
 
-import de.mr_pine.c0ne.ir.node.AddNode
-import de.mr_pine.c0ne.ir.node.Block
-import de.mr_pine.c0ne.ir.node.ConstBoolNode
-import de.mr_pine.c0ne.ir.node.ConstIntNode
-import de.mr_pine.c0ne.ir.node.DivNode
-import de.mr_pine.c0ne.ir.node.EqualsNode
-import de.mr_pine.c0ne.ir.node.IfNode
-import de.mr_pine.c0ne.ir.node.JumpNode
-import de.mr_pine.c0ne.ir.node.LessThanEqNode
-import de.mr_pine.c0ne.ir.node.LessThanNode
-import de.mr_pine.c0ne.ir.node.ModNode
-import de.mr_pine.c0ne.ir.node.MulNode
-import de.mr_pine.c0ne.ir.node.Node
-import de.mr_pine.c0ne.ir.node.NotNode
-import de.mr_pine.c0ne.ir.node.Phi
-import de.mr_pine.c0ne.ir.node.ProjNode
-import de.mr_pine.c0ne.ir.node.ReturnNode
-import de.mr_pine.c0ne.ir.node.StartNode
-import de.mr_pine.c0ne.ir.node.SubNode
-import de.mr_pine.c0ne.ir.node.UndefNode
+import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.optimize.Optimizer
 import de.mr_pine.c0ne.parser.symbol.Name
 
@@ -130,9 +111,9 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_FALSE)
     }
 
-    fun newPhi(): Phi {
+    fun newPhi(block: Block): Phi {
         // don't transform phi directly, it is not ready yet
-        return Phi(currentBlock)
+        return Phi(block)
     }
 
     fun writeVariable(variable: Name, block: Block, value: Node) {
@@ -153,12 +134,12 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     private fun readVariableRecursive(variable: Name, block: Block): Node {
         var value: Node
         if (!this.sealedBlocks.contains(block)) {
-            value = newPhi()
+            value = newPhi(block)
             this.incompletePhis.computeIfAbsent(block) { mutableMapOf() }.put(variable, value)
         } else if (block.predecessors().size == 1) {
             value = readVariable(variable, block.predecessors().first().block)
         } else {
-            value = newPhi()
+            value = newPhi(block)
             writeVariable(variable, block, value)
             value = addPhiOperands(variable, value)
         }
@@ -180,14 +161,11 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         val other = phi.predecessors().toSet() - phi
 
         if (other.isEmpty()) {
-            return UndefNode(currentBlock)
+            return UndefNode(phi.block)
         } else if (other.size == 1) {
             val replacement = other.first()
-            if (replacement is Phi) {
-                return tryRemoveTrivialPhi(replacement)
-            }
             for (succ in graph.successors(phi)) {
-                for((idx, _) in succ.predecessors().withIndex().filter { it.value == phi }) {
+                for ((idx, _) in succ.predecessors().withIndex().filter { it.value == phi }) {
                     succ.setPredecessor(idx, replacement)
                 }
             }
@@ -229,6 +207,9 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             val result = addPhiOperands(variable, phi)
             currentDef[variable]!![block] = result
         }
+        this.incompleteSideEffectPhis[block]?.let { phi ->
+            addPhiOperands(phi)
+        }
         this.sealedBlocks.add(block)
     }
 
@@ -255,13 +236,13 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     private fun readSideEffectRecursive(block: Block): Node {
         var value: Node
         if (!this.sealedBlocks.contains(block)) {
-            value = newPhi()
+            value = newPhi(block)
             val old = this.incompleteSideEffectPhis.put(block, value)
             assert(old == null) { "double readSideEffectRecursive for $block" }
         } else if (block.predecessors().size == 1) {
             value = readSideEffect(block.predecessors().first().block)
         } else {
-            value = Phi(block)
+            value = newPhi(block)
             writeSideEffect(block, value)
             value = addPhiOperands(value)
         }
