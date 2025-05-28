@@ -42,6 +42,7 @@ public class GraphVizPrinter {
         if (!(node instanceof Block)) {
             this.clusters.computeIfAbsent(node.block(), _ -> Collections.newSetFromMap(new IdentityHashMap<>()))
                 .add(node);
+            prepare(node.block(), seen);
         }
         int idx = 0;
         for (Node predecessor : node.predecessors()) {

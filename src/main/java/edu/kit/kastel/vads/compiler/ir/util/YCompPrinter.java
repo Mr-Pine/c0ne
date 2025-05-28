@@ -47,6 +47,7 @@ public class YCompPrinter {
                     _ -> Collections.newSetFromMap(new IdentityHashMap<>())
                 )
                 .add(node);
+            prepare(node.block(), seen);
         }
         for (Node predecessor : node.predecessors()) {
             prepare(predecessor, seen);
