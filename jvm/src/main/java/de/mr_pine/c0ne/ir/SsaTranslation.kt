@@ -210,6 +210,8 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
             )!!
             val res = when (unaryOperationTree.operator.type) {
                 Operator.OperatorType.MINUS -> data.constructor.newSub(data.constructor.newConstInt(0), node)
+                Operator.OperatorType.LOGICAL_NOT -> data.constructor.newLogicalNot(node)
+                Operator.OperatorType.BITWISE_NOT -> data.constructor.newBitwiseNot(node)
                 else -> TODO("Unsupported ${unaryOperationTree.operator.type}")
             }
             popSpan()
