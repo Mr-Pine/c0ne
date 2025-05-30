@@ -113,9 +113,9 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                 Operator.OperatorType.LEFT_SHIFT -> data.constructor.newLeftShift(lhs, rhs)
                 Operator.OperatorType.RIGHT_SHIFT -> data.constructor.newRightShift(lhs, rhs)
 
-                Operator.OperatorType.BITWISE_AND -> TODO() //data.constructor.newBitwiseAnd(lhs, rhs)
+                Operator.OperatorType.BITWISE_AND -> data.constructor.newBitwiseAnd(lhs, rhs)
                 Operator.OperatorType.BITWISE_XOR -> data.constructor.newXor(lhs, rhs)
-                Operator.OperatorType.BITWISE_OR -> TODO() //data.constructor.newBitwiseOr(lhs, rhs)
+                Operator.OperatorType.BITWISE_OR -> data.constructor.newBitwiseOr(lhs, rhs)
 
                 Operator.OperatorType.LESS_THAN -> data.constructor.newLessThan(lhs, rhs)
                 Operator.OperatorType.LESS_THAN_OR_EQUAL -> data.constructor.newLessThanOrEqual(lhs, rhs)

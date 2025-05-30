@@ -7,7 +7,9 @@ import de.mr_pine.c0ne.ir.node.AddNode
 import de.mr_pine.c0ne.ir.node.LogicalAndNode
 import de.mr_pine.c0ne.ir.node.ArithmeticLeftShiftNode
 import de.mr_pine.c0ne.ir.node.ArithmeticRightShiftNode
+import de.mr_pine.c0ne.ir.node.BitwiseAndNode
 import de.mr_pine.c0ne.ir.node.BitwiseNotNode
+import de.mr_pine.c0ne.ir.node.BitwiseOrNode
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
@@ -73,7 +75,9 @@ interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>
                 is SubNode -> processNode(node)
                 is ArithmeticLeftShiftNode -> TODO()
                 is ArithmeticRightShiftNode -> TODO()
+                is BitwiseAndNode -> TODO()
                 is XorNode -> TODO()
+                is BitwiseOrNode -> TODO()
                 is EqualsNode -> TODO()
                 is LessThanEqNode -> TODO()
                 is LessThanNode -> TODO()

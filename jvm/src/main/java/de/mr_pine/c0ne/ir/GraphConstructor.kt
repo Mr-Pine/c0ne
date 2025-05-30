@@ -57,8 +57,16 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return this.optimizer.transform(ArithmeticRightShiftNode(currentBlock, left, right))
     }
 
+    fun newBitwiseAnd(left: Node, right: Node): Node {
+        return this.optimizer.transform(BitwiseAndNode(currentBlock, left, right))
+    }
+
     fun newXor(left: Node, right: Node): Node {
         return this.optimizer.transform(XorNode(currentBlock, left, right))
+    }
+
+    fun newBitwiseOr(left: Node, right: Node): Node {
+        return this.optimizer.transform(BitwiseOrNode(currentBlock, left, right))
     }
 
     fun newLessThan(left: Node, right: Node): Node {
