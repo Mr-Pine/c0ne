@@ -69,6 +69,8 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         EqualsNode(currentBlock, left, right)
     )
 
+    fun newLogicalAnd(left: Node, right: Node): Node = optimizer.transform(LogicalAndNode(currentBlock, left, right))
+
     fun newLogicalNot(value: Node): Node = optimizer.transform(NotNode(currentBlock, value))
 
     fun newConstInt(value: Int): Node {

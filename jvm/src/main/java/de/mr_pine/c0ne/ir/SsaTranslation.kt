@@ -125,7 +125,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                 Operator.OperatorType.EQUALS -> data.constructor.newEquals(lhs, rhs)
                 Operator.OperatorType.NOT_EQUALS -> TODO() //data.constructor.newNotEquals(lhs, rhs)
 
-                Operator.OperatorType.LOGICAL_AND -> TODO() //data.constructor.newLogicalAnd(lhs, rhs)
+                Operator.OperatorType.LOGICAL_AND -> data.constructor.newLogicalAnd(lhs, rhs)
                 Operator.OperatorType.LOGICAL_OR -> TODO() //data.constructor.newLogicalOr(lhs, rhs)
 
                 else -> throw java.lang.IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType)

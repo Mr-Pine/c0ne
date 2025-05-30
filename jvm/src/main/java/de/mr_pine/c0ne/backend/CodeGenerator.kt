@@ -4,6 +4,7 @@ import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.ir.util.YCompPrinter
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.AddNode
+import de.mr_pine.c0ne.ir.node.LogicalAndNode
 import de.mr_pine.c0ne.ir.node.ArithmeticLeftShift
 import de.mr_pine.c0ne.ir.node.ArithmeticRightShift
 import de.mr_pine.c0ne.ir.node.BitwiseNotNode
@@ -75,6 +76,7 @@ interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>
                 is LessThanEqNode -> TODO()
                 is LessThanNode -> TODO()
                 is BitwiseNotNode -> TODO()
+                is LogicalAndNode -> TODO()
                 is NotNode -> TODO()
                 is Block -> processNode(node)
                 is ConstIntNode -> processNode(node)
