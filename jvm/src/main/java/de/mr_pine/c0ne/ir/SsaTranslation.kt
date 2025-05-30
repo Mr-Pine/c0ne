@@ -72,6 +72,11 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                         data.constructor.newMod(lhs, rhs)
                     )
                 }
+                Operator.OperatorType.ASSIGN_OR -> data.constructor::newBitwiseOr
+                Operator.OperatorType.ASSIGN_AND -> data.constructor::newBitwiseAnd
+                Operator.OperatorType.ASSIGN_XOR -> data.constructor::newXor
+                Operator.OperatorType.ASSIGN_LEFT_SHIFT -> data.constructor::newLeftShift
+                Operator.OperatorType.ASSIGN_RIGHT_SHIFT -> data.constructor::newRightShift
 
                 Operator.OperatorType.ASSIGN -> null
                 else -> throw IllegalArgumentException("not an assignment operator " + assignmentTree.operator)
