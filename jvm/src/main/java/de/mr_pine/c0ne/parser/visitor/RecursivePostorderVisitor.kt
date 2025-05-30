@@ -101,7 +101,7 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         var r = ifTree.condition.accept(this, data)
         r = ifTree.thenTree.accept(this, accumulate(data, r))
         if (ifTree.elseTree != null) {
-            r = ifTree.thenTree.accept(this, accumulate(data, r))
+            r = ifTree.elseTree.accept(this, accumulate(data, r))
         }
         r = this.visitor.visit(ifTree, accumulate(data, r))
         return r
