@@ -8,6 +8,7 @@ import de.mr_pine.c0ne.parser.ast.FunctionTree
 import de.mr_pine.c0ne.parser.ast.IfTree
 import de.mr_pine.c0ne.parser.ast.LValueIdentTree
 import de.mr_pine.c0ne.parser.ast.ReturnTree
+import de.mr_pine.c0ne.parser.ast.TernaryOperationTree
 import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
 import de.mr_pine.c0ne.parser.ast.WhileTree
 import de.mr_pine.c0ne.parser.type.BasicType
@@ -86,5 +87,19 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
         if (forTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${forTree.span} for condition of for loop: Expected ${BasicType.Boolean} got ${forTree.condition.type}")
 
         super.visit(forTree, data)
+    }
+
+    override fun visit(
+        ternaryOperationTree: TernaryOperationTree,
+        data: MutableList<ReturnTree>
+    ) {
+        if (ternaryOperationTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${ternaryOperationTree.span} for condition of ternary operation: Expected ${BasicType.Boolean} got ${ternaryOperationTree.condition.type}")
+
+        if (ternaryOperationTree.thenExpression.type != ternaryOperationTree.elseExpression.type) throw SemanticException("Type mismatch at ${ternaryOperationTree.span} for then and else expression of ternary operation: Expected ${ternaryOperationTree.thenExpression.type} got ${ternaryOperationTree.elseExpression.type}")
+
+        super.visit(
+            ternaryOperationTree,
+            data
+        )
     }
 }
