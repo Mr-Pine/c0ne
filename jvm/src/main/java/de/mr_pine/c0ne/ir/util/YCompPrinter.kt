@@ -2,9 +2,9 @@ package de.mr_pine.c0ne.ir.util
 
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.backend.RegisterAllocator
-import edu.kit.kastel.vads.compiler.ir.IrGraph
-import edu.kit.kastel.vads.compiler.ir.node.*
-import edu.kit.kastel.vads.compiler.ir.node.ProjNode.SimpleProjectionInfo
+import de.mr_pine.c0ne.ir.IrGraph
+import de.mr_pine.c0ne.ir.node.*
+import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
 import java.util.*
 
 class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.RegisterAllocation<*>?) {
@@ -19,25 +19,26 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
         return result
     }
 
-    private fun prepare(node: Node, seen: MutableSet<Node?>) {
+    private fun prepare(node: Node, seen: MutableSet<Node>) {
         if (!seen.add(node)) {
             return
         }
 
         if (node !is Block) {
             this.clusters.computeIfAbsent(
-                node.block()
+                node.block
             ) {
                 Collections.newSetFromMap(
                     IdentityHashMap()
                 )
             }.add(node)
+            prepare(node.block, seen)
         }
         for (predecessor in node.predecessors()) {
             prepare(predecessor, seen)
         }
-        if (node === this.graph.endBlock()) {
-            this.clusters.put(this.graph.endBlock(), mutableSetOf())
+        if (node === this.graph.endBlock) {
+            this.clusters.put(this.graph.endBlock, mutableSetOf())
         }
     }
 
@@ -129,8 +130,15 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
             if (parent is ReturnNode) {
                 // Return needs no label
                 result.add(formatControlflowEdge(parent, block, ""))
+            } else if (parent is ProjNode && parent.projectionInfo() in listOf(
+                    SimpleProjectionInfo.IF_TRUE,
+                    SimpleProjectionInfo.IF_FALSE
+                )
+                || parent is JumpNode || parent is IfNode
+            ) {
+                result.add(formatControlflowEdge(parent, block, ""))
             } else {
-                throw RuntimeException("Unknown paren type: $parent")
+                throw RuntimeException("Unknown parent type: $parent")
             }
         }
 
@@ -146,13 +154,27 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
             }
         """.trimIndent()
 
+    private fun Phi.checkSideeffect(visited: MutableSet<Phi>): Boolean {
+        visited.add(this)
+        return predecessors().any { it.isDirectSideeffect } || predecessors().filter { it !in visited }
+            .mapNotNull { it as? Phi }.any { it.checkSideeffect(visited) }
+    }
+
+    private val Node.isDirectSideeffect
+        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT
+    private val Node.isSideeffect: Boolean
+        get() = isDirectSideeffect || this is Phi && this.checkSideeffect(mutableSetOf())
+
     private fun formatEdges(edges: Collection<Edge>, additionalProps: List<String>) = edges.joinToString("\n") { edge ->
         // edge: {sourcename: "n74" targetname: "n71" label: "0" class:14 priority:50 color:blue}
-        val isSideeffect =
-            edge.src is ProjNode && edge.src.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || edge.dst is ProjNode && edge.dst.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT
+        val isSideeffect = edge.src.isSideeffect || edge.dst.isSideeffect
+
         val extraProps = additionalProps.toMutableList()
         if (isSideeffect) {
             extraProps.addFirst("color: ${VcgColor.MEMORY.id()}")
+        }
+        if (edge.src is IfNode) {
+            extraProps.addFirst("color: ${VcgColor.CONTROL_FLOW.id()}")
         }
         """
             edge: {
@@ -166,9 +188,9 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
 
     private fun formatSchedule(block: Block): String {
         // Once you have a schedule, you might want to also emit it :)
-        if (block != block.graph().startBlock()) return ""
+        if (block != block.graph.startBlock) return ""
         return ""
-        val edges = block.graph().nodesInControlFlowOrder().windowed(2).mapIndexed { i, (src, dst) ->
+        val edges = block.graph.nodesInControlFlowOrder().windowed(2).mapIndexed { i, (src, dst) ->
             Edge(src, dst, i)
         }
         return formatEdges(edges, listOf("color: ${VcgColor.SCHEDULE.id()}"))
@@ -176,28 +198,34 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
 
     private fun nodeColor(node: Node): VcgColor {
         return when (node) {
-            is BinaryOperationNode, is Block, is ConstIntNode -> VcgColor.NORMAL
+            is BinaryOperationNode, is UnaryOperationNode, is Block, is ConstIntNode, is ConstBoolNode -> VcgColor.NORMAL
             is Phi -> VcgColor.PHI
             is ProjNode -> {
                 if (node.projectionInfo() == SimpleProjectionInfo.SIDE_EFFECT) {
                     VcgColor.MEMORY
                 } else if (node.projectionInfo() == SimpleProjectionInfo.RESULT) {
                     VcgColor.NORMAL
+                } else if (node.projectionInfo() == SimpleProjectionInfo.IF_TRUE || node.projectionInfo() == SimpleProjectionInfo.IF_FALSE) {
+                    VcgColor.CONTROL_FLOW
                 } else {
                     VcgColor.NORMAL
                 }
             }
 
+            is UndefNode -> VcgColor.SPECIAL
+
             is ReturnNode -> VcgColor.CONTROL_FLOW
             is StartNode -> VcgColor.CONTROL_FLOW
+            is IfNode -> VcgColor.CONTROL_FLOW
+            is JumpNode -> VcgColor.CONTROL_FLOW
         }
     }
 
     private fun nodeTitle(node: Node): String {
         if (node is Block) {
-            if (node == this.graph.startBlock()) {
+            if (node == this.graph.startBlock) {
                 return "start-block"
-            } else if (node == this.graph.endBlock()) {
+            } else if (node == this.graph.endBlock) {
                 return "end-block"
             }
             return "block-" + idFor(node)
@@ -206,10 +234,8 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
     }
 
     private fun nodeLabel(node: Node): String {
-        if (node === this.graph.startBlock()) {
-            return "start-block"
-        } else if (node === this.graph.endBlock()) {
-            return "end-block"
+        if (node is Block) {
+            return "block ${node.label}"
         } else if (registers != null && registers.getOrNull(node) != null) {
             return "${node}\n${registers[node]}"
         }
@@ -254,7 +280,7 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
     companion object {
         fun print(graph: IrGraph, registers: RegisterAllocator.RegisterAllocation<*>? = null): String {
             val printer = YCompPrinter(graph, registers)
-            printer.prepare(graph.endBlock(), HashSet<Node?>())
+            printer.prepare(graph.endBlock, HashSet<Node>())
             return printer.dumpGraphAsString()
         }
     }

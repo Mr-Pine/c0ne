@@ -1,4 +1,4 @@
-import edu.kit.kastel.vads.compiler.parser.ParseException
+import de.mr_pine.c0ne.parser.ParseException
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
 import kotlin.test.assertEquals

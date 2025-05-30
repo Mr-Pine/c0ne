@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.backend
 
-import edu.kit.kastel.vads.compiler.ir.IrGraph
-import edu.kit.kastel.vads.compiler.ir.node.Node
+import de.mr_pine.c0ne.ir.IrGraph
+import de.mr_pine.c0ne.ir.node.Node
 
 interface RegisterAllocator<R: Register, A: RegisterAllocator.RegisterAllocation<R>> {
     fun allocateRegisters(graph: IrGraph): A

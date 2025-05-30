@@ -7,14 +7,14 @@ import com.github.ajalt.clikt.parameters.types.path
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import de.mr_pine.c0ne.ir.optimize.ConstantFolding
 import de.mr_pine.c0ne.ir.optimize.MultiOptimizer
-import edu.kit.kastel.vads.compiler.ir.SsaTranslation
-import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
-import edu.kit.kastel.vads.compiler.lexer.Lexer
-import edu.kit.kastel.vads.compiler.parser.ParseException
-import edu.kit.kastel.vads.compiler.parser.Parser
-import edu.kit.kastel.vads.compiler.parser.TokenSource
-import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis
-import edu.kit.kastel.vads.compiler.semantic.SemanticException
+import de.mr_pine.c0ne.ir.SsaTranslation
+import de.mr_pine.c0ne.ir.optimize.LocalValueNumbering
+import de.mr_pine.c0ne.lexer.Lexer
+import de.mr_pine.c0ne.parser.ParseException
+import de.mr_pine.c0ne.parser.Parser
+import de.mr_pine.c0ne.parser.TokenSource
+import de.mr_pine.c0ne.semantic.SemanticAnalysis
+import de.mr_pine.c0ne.semantic.SemanticException
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
 import kotlin.io.path.getPosixFilePermissions
@@ -37,7 +37,7 @@ class C0ne : CliktCommand() {
             exitProcess(ExitCodes.SEMANTIC_ERROR.code)
         }
         val graphs = program.topLevelTrees.map { function ->
-            val optimizer = MultiOptimizer(ConstantFolding(), LocalValueNumbering())
+            val optimizer = MultiOptimizer(/*ConstantFolding(), */LocalValueNumbering())
             val translation = SsaTranslation(function, optimizer)
             translation.translate()
         }
