@@ -2,8 +2,8 @@ package de.mr_pine.c0ne.semantic
 
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.parser.ast.*
-import de.mr_pine.c0ne.parser.visitor.Visitor
 import de.mr_pine.c0ne.parser.symbol.Name
+import de.mr_pine.c0ne.parser.visitor.Visitor
 
 /** Checks that variables are
  * - declared before assignment
@@ -195,10 +195,12 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             if (scopes.size <= 1) {
                 return initial
             }
-            val definitions = scopes.last().definitions
+            val declarations = scopes.last().declarations.map(Declaration::name)
+            val definitions = scopes.last().definitions.filter { it.name !in declarations }
             val updatedPrevious = scopes[scopes.size - 2].let { it.copy(definitions = it.definitions + definitions) }
             return copy(scopes = scopes.dropLast(2) + updatedPrevious)
         }
+
         fun exitScopeWithoutDefs(): VariableStatus {
             return copy(scopes = scopes.dropLast(1))
         }
