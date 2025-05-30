@@ -128,7 +128,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                 Operator.OperatorType.GREATER_THAN_OR_EQUAL -> data.constructor.newGreaterThanOrEqual(lhs, rhs)
 
                 Operator.OperatorType.EQUALS -> data.constructor.newEquals(lhs, rhs)
-                Operator.OperatorType.NOT_EQUALS -> TODO() //data.constructor.newNotEquals(lhs, rhs)
+                Operator.OperatorType.NOT_EQUALS -> data.constructor.newNotEquals(lhs, rhs)
 
                 Operator.OperatorType.LOGICAL_AND -> data.constructor.newLogicalAnd(lhs, rhs)
                 Operator.OperatorType.LOGICAL_OR -> data.constructor.newLogicalOr(lhs, rhs)

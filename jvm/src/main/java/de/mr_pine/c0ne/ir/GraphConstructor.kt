@@ -93,6 +93,8 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         EqualsNode(currentBlock, left, right)
     )
 
+    fun newNotEquals(left: Node, right: Node): Node = newLogicalNot(newEquals(left, right))
+
     fun newLogicalAnd(left: Node, right: Node): Node = optimizer.transform(LogicalAndNode(currentBlock, left, right))
 
     fun newLogicalOr(left: Node, right: Node): Node = optimizer.transform(LogicalOrNode(currentBlock, left, right))
