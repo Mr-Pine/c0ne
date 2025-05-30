@@ -1,38 +1,10 @@
 package de.mr_pine.c0ne.parser
 
-import de.mr_pine.c0ne.lexer.Identifier
-import de.mr_pine.c0ne.lexer.Keyword
-import de.mr_pine.c0ne.lexer.KeywordType
-import de.mr_pine.c0ne.lexer.NumberLiteral
-import de.mr_pine.c0ne.lexer.Operator
-import de.mr_pine.c0ne.lexer.Separator
+import de.mr_pine.c0ne.lexer.*
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
-import de.mr_pine.c0ne.lexer.Token
-import de.mr_pine.c0ne.parser.ast.AssignmentTree
-import de.mr_pine.c0ne.parser.ast.BinaryOperationTree
-import de.mr_pine.c0ne.parser.ast.BlockTree
-import de.mr_pine.c0ne.parser.ast.BreakTree
-import de.mr_pine.c0ne.parser.ast.ContinueTree
-import de.mr_pine.c0ne.parser.ast.ControlTree
-import de.mr_pine.c0ne.parser.ast.DeclarationTree
-import de.mr_pine.c0ne.parser.ast.ExpressionTree
-import de.mr_pine.c0ne.parser.ast.ForTree
-import de.mr_pine.c0ne.parser.ast.FunctionTree
-import de.mr_pine.c0ne.parser.ast.IdentExpressionTree
-import de.mr_pine.c0ne.parser.ast.IfTree
-import de.mr_pine.c0ne.parser.ast.LValueIdentTree
-import de.mr_pine.c0ne.parser.ast.LValueTree
-import de.mr_pine.c0ne.parser.ast.LiteralTree
-import de.mr_pine.c0ne.parser.ast.NameTree
-import de.mr_pine.c0ne.parser.ast.ProgramTree
-import de.mr_pine.c0ne.parser.ast.ReturnTree
-import de.mr_pine.c0ne.parser.ast.StatementTree
-import de.mr_pine.c0ne.parser.ast.TernaryOperationTree
-import de.mr_pine.c0ne.parser.ast.TypeTree
-import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
-import de.mr_pine.c0ne.parser.ast.WhileTree
-import de.mr_pine.c0ne.parser.type.BasicType
+import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.symbol.Name
+import de.mr_pine.c0ne.parser.type.BasicType
 
 class Parser(private val tokenSource: TokenSource) {
     fun parseProgram(): ProgramTree {
@@ -132,7 +104,7 @@ class Parser(private val tokenSource: TokenSource) {
         val operator = tokenSource.peekAs<Operator>()
         if (operator != null) {
             return when (operator.type) {
-                Operator.OperatorType.ASSIGN, Operator.OperatorType.ASSIGN_DIV, Operator.OperatorType.ASSIGN_MINUS, Operator.OperatorType.ASSIGN_MOD, Operator.OperatorType.ASSIGN_MUL, Operator.OperatorType.ASSIGN_PLUS -> {
+                Operator.OperatorType.ASSIGN, Operator.OperatorType.ASSIGN_DIV, Operator.OperatorType.ASSIGN_MINUS, Operator.OperatorType.ASSIGN_MOD, Operator.OperatorType.ASSIGN_MUL, Operator.OperatorType.ASSIGN_PLUS, Operator.OperatorType.ASSIGN_OR, Operator.OperatorType.ASSIGN_AND, Operator.OperatorType.ASSIGN_XOR -> {
                     this.tokenSource.consume()
                     operator
                 }
@@ -313,8 +285,12 @@ class Parser(private val tokenSource: TokenSource) {
     companion object {
         private val TYPE_KEYWORDS = listOf(KeywordType.INT, KeywordType.BOOL)
         private val CONTROL_KEYWORDS = listOf(
-            KeywordType.IF, KeywordType.FOR, KeywordType.WHILE, KeywordType.BREAK,
-            KeywordType.CONTINUE, KeywordType.RETURN
+            KeywordType.IF,
+            KeywordType.FOR,
+            KeywordType.WHILE,
+            KeywordType.BREAK,
+            KeywordType.CONTINUE,
+            KeywordType.RETURN
         )
         private val BOOLEAN_LITERAL_KEYWORDS = listOf(KeywordType.TRUE, KeywordType.FALSE)
         private fun name(ident: Identifier): NameTree {
