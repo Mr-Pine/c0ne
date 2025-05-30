@@ -49,6 +49,18 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return this.optimizer.transform(ModNode(currentBlock, left, right, readCurrentSideEffect()))
     }
 
+    fun newLeftShift(left: Node, right: Node): Node {
+        return this.optimizer.transform(ArithmeticLeftShiftNode(currentBlock, left, right))
+    }
+
+    fun newRightShift(left: Node, right: Node): Node {
+        return this.optimizer.transform(ArithmeticRightShiftNode(currentBlock, left, right))
+    }
+
+    fun newXor(left: Node, right: Node): Node {
+        return this.optimizer.transform(XorNode(currentBlock, left, right))
+    }
+
     fun newLessThan(left: Node, right: Node): Node {
         return this.optimizer.transform(LessThanNode(currentBlock, left, right))
     }

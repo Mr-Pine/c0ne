@@ -5,8 +5,8 @@ import de.mr_pine.c0ne.ir.util.YCompPrinter
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.AddNode
 import de.mr_pine.c0ne.ir.node.LogicalAndNode
-import de.mr_pine.c0ne.ir.node.ArithmeticLeftShift
-import de.mr_pine.c0ne.ir.node.ArithmeticRightShift
+import de.mr_pine.c0ne.ir.node.ArithmeticLeftShiftNode
+import de.mr_pine.c0ne.ir.node.ArithmeticRightShiftNode
 import de.mr_pine.c0ne.ir.node.BitwiseNotNode
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
@@ -27,6 +27,7 @@ import de.mr_pine.c0ne.ir.node.ReturnNode
 import de.mr_pine.c0ne.ir.node.StartNode
 import de.mr_pine.c0ne.ir.node.SubNode
 import de.mr_pine.c0ne.ir.node.UndefNode
+import de.mr_pine.c0ne.ir.node.XorNode
 import java.io.File
 
 interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>> {
@@ -70,8 +71,9 @@ interface CodeGenerator<R: Register, A : RegisterAllocator.RegisterAllocation<R>
                 is ModNode -> processNode(node)
                 is MulNode -> processNode(node)
                 is SubNode -> processNode(node)
-                is ArithmeticLeftShift -> TODO()
-                is ArithmeticRightShift -> TODO()
+                is ArithmeticLeftShiftNode -> TODO()
+                is ArithmeticRightShiftNode -> TODO()
+                is XorNode -> TODO()
                 is EqualsNode -> TODO()
                 is LessThanEqNode -> TODO()
                 is LessThanNode -> TODO()
