@@ -123,7 +123,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         val afterThenStatus = ifTree.thenTree.accept(this, status).exitScope()
         val afterElseStatus = ifTree.elseTree?.accept(this, status)?.exitScope()
 
-        return afterElseStatus?.intersectLastDefinitions(afterThenStatus) ?: afterThenStatus
+        return afterElseStatus?.intersectLastDefinitions(afterThenStatus) ?: status
     }
 
     override fun visit(
