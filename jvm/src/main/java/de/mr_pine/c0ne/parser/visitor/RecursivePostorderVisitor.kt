@@ -92,7 +92,7 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         var d = data
         for (tree in programTree.topLevelTrees) {
             val r = tree.accept(this, d)
-            d = accumulate(data, r)
+            d = accumulate(d, r)
         }
         return this.visitor.visit(programTree, d)
     }
