@@ -72,6 +72,7 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
                         data.constructor.newMod(lhs, rhs)
                     )
                 }
+
                 Operator.OperatorType.ASSIGN_OR -> data.constructor::newBitwiseOr
                 Operator.OperatorType.ASSIGN_AND -> data.constructor::newBitwiseAnd
                 Operator.OperatorType.ASSIGN_XOR -> data.constructor::newXor
@@ -182,7 +183,34 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
         }
 
         override fun visit(ternaryOperationTree: TernaryOperationTree, data: SsaTranslation): Node? {
-            throw NotImplementedError("ternary ssa")
+            val condition = ternaryOperationTree.condition.accept(this, data)!!
+            val (trueProj, falseProj) = projectedIfNode(data, condition)
+            data.constructor.sealBlock(data.constructor.currentBlock)
+
+            val trueBlock = data.constructor.newBlock("ternary-true")
+            val falseBlock = data.constructor.newBlock("ternary-false")
+            trueBlock.addPredecessor(trueProj)
+            falseBlock.addPredecessor(falseProj)
+            data.constructor.sealBlock(trueBlock)
+            data.constructor.sealBlock(falseBlock)
+
+            data.constructor.currentBlock = trueBlock
+            val trueValue = ternaryOperationTree.thenExpression.accept(this, data)!!
+            val trueExit = data.constructor.newJump()
+            data.constructor.currentBlock = falseBlock
+            val falseValue = ternaryOperationTree.elseExpression.accept(this, data)!!
+            val falseExit = data.constructor.newJump()
+
+            val followBlock = data.constructor.newBlock("ternary-follow")
+            val value = data.constructor.newPhi(data.constructor.currentBlock)
+            value.addPredecessor(trueValue)
+            followBlock.addPredecessor(trueExit)
+            value.addPredecessor(falseValue)
+            followBlock.addPredecessor(falseExit)
+            data.constructor.sealBlock(followBlock)
+            data.constructor.currentBlock = followBlock
+
+            return data.constructor.tryRemoveTrivialPhi(value)
         }
 
         override fun visit(literalIntTree: LiteralIntTree, data: SsaTranslation): Node? {
