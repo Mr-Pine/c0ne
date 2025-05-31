@@ -2,12 +2,17 @@ package de.mr_pine.c0ne.ir.util
 
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.backend.RegisterAllocator
+import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
 import java.util.*
 
-class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.RegisterAllocation<*>?) {
+class YCompPrinter(
+    private val graph: IrGraph,
+    private val schedule: Schedule?,
+    val registers: RegisterAllocator.RegisterAllocation<*>?
+) {
     private val clusters: MutableMap<Block, MutableSet<Node>> = mutableMapOf()
     private val ids: MutableMap<Node, Int> = mutableMapOf()
     private var nodeCounter = 0
@@ -62,6 +67,8 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
         }
 
         appendLine().append(formatMethod(graph.name()).indent(1))
+
+        appendLine().append(formatBlockSchedule().indent(1))
 
         append("}")
     }
@@ -154,16 +161,9 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
             }
         """.trimIndent()
 
-    private fun Phi.checkSideeffect(visited: MutableSet<Phi>): Boolean {
-        visited.add(this)
-        return predecessors().any { it.isDirectSideeffect } || predecessors().filter { it !in visited }
-            .mapNotNull { it as? Phi }.any { it.checkSideeffect(visited) }
-    }
 
-    private val Node.isDirectSideeffect
-        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT
     private val Node.isSideeffect: Boolean
-        get() = isDirectSideeffect || this is Phi && this.checkSideeffect(mutableSetOf())
+        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || this is Phi && this.isSideEffectPhi
 
     private fun formatEdges(edges: Collection<Edge>, additionalProps: List<String>) = edges.joinToString("\n") { edge ->
         // edge: {sourcename: "n74" targetname: "n71" label: "0" class:14 priority:50 color:blue}
@@ -186,11 +186,17 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
         } + "}"
     }
 
+    private fun formatBlockSchedule(): String {
+        if (schedule == null) return ""
+        val edges = schedule.blockOrder.windowed(2).mapIndexed { i, (src, dst) -> Edge(src, dst, i) }
+        return formatEdges(edges, listOf("color: ${VcgColor.SCHEDULE.id()}"))
+    }
+
     private fun formatSchedule(block: Block): String {
         // Once you have a schedule, you might want to also emit it :)
-        if (block != block.graph.startBlock) return ""
-        return ""
-        val edges = block.graph.nodesInControlFlowOrder().windowed(2).mapIndexed { i, (src, dst) ->
+        if (schedule == null) return ""
+        val blockSchedule = schedule.blockSchedules[block] ?: return ""
+        val edges = blockSchedule.nodeOrder.windowed(2).mapIndexed { i, (src, dst) ->
             Edge(src, dst, i)
         }
         return formatEdges(edges, listOf("color: ${VcgColor.SCHEDULE.id()}"))
@@ -278,8 +284,8 @@ class YCompPrinter(private val graph: IrGraph, val registers: RegisterAllocator.
     }
 
     companion object {
-        fun print(graph: IrGraph, registers: RegisterAllocator.RegisterAllocation<*>? = null): String {
-            val printer = YCompPrinter(graph, registers)
+        fun print(graph: IrGraph, schedule: Schedule? = null, registers: RegisterAllocator.RegisterAllocation<*>? = null): String {
+            val printer = YCompPrinter(graph, schedule, registers)
             printer.prepare(graph.endBlock, HashSet<Node>())
             return printer.dumpGraphAsString()
         }

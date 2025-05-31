@@ -1,7 +1,21 @@
 package de.mr_pine.c0ne.ir.node
 
+import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
+
 class Phi(block: Block) : Node(block) {
     fun appendOperand(node: Node) {
         addPredecessor(node)
+    }
+
+    val isSideEffectPhi
+        get() = checkSideeffect(mutableSetOf())
+
+    private val Node.isDirectSideeffect
+        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT
+
+    private fun Phi.checkSideeffect(visited: MutableSet<Phi>): Boolean {
+        visited.add(this)
+        return predecessors().any { it.isDirectSideeffect } || predecessors().filter { it !in visited }
+            .mapNotNull { it as? Phi }.any { it.checkSideeffect(visited) }
     }
 }

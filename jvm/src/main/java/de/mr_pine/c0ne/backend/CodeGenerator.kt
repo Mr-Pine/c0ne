@@ -15,7 +15,6 @@ interface CodeGenerator<R : Register, A : RegisterAllocator.RegisterAllocation<R
             prologue()
             for (graph in graphs) {
                 val registers = getAllocator().allocateRegisters(graph)
-                File("/tmp/graph.vcg").writeText(YCompPrinter.print(graph, registers))
                 with(registers) {
                     functionPrologue(graph.name())
                     codegenGraph(graph)
