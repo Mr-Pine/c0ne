@@ -1,6 +1,7 @@
 package de.mr_pine.c0ne.ir
 
 import de.mr_pine.c0ne.ir.node.*
+import de.mr_pine.c0ne.ir.optimize.FinishPassOptimizer
 import de.mr_pine.c0ne.ir.optimize.Optimizer
 import de.mr_pine.c0ne.ir.util.DebugInfo
 import de.mr_pine.c0ne.ir.util.DebugInfo.SourceInfo
@@ -20,12 +21,13 @@ import java.util.*
  * reordered.
  *
  * We recommend reading the paper to better understand the mechanics implemented here. */
-class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer) {
+class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer, private val finishPassOptimizer: FinishPassOptimizer) {
     private val constructor: GraphConstructor = GraphConstructor(optimizer, function.name.name.asString())
 
     fun translate(): IrGraph {
         val visitor = SsaTranslationVisitor()
         this.function.accept(visitor, this)
+        finishPassOptimizer.optimize(this.constructor.graph)
         return this.constructor.graph
     }
 

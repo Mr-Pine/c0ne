@@ -16,8 +16,11 @@ class IrGraph(private val name: String) {
     }
 
     fun removeSuccessor(node: Node, oldSuccessor: Node) {
-        this.successors.computeIfAbsent(node) { LinkedHashSet() }
-            .remove(oldSuccessor)
+        val successors = this.successors.computeIfAbsent(node) { LinkedHashSet() }
+        successors.remove(oldSuccessor)
+        if (successors.isEmpty()) {
+            this.successors.remove(node)
+        }
     }
 
     /** {@return the set of nodes that have the given node as one of their inputs} */
@@ -28,6 +31,9 @@ class IrGraph(private val name: String) {
         }
         return successors.toSet()
     }
+
+    val allSuccessors: Map<Node, Set<Node>>
+        get() = successors
 
     /** {@return the name of this graph} */
     fun name(): String {

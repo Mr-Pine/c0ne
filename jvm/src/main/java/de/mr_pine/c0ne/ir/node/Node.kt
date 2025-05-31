@@ -43,6 +43,18 @@ sealed class Node {
         this.graph.registerSuccessor(node, this)
     }
 
+    fun removePredecessor(node: Node) {
+        this.graph.removeSuccessor(node, this)
+        this.predecessors.remove(node)
+    }
+
+    fun clearPredecessors() {
+        for (predecessor in this.predecessors) {
+            this.graph.removeSuccessor(predecessor, this)
+        }
+        this.predecessors.clear()
+    }
+
     fun predecessor(idx: Int): Node {
         return this.predecessors[idx]
     }

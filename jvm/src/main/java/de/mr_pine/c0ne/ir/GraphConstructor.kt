@@ -114,19 +114,19 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     }
 
     fun newReturn(result: Node): Node {
-        return ReturnNode(currentBlock, readCurrentSideEffect(), result)
+        return this.optimizer.transform(ReturnNode(currentBlock, readCurrentSideEffect(), result))
     }
 
     fun newIf(condition: Node): Node {
-        return IfNode(currentBlock, condition)
+        return this.optimizer.transform(IfNode(currentBlock, condition))
     }
 
-    fun newJump(): JumpNode {
-        return JumpNode(currentBlock)
+    fun newJump(): Node {
+        return this.optimizer.transform(JumpNode(currentBlock))
     }
 
     fun newSideEffectProj(node: Node): Node {
-        return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.SIDE_EFFECT)
+        return this.optimizer.transform(ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.SIDE_EFFECT))
     }
 
     fun newResultProj(node: Node): Node {
