@@ -1,5 +1,6 @@
 package de.mr_pine.c0ne.semantic
 
+import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.parser.ast.AssignmentTree
 import de.mr_pine.c0ne.parser.ast.BinaryOperationTree
 import de.mr_pine.c0ne.parser.ast.DeclarationTree
@@ -42,6 +43,10 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
     ) {
         val variableType = (assignmentTree.lValue as LValueIdentTree).name.references!!.type
         if (assignmentTree.expression.type != variableType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue.name.name}: Expected $variableType got ${assignmentTree.expression.type}")
+        if (assignmentTree.operator.type != Operator.OperatorType.ASSIGN) {
+            val operatorType = assignmentTree.operator.type.inputType
+            if (variableType != operatorType) throw SemanticException("Type mismatch at ${assignmentTree.span}: Operator ${assignmentTree.operator.type} expects $operatorType but got $variableType")
+        }
         super.visit(assignmentTree, data)
     }
 
