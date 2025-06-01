@@ -166,8 +166,8 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                 node: BinaryOperationNode,
                 setConstructor: (Argument.RegMem) -> SetInsn,
             ) {
-                val left = Argument.NodeValue(node)
-                val right = Argument.NodeValue(node)
+                val left = Argument.NodeValue(node.left)
+                val right = Argument.NodeValue(node.right)
 
                 val leftReg = Argument.RegMem.Register.RegisterFor(left)
                 instructionList.add(Mov(leftReg, left))
