@@ -78,8 +78,8 @@ class Schedule(private val irGraph: IrGraph) {
                 if (node in visited) return
                 visited.add(node)
                 nodes.remove(node)
-                for (successor in node.predecessors().filter { it.block == block }) {
-                    dfs(successor)
+                for (predecessor in node.predecessors().filter { it.block == block && it !is Phi }) {
+                    dfs(predecessor)
                 }
 
                 finishNumbers[node] = nextFinishNumber

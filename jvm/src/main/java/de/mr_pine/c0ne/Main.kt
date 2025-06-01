@@ -5,6 +5,7 @@ import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
 import de.mr_pine.c0ne.backend.Schedule
+import de.mr_pine.c0ne.backend.x86.NextGenX86CodeGenerator
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import de.mr_pine.c0ne.ir.SsaTranslation
 import de.mr_pine.c0ne.ir.optimize.ControlFlowPrune
@@ -46,9 +47,11 @@ class C0ne : CliktCommand() {
             translation.translate()
         }
 
-        val schedules = graphs.map { Schedule(it) }
+        val firstGraph = graphs.first()
+        File("/tmp/graph.vcg").writeText(YCompPrinter.print(graphs[0], Schedule(firstGraph)))
 
-        File("/tmp/graph.vcg").writeText(YCompPrinter.print(graphs[0], schedules[0]))
+        val nextGenX86CodeGenerator = NextGenX86CodeGenerator(firstGraph)
+
 
         val code = X86CodeGenerator().generateCode(graphs)
         output.writeBytes(code)
