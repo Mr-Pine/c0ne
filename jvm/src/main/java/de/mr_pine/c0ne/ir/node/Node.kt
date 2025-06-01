@@ -29,7 +29,7 @@ sealed class Node {
         this.debugInfo = DebugInfo.NoInfo.INSTANCE
     }
 
-    abstract fun accept(visitor: SSAVisitor)
+    abstract fun <R> accept(visitor: SSAVisitor<R>): R
 
     fun predecessors(): List<Node> {
         return this.predecessors.toList()

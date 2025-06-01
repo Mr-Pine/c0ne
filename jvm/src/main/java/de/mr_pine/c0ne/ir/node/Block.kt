@@ -14,7 +14,7 @@ class Block(graph: IrGraph, val label: String) : Node(graph) {
         }
     }
 
-    override fun accept(visitor: SSAVisitor) {
-        visitor.visit(this)
+    override fun <R> accept(visitor: SSAVisitor<R>): R {
+        return visitor.visit(this)
     }
 }

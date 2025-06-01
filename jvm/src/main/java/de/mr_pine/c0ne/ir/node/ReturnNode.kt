@@ -9,8 +9,8 @@ class ReturnNode(block: Block, sideEffect: Node, result: Node) : ExitNode(block,
         const val RESULT: Int = 1
     }
 
-    override fun accept(visitor: SSAVisitor) {
-        visitor.visit(this)
+    override fun <R> accept(visitor: SSAVisitor<R>): R {
+        return visitor.visit(this)
     }
 
     val result

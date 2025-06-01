@@ -28,32 +28,32 @@ import de.mr_pine.c0ne.ir.node.SubNode
 import de.mr_pine.c0ne.ir.node.UndefNode
 import de.mr_pine.c0ne.ir.node.XorNode
 
-interface SSAVisitor {
-    fun visit(node: AddNode)
-    fun visit(node: ArithmeticLeftShiftNode)
-    fun visit(node: ArithmeticRightShiftNode)
-    fun visit(node: BitwiseAndNode)
-    fun visit(node: BitwiseNotNode)
-    fun visit(node: BitwiseOrNode)
-    fun visit(node: Block)
-    fun visit(node: ConstBoolNode)
-    fun visit(node: ConstIntNode)
-    fun visit(node: DivNode)
-    fun visit(node: EqualsNode)
-    fun visit(node: IfNode)
-    fun visit(node: JumpNode)
-    fun visit(node: LessThanEqNode)
-    fun visit(node: LessThanNode)
-    fun visit(node: LogicalAndNode)
-    fun visit(node: LogicalOrNode)
-    fun visit(node: ModNode)
-    fun visit(node: MulNode)
-    fun visit(node: NotNode)
-    fun visit(node: Phi)
-    fun visit(node: ProjNode)
-    fun visit(node: ReturnNode)
-    fun visit(node: StartNode)
-    fun visit(node: SubNode)
-    fun visit(node: UndefNode)
-    fun visit(node: XorNode)
+interface SSAVisitor<R> {
+    fun visit(node: AddNode): R
+    fun visit(node: ArithmeticLeftShiftNode): R
+    fun visit(node: ArithmeticRightShiftNode): R
+    fun visit(node: BitwiseAndNode): R
+    fun visit(node: BitwiseNotNode): R
+    fun visit(node: BitwiseOrNode): R
+    fun visit(node: Block): R
+    fun visit(node: ConstBoolNode): R
+    fun visit(node: ConstIntNode): R
+    fun visit(node: DivNode): R
+    fun visit(node: EqualsNode): R
+    fun visit(node: IfNode): R
+    fun visit(node: JumpNode): R
+    fun visit(node: LessThanEqNode): R
+    fun visit(node: LessThanNode): R
+    fun visit(node: LogicalAndNode): R
+    fun visit(node: LogicalOrNode): R
+    fun visit(node: ModNode): R
+    fun visit(node: MulNode): R
+    fun visit(node: NotNode): R
+    fun visit(node: Phi): R
+    fun visit(node: ProjNode): R
+    fun visit(node: ReturnNode): R
+    fun visit(node: StartNode): R
+    fun visit(node: SubNode): R
+    fun visit(node: UndefNode): R
+    fun visit(node: XorNode): R
 }

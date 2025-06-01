@@ -20,7 +20,7 @@ class Phi(block: Block) : Node(block) {
             .mapNotNull { it as? Phi }.any { it.checkSideeffect(visited) }
     }
 
-    override fun accept(visitor: SSAVisitor) {
-        visitor.visit(this)
+    override fun <R> accept(visitor: SSAVisitor<R>): R {
+        return visitor.visit(this)
     }
 }

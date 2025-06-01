@@ -19,7 +19,7 @@ class ConstBoolNode(block: Block, val value: Boolean) : Node(block) {
         return "[$value]"
     }
 
-    override fun accept(visitor: SSAVisitor) {
-        visitor.visit(this)
+    override fun <R> accept(visitor: SSAVisitor<R>): R {
+        return visitor.visit(this)
     }
 }

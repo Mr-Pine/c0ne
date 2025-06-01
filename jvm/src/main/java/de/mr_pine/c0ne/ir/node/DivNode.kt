@@ -19,8 +19,8 @@ class DivNode(block: Block, left: Node, right: Node, sideEffect: Node) :
         return super.hashCode()
     }
 
-    override fun accept(visitor: SSAVisitor) {
-        visitor.visit(this)
+    override fun <R> accept(visitor: SSAVisitor<R>): R {
+        return visitor.visit(this)
     }
 
     val sideEffect
