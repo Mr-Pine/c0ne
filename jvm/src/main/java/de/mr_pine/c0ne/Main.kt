@@ -50,10 +50,11 @@ class C0ne : CliktCommand() {
         val firstGraph = graphs.first()
         File("/tmp/graph.vcg").writeText(YCompPrinter.print(graphs[0], Schedule(firstGraph)))
 
-        val nextGenX86CodeGenerator = NextGenX86CodeGenerator(firstGraph)
+        val nextGenX86CodeGenerator = NextGenX86CodeGenerator(graphs)
 
 
-        val code = X86CodeGenerator().generateCode(graphs)
+        //val code = X86CodeGenerator().generateCode(graphs)
+        val code = nextGenX86CodeGenerator.generate()
         output.writeBytes(code)
         output.setPosixFilePermissions(
             setOf(

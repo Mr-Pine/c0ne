@@ -40,8 +40,8 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
     context(builder: StringBuilder) override fun prologue() {
         builder.appendLine(".intel_syntax noprefix").appendLine(".global main").appendLine(".text").appendLine()
             .appendLine("main:").appendLine("call _main").appendLine()
-            .appendLine("mov ${X86Register.RealRegister.EDI}, ${X86Register.RealRegister.EAX}")
-            .appendLine("mov ${X86Register.RealRegister.EAX}, 0x3C").appendLine("syscall").appendLine()
+            .appendLine("mov ${X86Register.RealRegister.RDI}, ${X86Register.RealRegister.RAX}")
+            .appendLine("mov ${X86Register.RealRegister.RAX}, 0x3C").appendLine("syscall").appendLine()
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun functionPrologue(name: String) {
@@ -86,9 +86,9 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
         } else if (right == target && commutative) {
             processInstruction(instruction, right, node.left.registerOrConstValue)
         } else if (right == target || (left !is X86Register.RealRegister && target !is X86Register.RealRegister)) {
-            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, node.left.registerOrConstValue)
-            processInstruction(instruction, X86Register.RealRegister.R15D, node.right.registerOrConstValue)
-            processInstruction(Instruction.MOV, target, X86Register.RealRegister.R15D)
+            processInstruction(Instruction.MOV, X86Register.RealRegister.R15, node.left.registerOrConstValue)
+            processInstruction(instruction, X86Register.RealRegister.R15, node.right.registerOrConstValue)
+            processInstruction(Instruction.MOV, target, X86Register.RealRegister.R15)
         } else {
             processInstruction(Instruction.MOV, target, node.left.registerOrConstValue)
             processInstruction(instruction, target, node.right.registerOrConstValue)
@@ -96,22 +96,22 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: DivNode) {
-        processIdiv(node, X86Register.RealRegister.EAX)
+        processIdiv(node, X86Register.RealRegister.RAX)
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: ModNode) {
-        processIdiv(node, X86Register.RealRegister.EDX)
+        processIdiv(node, X86Register.RealRegister.RDX)
     }
 
     context(builder: StringBuilder, registers: Allocation) private fun processIdiv(
         node: BinaryOperationNode,
         target: X86Register.RealRegister
     ) {
-        processInstruction(Instruction.MOV, X86Register.RealRegister.EAX, node.left.registerOrConstValue)
+        processInstruction(Instruction.MOV, X86Register.RealRegister.RAX, node.left.registerOrConstValue)
         processInstruction(Instruction.CDQ)
         if (node.right.registerOrConstValue !is X86Register.RealRegister) {
-            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, node.right.registerOrConstValue)
-            processInstruction(Instruction.IDIV, X86Register.RealRegister.R15D)
+            processInstruction(Instruction.MOV, X86Register.RealRegister.R15, node.right.registerOrConstValue)
+            processInstruction(Instruction.IDIV, X86Register.RealRegister.R15)
         } else {
             processInstruction(Instruction.IDIV, registers[node.right])
         }
@@ -128,7 +128,7 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
     }
 
     context(builder: StringBuilder, registers: Allocation) override fun processNode(node: ReturnNode) {
-        processInstruction(Instruction.MOV, X86Register.RealRegister.EAX, node.result.registerOrConstValue)
+        processInstruction(Instruction.MOV, X86Register.RealRegister.RAX, node.result.registerOrConstValue)
         processInstruction(Instruction.LEAVE)
         processInstruction(Instruction.RET)
     }
@@ -138,10 +138,10 @@ class X86CodeGenerator : CodeGenerator<X86Register, Allocation> {
 
     context(builder: StringBuilder) private fun processInstruction(instruction: Instruction, vararg operands: Any) {
         if (operands.isNotEmpty() && instruction != Instruction.MOV && operands[0] is X86Register.OverflowSlot) {
-            processInstruction(Instruction.MOV, X86Register.RealRegister.R15D, operands[0])
-            processInstruction(instruction, *(listOf(X86Register.RealRegister.R15D) + operands.drop(1)).toTypedArray())
+            processInstruction(Instruction.MOV, X86Register.RealRegister.R15, operands[0])
+            processInstruction(instruction, *(listOf(X86Register.RealRegister.R15) + operands.drop(1)).toTypedArray())
             builder.append(Instruction.MOV.name).append(" ")
-                .append(listOf(operands[0], X86Register.RealRegister.R15D).joinToString(", ")).appendLine()
+                .append(listOf(operands[0], X86Register.RealRegister.R15).joinToString(", ")).appendLine()
         } else {
             val isUnnecessaryMove = instruction == Instruction.MOV && operands[0] == operands[1]
             if (!isUnnecessaryMove) {

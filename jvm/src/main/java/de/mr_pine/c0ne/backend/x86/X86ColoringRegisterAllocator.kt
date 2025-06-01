@@ -11,11 +11,11 @@ class X86ColoringRegisterAllocator :
 
     private val registerMap = mutableMapOf<Node, X86Register>()
     private val registerSequence = (X86Register.RealRegister.entries - listOf(
-        X86Register.RealRegister.EAX,
-        X86Register.RealRegister.EDX,
+        X86Register.RealRegister.RAX,
+        X86Register.RealRegister.RDX,
         X86Register.RealRegister.RBP,
         X86Register.RealRegister.RSP,
-        X86Register.RealRegister.R15D
+        X86Register.RealRegister.R15
     )).asSequence() + generateSequence(X86Register.OverflowSlot(0)) { X86Register.OverflowSlot(it.index + 1) }
 
     fun allocateFromSimplicialOrdering(ordering: List<Node>, interferenceGraph: AllocationInterferenceGraph) {

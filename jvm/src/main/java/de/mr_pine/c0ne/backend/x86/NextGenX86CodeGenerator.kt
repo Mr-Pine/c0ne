@@ -5,11 +5,49 @@ import de.mr_pine.c0ne.backend.x86.instructions.*
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.writeText
 
-class NextGenX86CodeGenerator(irGraph: IrGraph) {
-    val abstractInstructions = AbstractCodegen(irGraph, Schedule(irGraph)).abstractInstructions
-    val regAlloc = NextGenSimpleX86RegAlloc(abstractInstructions)
-    val concreteInstructions = with(regAlloc) { abstractInstructions.map { it.concretize() } }
+class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
+    val abstractInstructions =
+        irGraphs.map { irGraph -> AbstractCodegen(irGraph, Schedule(irGraph)).abstractInstructions }
+    val regAllocs = abstractInstructions.map { abstractInstructions -> NextGenSimpleX86RegAlloc(abstractInstructions) }
+    val concreteInstructions =
+        abstractInstructions.zip(regAllocs) { abstractInstructions, regAlloc -> with(regAlloc) { abstractInstructions.map { it.concretize() } } }
+
+    val prefix = """
+        .intel_syntax noprefix
+        .global _main
+        .text
+        
+        _main:
+        call main
+        mov EDI, EAX
+        mov EAX, 0x3c
+        syscall
+    """.trimIndent() + "\n\n"
+
+    private fun generateAssembly(): String {
+        val functionAssembly = concreteInstructions.map { it.joinToString(separator = "\n") { it.render() } }
+        return prefix + functionAssembly.joinToString("\n\n")
+    }
+
+    private fun postprocess(generation: String): ByteArray {
+        val tmpdir = createTempDirectory("c0ne")
+        val input = tmpdir.resolve("input.s").apply { writeText(generation + "\n") }
+        val output = tmpdir.resolve("c0ne_out")
+        val assembler =
+            ProcessBuilder("gcc", input.absolutePathString(), "-o", output.absolutePathString(), "-Wl,-e_main").start()
+        if (assembler.waitFor() != 0) {
+            throw Exception("gcc assembly failed: ${assembler.errorStream.readAllBytes().decodeToString()}")
+        }
+        return output.toFile().readBytes()
+    }
+
+    fun generate(): ByteArray {
+        return postprocess(generateAssembly())
+    }
 
     class AbstractCodegen(irGraph: IrGraph, schedule: Schedule) {
 
@@ -29,14 +67,13 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
             private var currentBlock: Block
         ) :
             SSAVisitor<Unit> {
-            val nodeValues = mutableMapOf<Node, Argument>()
 
             private fun visitNormalBinop(
                 node: BinaryOperationNode,
                 instructionConstructor: (Argument.RegMem.Register, Argument) -> Instruction
             ) {
-                val arg1 = nodeValues[node.left]!!
-                val arg2 = nodeValues[node.right]!!
+                val arg1 = Argument.NodeValue(node.left)
+                val arg2 = Argument.NodeValue(node.right)
 
                 val target = Argument.NodeValue(node)
                 val targetReg = Argument.RegMem.Register.RegisterFor(target)
@@ -44,8 +81,6 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
                 instructionList.add(Mov(targetReg, arg1))
                 instructionList.add(instructionConstructor(targetReg, arg2))
                 instructionList.add(Mov(target, targetReg))
-
-                nodeValues[node] = target
             }
 
             override fun visit(node: AddNode) {
@@ -53,28 +88,23 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
             }
 
             private fun visitShift(node: BinaryOperationNode, isLeftShift: Boolean) {
-                val value = nodeValues[node.left]!!
-                val shift = nodeValues[node.right]!!
+                val value = Argument.NodeValue(node.left)
+                val shift = Argument.NodeValue(node.right)
 
                 val target = Argument.NodeValue(node)
+                val targetReg = Argument.RegMem.Register.RegisterFor(target)
 
-                instructionList.add(Mov(target, value))
-                val insn = if (shift is Argument.Immediate) {
-                    if (isLeftShift) {
-                        Sal(target, shift)
-                    } else {
-                        Sar(target, shift)
-                    }
-                } else {
+                instructionList.add(Mov(targetReg, value))
+                val insn = run {
                     val shiftReg = Argument.RegMem.Register.EcxOf(shift)
                     if (isLeftShift) {
-                        Sal(target, shiftReg)
+                        Sal(targetReg, shiftReg)
                     } else {
-                        Sar(target, shiftReg)
+                        Sar(targetReg, shiftReg)
                     }
                 }
                 instructionList.add(insn)
-                instructionList.add(Mov(target, target))
+                instructionList.add(Mov(target, targetReg))
             }
 
             override fun visit(node: ArithmeticLeftShiftNode) {
@@ -90,11 +120,13 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
             }
 
             override fun visit(node: BitwiseNotNode) {
-                val value = nodeValues[node.value]!!
+                val value = Argument.NodeValue(node.value)
 
                 val target = Argument.NodeValue(node)
-                instructionList.add(Mov(target, value))
-                instructionList.add(Not(target))
+                val targetReg = Argument.RegMem.Register.RegisterFor(target)
+                instructionList.add(Mov(targetReg, value))
+                instructionList.add(Not(targetReg))
+                instructionList.add(Mov(target, targetReg))
             }
 
             override fun visit(node: BitwiseOrNode) {
@@ -109,54 +141,52 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
             override fun visit(node: ConstBoolNode) {
                 val target = Argument.NodeValue(node)
                 instructionList.add(Mov(target, Argument.Immediate(if (node.value) 1 else 0)))
-                nodeValues[node] = target
             }
 
             override fun visit(node: ConstIntNode) {
                 val target = Argument.NodeValue(node)
                 instructionList.add(Mov(target, Argument.Immediate(node.value)))
-                nodeValues[node] = target
             }
 
             override fun visit(node: DivNode) {
-                val left = nodeValues[node.left]!!
-                val right = nodeValues[node.right]!!
+                val left = Argument.NodeValue(node)
+                val right = Argument.NodeValue(node)
 
                 val rightRegMem = Argument.RegMem.RegMemFor(right)
 
                 val target = Argument.NodeValue(node)
 
-                instructionList.add(Mov(Argument.RegMem.Register.RealRegister(X86Register.RealRegister.EAX), left))
+                instructionList.add(Mov(Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RAX), left))
                 instructionList.add(Cdq())
                 instructionList.add(Idiv(rightRegMem))
-                instructionList.add(Mov(target, Argument.RegMem.Register.RealRegister(X86Register.RealRegister.EAX)))
+                instructionList.add(Mov(target, Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RAX)))
             }
 
             private fun visitComparisonNode(
                 node: BinaryOperationNode,
-                trueCmov: (Argument.RegMem, Argument) -> Instruction,
-                falseCmov: (Argument.RegMem, Argument) -> Instruction
+                setConstructor: (Argument.RegMem) -> SetInsn,
             ) {
-                val left = nodeValues[node.left]!!
-                val right = nodeValues[node.right]!!
+                val left = Argument.NodeValue(node)
+                val right = Argument.NodeValue(node)
 
-                val leftRegMem = Argument.RegMem.RegMemFor(left)
+                val leftReg = Argument.RegMem.Register.RegisterFor(left)
+                instructionList.add(Mov(leftReg, left))
+
                 val target = Argument.NodeValue(node)
 
-                instructionList.add(Cmp(leftRegMem, right))
-                instructionList.add(trueCmov(target, Argument.Immediate(1)))
-                instructionList.add(falseCmov(target, Argument.Immediate(0)))
+                instructionList.add(Cmp(leftReg, right))
+                instructionList.add(setConstructor(target))
             }
 
             override fun visit(node: EqualsNode) {
-                visitComparisonNode(node, ::Cmove, ::Cmovne)
+                visitComparisonNode(node, ::Sete)
             }
 
             override fun visit(node: IfNode) {
                 val (trueTarget, falseTarget) = irGraph.successors(node).map { irGraph.successors(it).first() }
                     .map { Label(it.block) }
 
-                val condition = Argument.RegMem.RegMemFor(nodeValues[node.condition]!!)
+                val condition = Argument.RegMem.RegMemFor(Argument.NodeValue(node.condition))
 
                 instructionList.add(Cmp(condition, Argument.Immediate(1)))
                 instructionList.add(Je(trueTarget))
@@ -169,11 +199,11 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
             }
 
             override fun visit(node: LessThanEqNode) {
-                visitComparisonNode(node, ::Cmovle, ::Cmovg)
+                visitComparisonNode(node, ::Setle)
             }
 
             override fun visit(node: LessThanNode) {
-                visitComparisonNode(node, ::Cmovl, ::Cmovge)
+                visitComparisonNode(node, ::Setl)
             }
 
             override fun visit(node: LogicalAndNode) {
@@ -185,17 +215,17 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
             }
 
             override fun visit(node: ModNode) {
-                val left = nodeValues[node.left]!!
-                val right = nodeValues[node.right]!!
+                val left = Argument.NodeValue(node)
+                val right = Argument.NodeValue(node)
 
                 val rightRegMem = Argument.RegMem.RegMemFor(right)
 
                 val target = Argument.NodeValue(node)
 
-                instructionList.add(Mov(Argument.RegMem.Register.RealRegister(X86Register.RealRegister.EAX), left))
+                instructionList.add(Mov(Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RAX), left))
                 instructionList.add(Cdq())
                 instructionList.add(Idiv(rightRegMem))
-                instructionList.add(Mov(target, Argument.RegMem.Register.RealRegister(X86Register.RealRegister.EDX)))
+                instructionList.add(Mov(target, Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RDX)))
             }
 
             override fun visit(node: MulNode) {
@@ -203,11 +233,13 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
             }
 
             override fun visit(node: NotNode) {
-                val value = nodeValues[node.value]!!
+                val value = Argument.NodeValue(node.value)
 
                 val target = Argument.NodeValue(node)
-                instructionList.add(Mov(target, value))
-                instructionList.add(Not(target))
+                val targetReg = Argument.RegMem.Register.RegisterFor(target)
+                instructionList.add(Mov(targetReg, value))
+                instructionList.add(Not(targetReg))
+                instructionList.add(Mov(target, targetReg))
             }
 
             override fun visit(node: Phi) {
@@ -217,7 +249,9 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
                 val value = Argument.NodeValue(predecessor)
 
                 val target = Argument.NodeValue(node)
-                instructionList.add(Mov(target, value))
+                val tmpReg = Argument.RegMem.Register.RegisterFor(target)
+                instructionList.add(Mov(tmpReg, value))
+                instructionList.add(Mov(target, tmpReg))
             }
 
             override fun visit(node: ProjNode) {
@@ -225,11 +259,14 @@ class NextGenX86CodeGenerator(irGraph: IrGraph) {
 
             override fun visit(node: ReturnNode) {
                 val value = Argument.NodeValue(node.result)
-                instructionList.add(Mov(Argument.RegMem.Register.RealRegister(X86Register.RealRegister.EAX), value))
+                instructionList.add(Mov(Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RAX), value))
+
+                instructionList.add(Leave())
+                instructionList.add(Ret())
             }
 
             override fun visit(node: StartNode) {
-
+                instructionList.add(Enter(node))
             }
 
             override fun visit(node: SubNode) {

@@ -2,6 +2,7 @@ package de.mr_pine.c0ne.backend.x86.instructions
 
 import de.mr_pine.c0ne.backend.x86.NextGenSimpleX86RegAlloc
 import de.mr_pine.c0ne.backend.x86.X86Register
+import de.mr_pine.c0ne.backend.x86.X86Register.RealRegister
 import de.mr_pine.c0ne.ir.node.Node
 
 sealed interface Argument {
@@ -10,15 +11,17 @@ sealed interface Argument {
 
         context(alloc: NextGenSimpleX86RegAlloc)
         override fun concretize() = alloc.concretize(this)
+        override fun render(size: Int) = value.toString()
     }
 
     sealed interface RegMem : Argument {
         sealed interface Register : RegMem {
-            data class RealRegister(val register: X86Register) : Register {
+            data class RealRegister(val register: X86Register.RealRegister) : Register {
                 override val nodeValue = null
 
                 context(alloc: NextGenSimpleX86RegAlloc)
                 override fun concretize() = alloc.concretize(this)
+                override fun render(size: Int) = register.render(size)
             }
 
             data class RegisterFor(val arg: Argument) : Register {
@@ -26,6 +29,7 @@ sealed interface Argument {
 
                 context(alloc: NextGenSimpleX86RegAlloc)
                 override fun concretize() = alloc.concretize(this)
+                override fun render(size: Int) = error("Can't render abstract $this")
             }
 
             data class EcxOf(val from: Argument) : Register {
@@ -33,6 +37,7 @@ sealed interface Argument {
 
                 context(alloc: NextGenSimpleX86RegAlloc)
                 override fun concretize() = alloc.concretize(this)
+                override fun render(size: Int) = error("Can't render abstract $this")
             }
         }
 
@@ -41,6 +46,16 @@ sealed interface Argument {
 
             context(alloc: NextGenSimpleX86RegAlloc)
             override fun concretize() = alloc.concretize(this)
+            private fun sizePrefix(size: Int): String {
+                return if (size == 4) {
+                    "DWORD"
+                } else if (size == 1) {
+                    "BYTE"
+                } else {
+                    error("Unknown size $size")
+                }
+            }
+            override fun render(size: Int) = "${sizePrefix(size)} PTR [${RealRegister.RSP} + ${index * 4}]"
         }
 
         data class RegMemFor(val arg: Argument) : RegMem {
@@ -48,6 +63,7 @@ sealed interface Argument {
 
             context(alloc: NextGenSimpleX86RegAlloc)
             override fun concretize() = alloc.concretize(this)
+            override fun render(size: Int) = error("Can't render abstract $this")
         }
     }
 
@@ -56,10 +72,12 @@ sealed interface Argument {
 
         context(alloc: NextGenSimpleX86RegAlloc)
         override fun concretize() = alloc.concretize(this)
+        override fun render(size: Int) = error("Can't render abstract node value $this")
     }
 
     val nodeValue: NodeValue?
 
     context(alloc: NextGenSimpleX86RegAlloc)
     fun concretize(): Argument
+    fun render(size: Int = 4): String
 }

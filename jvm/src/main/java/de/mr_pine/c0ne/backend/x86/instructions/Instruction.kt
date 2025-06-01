@@ -10,5 +10,8 @@ sealed class Instruction(val mnemonic: String, vararg val arguments: Argument) {
 
     context(alloc: NextGenSimpleX86RegAlloc)
     abstract fun concretize(): Instruction
+    open fun render(): String {
+        return "$mnemonic ${arguments.joinToString(", ") {it.render()}}"
+    }
 }
 

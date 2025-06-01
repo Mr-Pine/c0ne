@@ -10,7 +10,7 @@ class X86StraightLineRegisterAllocator :
     RegisterAllocator<X86Register, X86StraightLineRegisterAllocator.X86StraightLineRegisterAllocation> {
     private val registerMap: MutableMap<Node, X86Register> = mutableMapOf()
     private val remainingRealRegisters: ArrayDeque<X86Register.RealRegister> =
-        ArrayDeque(X86Register.RealRegister.entries - listOf(X86Register.RealRegister.EAX, X86Register.RealRegister.EDX, X86Register.RealRegister.RBP, X86Register.RealRegister.RSP, X86Register.RealRegister.R15D))
+        ArrayDeque(X86Register.RealRegister.entries - listOf(X86Register.RealRegister.RAX, X86Register.RealRegister.RDX, X86Register.RealRegister.RBP, X86Register.RealRegister.RSP, X86Register.RealRegister.R15))
     var overflowCount: Int = 0
         private set
 
