@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.ir.node
 
-sealed class UnaryOperationNode : Node, ValueNode {
+sealed class UnaryOperationNode : Node {
     protected constructor(block: Block, value: Node) : super(block, value)
 
     override fun equals(other: Any?): Boolean {

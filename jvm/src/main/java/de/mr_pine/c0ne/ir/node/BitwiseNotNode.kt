@@ -1,3 +1,9 @@
 package de.mr_pine.c0ne.ir.node
 
-class BitwiseNotNode(block: Block, value: Node) : UnaryOperationNode(block, value), ValueNode
+import de.mr_pine.c0ne.ir.visitor.SSAVisitor
+
+class BitwiseNotNode(block: Block, value: Node) : UnaryOperationNode(block, value) {
+    override fun accept(visitor: SSAVisitor) {
+        visitor.visit(this)
+    }
+}

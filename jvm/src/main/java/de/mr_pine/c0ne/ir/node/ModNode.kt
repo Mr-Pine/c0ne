@@ -1,7 +1,9 @@
 package de.mr_pine.c0ne.ir.node
 
+import de.mr_pine.c0ne.ir.visitor.SSAVisitor
+
 class ModNode(block: Block, left: Node, right: Node, sideEffect: Node) :
-    BinaryOperationNode(block, left, right, sideEffect), ValueNode {
+    BinaryOperationNode(block, left, right, sideEffect) {
     public override fun equals(other: Any?): Boolean {
         // side effect, must be very careful with value numbering.
         // this is the most conservative approach
@@ -14,5 +16,9 @@ class ModNode(block: Block, left: Node, right: Node, sideEffect: Node) :
 
     override fun hashCode(): Int {
         return super.hashCode()
+    }
+
+    override fun accept(visitor: SSAVisitor) {
+        visitor.visit(this)
     }
 }

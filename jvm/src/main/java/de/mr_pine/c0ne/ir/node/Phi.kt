@@ -1,6 +1,7 @@
 package de.mr_pine.c0ne.ir.node
 
 import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
+import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 
 class Phi(block: Block) : Node(block) {
     fun appendOperand(node: Node) {
@@ -17,5 +18,9 @@ class Phi(block: Block) : Node(block) {
         visited.add(this)
         return predecessors().any { it.isDirectSideeffect } || predecessors().filter { it !in visited }
             .mapNotNull { it as? Phi }.any { it.checkSideeffect(visited) }
+    }
+
+    override fun accept(visitor: SSAVisitor) {
+        visitor.visit(this)
     }
 }

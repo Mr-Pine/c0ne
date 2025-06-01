@@ -3,6 +3,7 @@ package de.mr_pine.c0ne.ir.node
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.util.DebugInfo
 import de.mr_pine.c0ne.ir.util.DebugInfoHelper
+import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 
 /** The base class for all nodes. */
 sealed class Node {
@@ -27,6 +28,8 @@ sealed class Node {
         this.block = this as Block
         this.debugInfo = DebugInfo.NoInfo.INSTANCE
     }
+
+    abstract fun accept(visitor: SSAVisitor)
 
     fun predecessors(): List<Node> {
         return this.predecessors.toList()

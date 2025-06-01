@@ -1,6 +1,8 @@
 package de.mr_pine.c0ne.ir.node
 
-class ConstIntNode(block: Block, val value: Int) : Node(block), ValueNode {
+import de.mr_pine.c0ne.ir.visitor.SSAVisitor
+
+class ConstIntNode(block: Block, val value: Int) : Node(block) {
 
     override fun equals(other: Any?): Boolean {
         if (other is ConstIntNode) {
@@ -15,5 +17,9 @@ class ConstIntNode(block: Block, val value: Int) : Node(block), ValueNode {
 
     override fun info(): String {
         return "[$value]"
+    }
+
+    override fun accept(visitor: SSAVisitor) {
+        visitor.visit(this)
     }
 }

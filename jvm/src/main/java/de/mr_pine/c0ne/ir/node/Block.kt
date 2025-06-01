@@ -1,6 +1,7 @@
 package de.mr_pine.c0ne.ir.node
 
 import de.mr_pine.c0ne.ir.IrGraph
+import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 
 class Block(graph: IrGraph, val label: String) : Node(graph) {
     override fun toString() = "Block $label"
@@ -11,5 +12,9 @@ class Block(graph: IrGraph, val label: String) : Node(graph) {
         for ((pred, succ) in edges) {
             succ.removePredecessor(pred)
         }
+    }
+
+    override fun accept(visitor: SSAVisitor) {
+        visitor.visit(this)
     }
 }

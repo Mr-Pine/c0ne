@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.ir.node
 
-sealed class BinaryOperationNode : Node, ValueNode {
+sealed class BinaryOperationNode : Node {
     protected constructor(block: Block, left: Node, right: Node) : super(block, left, right)
 
     protected constructor(block: Block, left: Node, right: Node, sideEffect: Node) : super(

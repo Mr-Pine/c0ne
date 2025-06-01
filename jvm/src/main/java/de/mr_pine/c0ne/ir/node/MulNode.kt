@@ -1,11 +1,17 @@
 package de.mr_pine.c0ne.ir.node
 
-class MulNode(block: Block, left: Node, right: Node) : BinaryOperationNode(block, left, right), ValueNode {
+import de.mr_pine.c0ne.ir.visitor.SSAVisitor
+
+class MulNode(block: Block, left: Node, right: Node) : BinaryOperationNode(block, left, right) {
     override fun equals(other: Any?): Boolean {
         return commutativeEquals(this, other)
     }
 
     override fun hashCode(): Int {
         return commutativeHashCode(this)
+    }
+
+    override fun accept(visitor: SSAVisitor) {
+        visitor.visit(this)
     }
 }
