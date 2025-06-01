@@ -104,7 +104,7 @@ class Parser(private val tokenSource: TokenSource) {
         val operator = tokenSource.peekAs<Operator>()
         if (operator != null) {
             return when (operator.type) {
-                Operator.OperatorType.ASSIGN, Operator.OperatorType.ASSIGN_DIV, Operator.OperatorType.ASSIGN_MINUS, Operator.OperatorType.ASSIGN_MOD, Operator.OperatorType.ASSIGN_MUL, Operator.OperatorType.ASSIGN_PLUS, Operator.OperatorType.ASSIGN_OR, Operator.OperatorType.ASSIGN_AND, Operator.OperatorType.ASSIGN_XOR -> {
+                Operator.OperatorType.ASSIGN, Operator.OperatorType.ASSIGN_DIV, Operator.OperatorType.ASSIGN_MINUS, Operator.OperatorType.ASSIGN_MOD, Operator.OperatorType.ASSIGN_MUL, Operator.OperatorType.ASSIGN_PLUS, Operator.OperatorType.ASSIGN_OR, Operator.OperatorType.ASSIGN_AND, Operator.OperatorType.ASSIGN_XOR, Operator.OperatorType.ASSIGN_LEFT_SHIFT, Operator.OperatorType.ASSIGN_RIGHT_SHIFT -> {
                     this.tokenSource.consume()
                     operator
                 }
