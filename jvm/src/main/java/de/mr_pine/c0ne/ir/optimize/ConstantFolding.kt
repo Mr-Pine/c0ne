@@ -1,8 +1,5 @@
 package de.mr_pine.c0ne.ir.optimize
 
-import de.mr_pine.c0ne.ir.left
-import de.mr_pine.c0ne.ir.right
-import de.mr_pine.c0ne.ir.sideEffect
 import de.mr_pine.c0ne.ir.node.AddNode
 import de.mr_pine.c0ne.ir.node.BinaryOperationNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode

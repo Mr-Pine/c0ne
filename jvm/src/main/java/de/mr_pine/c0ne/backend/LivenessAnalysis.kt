@@ -2,9 +2,6 @@ package de.mr_pine.c0ne.backend
 
 import de.mr_pine.c0ne.analysis.BackwardsControlFlow
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
-import de.mr_pine.c0ne.ir.left
-import de.mr_pine.c0ne.ir.result
-import de.mr_pine.c0ne.ir.right
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.BinaryOperationNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode

@@ -1,7 +1,6 @@
 package de.mr_pine.c0ne.backend.aasm
 
 import de.mr_pine.c0ne.backend.CodeGenerator
-import de.mr_pine.c0ne.ir.left
 import de.mr_pine.c0ne.ir.node.AddNode
 import de.mr_pine.c0ne.ir.node.BinaryOperationNode
 import de.mr_pine.c0ne.ir.node.Block
@@ -14,8 +13,6 @@ import de.mr_pine.c0ne.ir.node.ProjNode
 import de.mr_pine.c0ne.ir.node.ReturnNode
 import de.mr_pine.c0ne.ir.node.StartNode
 import de.mr_pine.c0ne.ir.node.SubNode
-import de.mr_pine.c0ne.ir.result
-import de.mr_pine.c0ne.ir.right
 
 
 class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.AasmRegisterAllocation> {

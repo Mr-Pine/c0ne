@@ -1,5 +1,6 @@
 package de.mr_pine.c0ne.ir.node
 
+import de.mr_pine.c0ne.ir.util.NodeSupport
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 
 class ModNode(block: Block, left: Node, right: Node, sideEffect: Node) :
@@ -21,4 +22,7 @@ class ModNode(block: Block, left: Node, right: Node, sideEffect: Node) :
     override fun accept(visitor: SSAVisitor) {
         visitor.visit(this)
     }
+
+    val sideEffect
+        get() = NodeSupport.predecessorSkipProj(this, DivNode.Companion.SIDE_EFFECT)
 }

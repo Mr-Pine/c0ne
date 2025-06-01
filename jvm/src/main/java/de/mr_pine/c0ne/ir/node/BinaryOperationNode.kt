@@ -1,5 +1,7 @@
 package de.mr_pine.c0ne.ir.node
 
+import de.mr_pine.c0ne.ir.util.NodeSupport
+
 sealed class BinaryOperationNode : Node {
     protected constructor(block: Block, left: Node, right: Node) : super(block, left, right)
 
@@ -26,6 +28,7 @@ sealed class BinaryOperationNode : Node {
     companion object {
         const val LEFT: Int = 0
         const val RIGHT: Int = 1
+        const val SIDE_EFFECT: Int = 2
 
         @JvmStatic
         protected fun commutativeHashCode(node: BinaryOperationNode): Int {
@@ -50,4 +53,9 @@ sealed class BinaryOperationNode : Node {
             return a.predecessor(LEFT) === bObj.predecessor(RIGHT) && a.predecessor(RIGHT) === bObj.predecessor(LEFT)
         }
     }
+
+    val left
+        get() = NodeSupport.predecessorSkipProj(this, LEFT)
+    val right
+        get() = NodeSupport.predecessorSkipProj(this, RIGHT)
 }

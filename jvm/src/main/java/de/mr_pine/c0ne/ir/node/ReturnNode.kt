@@ -1,5 +1,6 @@
 package de.mr_pine.c0ne.ir.node
 
+import de.mr_pine.c0ne.ir.util.NodeSupport
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 
 class ReturnNode(block: Block, sideEffect: Node, result: Node) : ExitNode(block, sideEffect, result) {
@@ -11,4 +12,7 @@ class ReturnNode(block: Block, sideEffect: Node, result: Node) : ExitNode(block,
     override fun accept(visitor: SSAVisitor) {
         visitor.visit(this)
     }
+
+    val result
+        get() = NodeSupport.predecessorSkipProj(this, RESULT)
 }
