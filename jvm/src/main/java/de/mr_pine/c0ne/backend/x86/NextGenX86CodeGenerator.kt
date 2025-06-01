@@ -188,7 +188,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
 
                 val condition = Argument.RegMem.RegMemFor(Argument.NodeValue(node.condition))
 
-                instructionList.add(Cmp(condition, Argument.Immediate(1)))
+                instructionList.add(Cmp(condition, Argument.Immediate(1), size = 1))
                 instructionList.add(Je(trueTarget))
                 instructionList.add(Jmp(falseTarget))
             }
