@@ -204,12 +204,13 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer, p
             val falseExit = data.constructor.newJump()
 
             val followBlock = data.constructor.newBlock("ternary-follow")
-            val value = data.constructor.newPhi(data.constructor.currentBlock)
-            value.addPredecessor(trueValue)
+            data.constructor.currentBlock = followBlock
             followBlock.addPredecessor(trueExit)
-            value.addPredecessor(falseValue)
             followBlock.addPredecessor(falseExit)
             data.constructor.sealBlock(followBlock)
+            val value = data.constructor.newPhi(data.constructor.currentBlock)
+            value.addPredecessor(trueValue)
+            value.addPredecessor(falseValue)
             data.constructor.currentBlock = followBlock
 
             return data.constructor.tryRemoveTrivialPhi(value)
