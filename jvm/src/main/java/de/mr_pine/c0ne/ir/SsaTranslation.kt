@@ -355,15 +355,15 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer, p
             bodyBlock.addPredecessor(trueProj)
             followBlock.addPredecessor(falseProj)
 
-            data.constructor.currentBlock = bodyBlock
-            forTree.loopBody.accept(this, data)
-            val normalLoopExit = data.constructor.newJump()
-            stepBlock.addPredecessor(normalLoopExit)
-
             data.constructor.currentBlock = stepBlock
             forTree.step?.accept(this, data)
             val stepExit = data.constructor.newJump()
             forBlock.addPredecessor(stepExit)
+
+            data.constructor.currentBlock = bodyBlock
+            forTree.loopBody.accept(this, data)
+            val normalLoopExit = data.constructor.newJump()
+            stepBlock.addPredecessor(normalLoopExit)
 
 
             data.constructor.sealBlock(forBlock)

@@ -48,7 +48,7 @@ class C0ne : CliktCommand() {
         }
 
         val firstGraph = graphs.first()
-        File("/tmp/graph.vcg").writeText(YCompPrinter.print(graphs[0], Schedule(firstGraph)))
+        File("/tmp/graph.vcg").writeText(YCompPrinter.print(graphs[0]/*, Schedule(firstGraph)*/))
 
         val nextGenX86CodeGenerator = NextGenX86CodeGenerator(graphs)
 
