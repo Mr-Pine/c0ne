@@ -19,7 +19,6 @@ import de.mr_pine.c0ne.ir.node.LogicalAndNode
 import de.mr_pine.c0ne.ir.node.LogicalOrNode
 import de.mr_pine.c0ne.ir.node.ModNode
 import de.mr_pine.c0ne.ir.node.MulNode
-import de.mr_pine.c0ne.ir.node.NotNode
 import de.mr_pine.c0ne.ir.node.Phi
 import de.mr_pine.c0ne.ir.node.ProjNode
 import de.mr_pine.c0ne.ir.node.ReturnNode
@@ -48,7 +47,6 @@ interface SSAVisitor<R> {
     fun visit(node: LogicalOrNode): R
     fun visit(node: ModNode): R
     fun visit(node: MulNode): R
-    fun visit(node: NotNode): R
     fun visit(node: Phi): R
     fun visit(node: ProjNode): R
     fun visit(node: ReturnNode): R

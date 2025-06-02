@@ -38,7 +38,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         val input = tmpdir.resolve("input.s").apply { writeText(generation + "\n") }
         val output = tmpdir.resolve("c0ne_out")
         val assembler =
-            ProcessBuilder("gcc", input.absolutePathString(), "-o", output.absolutePathString(), "-Wl,-e_main").start()
+            ProcessBuilder("gcc", input.absolutePathString(), "-g", "-o", output.absolutePathString(), "-Wl,-e_main").start()
         if (assembler.waitFor() != 0) {
             throw Exception("gcc assembly failed: ${assembler.errorStream.readAllBytes().decodeToString()}")
         }
@@ -149,8 +149,8 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             }
 
             override fun visit(node: DivNode) {
-                val left = Argument.NodeValue(node)
-                val right = Argument.NodeValue(node)
+                val left = Argument.NodeValue(node.left)
+                val right = Argument.NodeValue(node.right)
 
                 val rightRegMem = Argument.RegMem.RegMemFor(right)
 
@@ -215,8 +215,8 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             }
 
             override fun visit(node: ModNode) {
-                val left = Argument.NodeValue(node)
-                val right = Argument.NodeValue(node)
+                val left = Argument.NodeValue(node.left)
+                val right = Argument.NodeValue(node.right)
 
                 val rightRegMem = Argument.RegMem.RegMemFor(right)
 
@@ -230,16 +230,6 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
 
             override fun visit(node: MulNode) {
                 visitNormalBinop(node, ::Imul)
-            }
-
-            override fun visit(node: NotNode) {
-                val value = Argument.NodeValue(node.value)
-
-                val target = Argument.NodeValue(node)
-                val targetReg = Argument.RegMem.Register.RegisterFor(target)
-                instructionList.add(Mov(targetReg, value))
-                instructionList.add(Not(targetReg))
-                instructionList.add(Mov(target, targetReg))
             }
 
             override fun visit(node: Phi) {

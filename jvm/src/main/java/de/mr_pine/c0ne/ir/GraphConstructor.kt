@@ -99,7 +99,9 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
 
     fun newLogicalOr(left: Node, right: Node): Node = optimizer.transform(LogicalOrNode(currentBlock, left, right))
 
-    fun newLogicalNot(value: Node): Node = optimizer.transform(NotNode(currentBlock, value))
+    fun newLogicalNot(value: Node): Node {
+        return newXor(value, newConstInt(1))
+    }
 
     fun newConstInt(value: Int): Node {
         // always move const into start block, this allows better deduplication
