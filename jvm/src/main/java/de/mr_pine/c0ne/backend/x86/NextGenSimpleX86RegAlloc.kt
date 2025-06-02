@@ -9,6 +9,7 @@ class NextGenSimpleX86RegAlloc(abstractInstructions: List<Instruction>) {
     private var allocatable = (X86Register.RealRegister.entries - listOf(
         X86Register.RealRegister.RAX,
         X86Register.RealRegister.RDX,
+        X86Register.RealRegister.RCX,
         X86Register.RealRegister.RBP,
         X86Register.RealRegister.RSP,
         X86Register.RealRegister.R15

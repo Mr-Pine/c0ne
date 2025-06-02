@@ -97,6 +97,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                 instructionList.add(Mov(targetReg, value))
                 val insn = run {
                     val shiftReg = Argument.RegMem.Register.EcxOf(shift)
+                    instructionList.add(Mov(shiftReg, shift))
                     if (isLeftShift) {
                         Sal(targetReg, shiftReg)
                     } else {
