@@ -21,7 +21,11 @@ import java.util.*
  * reordered.
  *
  * We recommend reading the paper to better understand the mechanics implemented here. */
-class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer, private val finishPassOptimizer: FinishPassOptimizer) {
+class SsaTranslation(
+    private val function: FunctionTree,
+    optimizer: Optimizer,
+    private val finishPassOptimizer: FinishPassOptimizer
+) {
     private val constructor: GraphConstructor = GraphConstructor(optimizer, function.name.name.asString())
 
     fun translate(): IrGraph {
@@ -101,6 +105,12 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer, p
         }
 
         override fun visit(binaryOperationTree: BinaryOperationTree, data: SsaTranslation): Node? {
+            if (binaryOperationTree.operatorType == Operator.OperatorType.LOGICAL_AND) {
+                return shortCircuitLogicalAnd(data, binaryOperationTree)
+            } else if (binaryOperationTree.operatorType == Operator.OperatorType.LOGICAL_OR) {
+                return shortCircuitLogicalOr(data, binaryOperationTree)
+            }
+
             pushSpan(binaryOperationTree)
             val lhs = binaryOperationTree.lhs.accept(this, data)!!
             val rhs = binaryOperationTree.rhs.accept(this, data)!!
@@ -132,9 +142,6 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer, p
 
                 Operator.OperatorType.EQUALS -> data.constructor.newEquals(lhs, rhs)
                 Operator.OperatorType.NOT_EQUALS -> data.constructor.newNotEquals(lhs, rhs)
-
-                Operator.OperatorType.LOGICAL_AND -> data.constructor.newLogicalAnd(lhs, rhs)
-                Operator.OperatorType.LOGICAL_OR -> data.constructor.newLogicalOr(lhs, rhs)
 
                 else -> throw java.lang.IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType)
             }
@@ -418,6 +425,46 @@ class SsaTranslation(private val function: FunctionTree, optimizer: Optimizer, p
         override fun visit(typeTree: TypeTree, data: SsaTranslation): Node? {
             throw UnsupportedOperationException()
         }
+
+        private enum class ShortCircuitType {
+            LOGICAL_AND, LOGICAL_OR
+        }
+
+        fun shortCircuiting(data: SsaTranslation, tree: BinaryOperationTree, type: ShortCircuitType): Node {
+            pushSpan(tree)
+
+            val lhs = tree.lhs.accept(this, data)!!
+
+            val continueCalculationBlock = data.constructor.newBlock("short-circuit-${type.name.lowercase()}-continue")
+            val followBlock = data.constructor.newBlock("short-circuit-${type.name.lowercase()}-follow")
+
+            val (trueProj, falseProj) = projectedIfNode(data, lhs)
+            continueCalculationBlock.addPredecessor(if (type == ShortCircuitType.LOGICAL_AND) trueProj else falseProj)
+            data.constructor.sealBlock(continueCalculationBlock)
+            followBlock.addPredecessor(if (type == ShortCircuitType.LOGICAL_AND) falseProj else trueProj)
+
+            data.constructor.currentBlock = continueCalculationBlock
+            val rhs = tree.rhs.accept(this, data)!!
+            val continueExit = data.constructor.newJump()
+
+            followBlock.addPredecessor(continueExit)
+            data.constructor.currentBlock = followBlock
+
+            val phi = data.constructor.newPhi(data.constructor.currentBlock)
+            phi.appendOperand(lhs)
+            phi.appendOperand(rhs)
+
+            val res = data.constructor.tryRemoveTrivialPhi(phi)
+
+            popSpan()
+            return res
+        }
+
+        fun shortCircuitLogicalAnd(data: SsaTranslation, tree: BinaryOperationTree) =
+            shortCircuiting(data, tree, ShortCircuitType.LOGICAL_AND)
+
+        fun shortCircuitLogicalOr(data: SsaTranslation, tree: BinaryOperationTree) =
+            shortCircuiting(data, tree, ShortCircuitType.LOGICAL_OR)
 
         fun projResultDivMod(data: SsaTranslation, divMod: Node): Node {
             // make sure we actually have a div or a mod, as optimizations could
