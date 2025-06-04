@@ -448,6 +448,7 @@ class SsaTranslation(
             val continueExit = data.constructor.newJump()
 
             followBlock.addPredecessor(continueExit)
+            data.constructor.sealBlock(followBlock)
             data.constructor.currentBlock = followBlock
 
             val phi = data.constructor.newPhi(data.constructor.currentBlock)

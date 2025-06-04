@@ -236,7 +236,10 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             return
         }
         for ((variable, phi) in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
-            addPhiOperands(variable, phi)
+            val replacement = addPhiOperands(variable, phi)
+            if (this.currentDef[variable]!![block] == phi) {
+                this.currentDef[variable]!![block] = replacement
+            }
         }
         incompletePhis.remove(block)
         this.incompleteSideEffectPhis[block]?.let { phi ->

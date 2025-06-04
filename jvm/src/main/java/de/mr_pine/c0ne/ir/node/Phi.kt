@@ -1,12 +1,15 @@
 package de.mr_pine.c0ne.ir.node
 
 import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
+import de.mr_pine.c0ne.ir.util.NodeSupport
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 
 class Phi(block: Block) : Node(block) {
     fun appendOperand(node: Node) {
         addPredecessor(node)
     }
+
+    operator fun get(index: Int) = NodeSupport.predecessorSkipProj(this, index)
 
     val isSideEffectPhi
         get() = checkSideeffect(mutableSetOf())

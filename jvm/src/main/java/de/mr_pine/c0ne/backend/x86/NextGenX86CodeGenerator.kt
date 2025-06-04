@@ -235,7 +235,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
 
             override fun visit(node: Phi) {
                 val predecessorIndex = node.block.predecessors().indexOfFirst { it.block == currentBlock }
-                val predecessor = node.predecessors()[predecessorIndex]
+                val predecessor = node[predecessorIndex]
 
                 val value = Argument.NodeValue(predecessor)
 
