@@ -46,6 +46,9 @@ sealed class BinaryOperationNode : Node {
             if (a.javaClass != bObj.javaClass) {
                 return false
             }
+            if (a.block != bObj.block) {
+                return false
+            }
             if (a.predecessor(LEFT) === bObj.predecessor(LEFT) && a.predecessor(RIGHT) === bObj.predecessor(RIGHT)) {
                 return true
             }
