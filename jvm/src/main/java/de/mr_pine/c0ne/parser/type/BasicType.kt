@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.parser.type
 
-interface BasicType: Type {
+sealed interface BasicType: Type {
     object Integer: Type {
         override fun asString() = "int"
         override fun toString() = asString()

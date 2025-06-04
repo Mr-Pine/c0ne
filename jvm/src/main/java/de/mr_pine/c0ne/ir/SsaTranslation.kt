@@ -11,6 +11,7 @@ import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralBoolTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
 import de.mr_pine.c0ne.parser.symbol.Name
+import de.mr_pine.c0ne.parser.type.BasicType
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.util.*
 
@@ -140,8 +141,20 @@ class SsaTranslation(
                 Operator.OperatorType.GREATER_THAN -> data.constructor.newGreaterThan(lhs, rhs)
                 Operator.OperatorType.GREATER_THAN_OR_EQUAL -> data.constructor.newGreaterThanOrEqual(lhs, rhs)
 
-                Operator.OperatorType.EQUALS -> data.constructor.newEquals(lhs, rhs)
-                Operator.OperatorType.NOT_EQUALS -> data.constructor.newNotEquals(lhs, rhs)
+                Operator.OperatorType.EQUALS -> {
+                    val size = when (binaryOperationTree.lhs.type) {
+                        BasicType.Boolean -> 1
+                        BasicType.Integer -> 4
+                    }
+                    data.constructor.newEquals(lhs, rhs, size)
+                }
+                Operator.OperatorType.NOT_EQUALS -> {
+                    val size = when (binaryOperationTree.lhs.type) {
+                        BasicType.Boolean -> 1
+                        BasicType.Integer -> 4
+                    }
+                    data.constructor.newNotEquals(lhs, rhs, size)
+                }
 
                 else -> throw java.lang.IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType)
             }

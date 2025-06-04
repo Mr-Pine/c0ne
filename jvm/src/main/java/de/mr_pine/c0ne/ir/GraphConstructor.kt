@@ -89,11 +89,11 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return newLogicalNot(newLessThan(left, right))
     }
 
-    fun newEquals(left: Node, right: Node): Node = optimizer.transform(
-        EqualsNode(currentBlock, left, right)
+    fun newEquals(left: Node, right: Node, size: Int): Node = optimizer.transform(
+        EqualsNode(currentBlock, left, right, size)
     )
 
-    fun newNotEquals(left: Node, right: Node): Node = newLogicalNot(newEquals(left, right))
+    fun newNotEquals(left: Node, right: Node, size: Int): Node = newLogicalNot(newEquals(left, right, size))
 
     fun newLogicalNot(value: Node): Node {
         return newXor(value, newConstInt(1))

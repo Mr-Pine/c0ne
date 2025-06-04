@@ -166,6 +166,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             private fun visitComparisonNode(
                 node: BinaryOperationNode,
                 setConstructor: (Argument.RegMem) -> SetInsn,
+                size: Int = 4,
             ) {
                 val left = Argument.NodeValue(node.left)
                 val right = Argument.NodeValue(node.right)
@@ -175,12 +176,12 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
 
                 val target = Argument.NodeValue(node)
 
-                instructionList.add(Cmp(leftReg, right))
+                instructionList.add(Cmp(leftReg, right, size))
                 instructionList.add(setConstructor(target))
             }
 
             override fun visit(node: EqualsNode) {
-                visitComparisonNode(node, ::Sete)
+                visitComparisonNode(node, ::Sete, node.size)
             }
 
             override fun visit(node: IfNode) {
