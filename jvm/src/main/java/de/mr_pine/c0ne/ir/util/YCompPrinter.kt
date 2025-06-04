@@ -133,17 +133,17 @@ class YCompPrinter(
     private fun formatControlflowEdges(block: Block): String? {
         val result = StringJoiner("\n")
         val parents = block.predecessors()
-        for (parent in parents) {
+        for ((i, parent) in parents.withIndex()) {
             if (parent is ReturnNode) {
                 // Return needs no label
-                result.add(formatControlflowEdge(parent, block, ""))
+                result.add(formatControlflowEdge(parent, block, "$i"))
             } else if (parent is ProjNode && parent.projectionInfo() in listOf(
                     SimpleProjectionInfo.IF_TRUE,
                     SimpleProjectionInfo.IF_FALSE
                 )
                 || parent is JumpNode || parent is IfNode
             ) {
-                result.add(formatControlflowEdge(parent, block, ""))
+                result.add(formatControlflowEdge(parent, block, "$i"))
             } else {
                 throw RuntimeException("Unknown parent type: $parent")
             }
