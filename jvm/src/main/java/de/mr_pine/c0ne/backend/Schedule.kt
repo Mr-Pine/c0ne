@@ -42,7 +42,7 @@ class Schedule(private val irGraph: IrGraph) {
                 assert(phiPredecessors.size == blockPredecessors.size) { "Phi predecessors and block predecessors don't match" }
                 if (!node.isSideEffectPhi) {
                     for (predBlock in blockPredecessors.map { it.block }.toSet()) {
-                        relevantNodes.getOrPut(predBlock) { mutableListOf() }.add(node)
+                        relevantNodes[predBlock]!!.addFirst(node)
                     }
                 }
             } else {
@@ -62,12 +62,26 @@ class Schedule(private val irGraph: IrGraph) {
     }
 
     class BlockSchedule(private val block: Block, private val nodes: MutableList<Node>) {
-        val nodeOrder = Dfs().apply {
+        val nodeOrder = sortNodes(Dfs().apply {
             while (nodes.isNotEmpty()) {
                 dfs(nodes.first())
             }
-        }.finishNumbers.mapValues { if (it.key is ExitNode) Int.MAX_VALUE else if (it.key is StartNode) Int.MIN_VALUE else it.value }.entries.sortedBy { it.value }
-            .map { it.key }
+        })
+
+        private fun sortNodes(dfs: Dfs): List<Node> {
+            val finishNumbers = dfs.finishNumbers
+            val maxFinishNumber = dfs.nextFinishNumber - 1
+            val mappedFinishNumbers = finishNumbers.mapValues {
+                when (it.key) {
+                    is ExitNode -> Int.MAX_VALUE
+                    is StartNode -> Int.MIN_VALUE
+                    is Phi -> it.value + maxFinishNumber
+                    else -> it.value
+                }
+            }
+            return mappedFinishNumbers.entries.sortedBy { it.value }
+                .map { it.key }
+        }
 
         inner class Dfs {
             var nextFinishNumber = 0
