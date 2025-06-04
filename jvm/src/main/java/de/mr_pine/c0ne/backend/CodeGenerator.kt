@@ -55,8 +55,6 @@ interface CodeGenerator<R : Register, A : RegisterAllocator.RegisterAllocation<R
                 is LessThanEqNode -> TODO()
                 is LessThanNode -> TODO()
                 is BitwiseNotNode -> TODO()
-                is LogicalAndNode -> TODO()
-                is LogicalOrNode -> TODO()
                 is Block -> processNode(node)
                 is ConstIntNode -> processNode(node)
                 is ConstBoolNode -> TODO()

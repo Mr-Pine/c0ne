@@ -15,8 +15,6 @@ import de.mr_pine.c0ne.ir.node.IfNode
 import de.mr_pine.c0ne.ir.node.JumpNode
 import de.mr_pine.c0ne.ir.node.LessThanEqNode
 import de.mr_pine.c0ne.ir.node.LessThanNode
-import de.mr_pine.c0ne.ir.node.LogicalAndNode
-import de.mr_pine.c0ne.ir.node.LogicalOrNode
 import de.mr_pine.c0ne.ir.node.ModNode
 import de.mr_pine.c0ne.ir.node.MulNode
 import de.mr_pine.c0ne.ir.node.Phi
@@ -43,8 +41,6 @@ interface SSAVisitor<R> {
     fun visit(node: JumpNode): R
     fun visit(node: LessThanEqNode): R
     fun visit(node: LessThanNode): R
-    fun visit(node: LogicalAndNode): R
-    fun visit(node: LogicalOrNode): R
     fun visit(node: ModNode): R
     fun visit(node: MulNode): R
     fun visit(node: Phi): R

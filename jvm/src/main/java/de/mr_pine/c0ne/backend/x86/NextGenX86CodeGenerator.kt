@@ -207,14 +207,6 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                 visitComparisonNode(node, ::Setl)
             }
 
-            override fun visit(node: LogicalAndNode) {
-                visitNormalBinop(node, ::And)
-            }
-
-            override fun visit(node: LogicalOrNode) {
-                visitNormalBinop(node, ::Or)
-            }
-
             override fun visit(node: ModNode) {
                 val left = Argument.NodeValue(node.left)
                 val right = Argument.NodeValue(node.right)
