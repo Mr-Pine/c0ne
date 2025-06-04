@@ -195,6 +195,9 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             for (succ in graph.successors(phi)) {
                 for ((idx, _) in succ.predecessors().withIndex().filter { it.value == phi }) {
                     succ.setPredecessor(idx, replacement)
+                    if (succ is Phi && succ.block in sealedBlocks) {
+                        tryRemoveTrivialPhi(succ)
+                    }
                 }
             }
             return replacement
