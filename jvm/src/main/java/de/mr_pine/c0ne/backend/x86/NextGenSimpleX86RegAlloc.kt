@@ -27,7 +27,9 @@ class NextGenSimpleX86RegAlloc(abstractInstructions: List<Instruction>) {
     }
 
     fun concretize(argument: Argument.RegMem.Register.RegisterFor): Argument.RegMem.Register.RealRegister {
-        return Argument.RegMem.Register.RealRegister(X86Register.RealRegister.R15)
+        val concreteArg = argument.arg.concretize()
+        return concreteArg as? Argument.RegMem.Register.RealRegister
+            ?: Argument.RegMem.Register.RealRegister(X86Register.RealRegister.R15)
     }
 
     fun concretize(argument: Argument.RegMem.RegMemFor): Argument {
