@@ -75,7 +75,7 @@ class Schedule(private val irGraph: IrGraph) {
                 when (it.key) {
                     is ExitNode -> Int.MAX_VALUE
                     is StartNode -> Int.MIN_VALUE
-                    is Phi -> -it.value + 2 * maxFinishNumber
+                    is Phi -> it.value + maxFinishNumber
                     else -> it.value
                 }
             }
