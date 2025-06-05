@@ -42,7 +42,9 @@ class Schedule(private val irGraph: IrGraph) {
                 assert(phiPredecessors.size == blockPredecessors.size) { "Phi predecessors and block predecessors don't match" }
                 if (!node.isSideEffectPhi) {
                     for (predBlock in blockPredecessors.map { it.block }.toSet()) {
-                        relevantNodes[predBlock]!!.add(node)
+                        val nodes = relevantNodes[predBlock]!!
+                        val predecessorPhiIndex = nodes.indexOfFirst { it is Phi && it in node.predecessors() }.takeIf { it != -1 } ?: nodes.size
+                        nodes.add(predecessorPhiIndex, node)
                     }
                 }
             } else {
