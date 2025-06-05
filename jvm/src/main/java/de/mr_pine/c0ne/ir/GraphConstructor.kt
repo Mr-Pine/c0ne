@@ -82,11 +82,11 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     }
 
     fun newGreaterThan(left: Node, right: Node): Node {
-        return newLogicalNot(newLessThanOrEqual(left, right))
+        return newLessThan(right, left)
     }
 
     fun newGreaterThanOrEqual(left: Node, right: Node): Node {
-        return newLogicalNot(newLessThan(left, right))
+        return newLessThanOrEqual(right, left)
     }
 
     fun newEquals(left: Node, right: Node, size: Int): Node = optimizer.transform(
