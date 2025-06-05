@@ -18,11 +18,11 @@ sealed class BinaryOperationNode : Node {
         }
         return other.javaClass == this.javaClass && this.predecessor(LEFT) === other.predecessor(LEFT) && this.predecessor(
             RIGHT
-        ) === other.predecessor(RIGHT)
+        ) === other.predecessor(RIGHT) && this.block == other.block
     }
 
     override fun hashCode(): Int {
-        return (predecessorHash(this, LEFT) * 31 + predecessorHash(this, RIGHT)) xor this.javaClass.hashCode()
+        return block.hashCode() + 31 * ((predecessorHash(this, LEFT) * 31 + predecessorHash(this, RIGHT)) xor this.javaClass.hashCode())
     }
 
     companion object {
