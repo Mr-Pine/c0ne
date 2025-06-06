@@ -14,7 +14,7 @@
           <option value="--args=&quot;/tmp/program.c0 /tmp/output&quot;" />
         </list>
       </option>
-      <option name="vmOptions" />
+      <option name="vmOptions" value="-ea" />
     </ExternalSystemSettings>
     <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
     <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
