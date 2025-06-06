@@ -145,7 +145,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         status = forTree.loopBody.accept(this, status)
         status = status.exitScopeWithoutDefs()
         status = forTree.step?.accept(this, status) ?: status
-        return status.exitScope().exitScope()
+        return status.exitScopeWithoutDefs().exitScope()
     }
 
     override fun visit(
