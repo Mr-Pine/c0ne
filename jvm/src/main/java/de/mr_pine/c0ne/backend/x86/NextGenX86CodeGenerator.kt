@@ -13,11 +13,10 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
     val schedules = irGraphs.map(::Schedule)
     val abstractInstructions =
         irGraphs.zip(schedules).map { (irGraph, schedule) -> AbstractCodegen(irGraph, schedule).abstractInstructions }
-    val regAllocs = abstractInstructions.zip(schedules.zip(irGraphs)).map { (abstractInstructions, graphAndSchedule) ->
+    val regAllocs = schedules.zip(irGraphs).map { (schedule, irGraph) ->
         NextGenSimpleX86RegAlloc(
-            abstractInstructions,
-            graphAndSchedule.second.startBlock,
-            graphAndSchedule.first
+            irGraph.startBlock,
+            schedule
         )
     }
     val concreteInstructions =
@@ -154,13 +153,9 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             }
 
             override fun visit(node: ConstBoolNode) {
-                val target = Argument.NodeValue(node)
-                instructionList.add(Mov(target, Argument.Immediate(if (node.value) 1 else 0)))
             }
 
             override fun visit(node: ConstIntNode) {
-                val target = Argument.NodeValue(node)
-                instructionList.add(Mov(target, Argument.Immediate(node.value)))
             }
 
             override fun visit(node: DivNode) {

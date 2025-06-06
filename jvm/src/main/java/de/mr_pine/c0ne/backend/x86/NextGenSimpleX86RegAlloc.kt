@@ -4,14 +4,13 @@ import de.mr_pine.c0ne.backend.AllocationInterferenceGraph
 import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.backend.needsRegister
 import de.mr_pine.c0ne.backend.x86.instructions.Argument
-import de.mr_pine.c0ne.backend.x86.instructions.Instruction
 import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.ConstBoolNode
+import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.Node
 import kotlin.collections.set
 
-class NextGenSimpleX86RegAlloc(abstractInstructions: List<Instruction>, private val startBlock: Block, private val schedule: Schedule) {
-    private val toAllocate =
-        abstractInstructions.flatMap { it.sources.toList() }.mapNotNull(Argument::nodeValue).toSet()
+class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedule: Schedule) {
     private var allocatable = (X86Register.RealRegister.entries - listOf(
         X86Register.RealRegister.RAX,
         X86Register.RealRegister.RDX,
@@ -45,8 +44,12 @@ class NextGenSimpleX86RegAlloc(abstractInstructions: List<Instruction>, private 
     val overflowCount
         get() = allocation.values.mapNotNull { it as? Argument.RegMem.StackOverflowSlot }.maxOfOrNull { it.index }?.let { it + 1 } ?: 0
 
-    fun concretize(argument: Argument.NodeValue): Argument.RegMem {
-        return allocation[argument.nodeValue.node] ?: error("No register allocated for $argument")
+    fun concretize(argument: Argument.NodeValue): Argument {
+        return when (argument.node) {
+            is ConstIntNode -> Argument.Immediate(argument.node.value)
+            is ConstBoolNode -> Argument.Immediate(if (argument.node.value) 1 else 0)
+            else -> allocation[argument.nodeValue.node] ?: error("No register allocated for $argument")
+        }
     }
 
     fun concretize(argument: Argument.RegMem.Register.RegisterFor): Argument.RegMem.Register.RealRegister {
