@@ -8,6 +8,7 @@ import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.ExitNode
+import de.mr_pine.c0ne.ir.node.IfNode
 import de.mr_pine.c0ne.ir.node.Node
 import de.mr_pine.c0ne.ir.node.Phi
 import de.mr_pine.c0ne.ir.node.ProjNode
@@ -56,9 +57,10 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
             is UnaryOperationNode -> setOf(node.value)
             is Phi -> {
                 val predecessorIndex = node.block.predecessors().indexOfFirst { it.block == nodeInBlock.block }
-                setOf(node.predecessor(predecessorIndex))
+                setOf(node[predecessorIndex])
             }
             is ReturnNode -> setOf(node.result)
+            is IfNode -> setOf(node.condition)
             is ExitNode, is ProjNode, is ConstIntNode, is ConstBoolNode, is Block, is StartNode, is UndefNode -> setOf()
         }
     }
