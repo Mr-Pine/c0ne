@@ -59,7 +59,9 @@ class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedu
     }
 
     fun concretize(argument: Argument.RegMem.RegMemFor): Argument {
-        return argument.arg.concretize()
+        val concreteArg = argument.arg.concretize()
+        return concreteArg as? Argument.RegMem
+            ?: Argument.RegMem.Register.RealRegister(X86Register.RealRegister.R15)
     }
 
     fun concretize(argument: Argument.RegMem.StackOverflowSlot) = argument
