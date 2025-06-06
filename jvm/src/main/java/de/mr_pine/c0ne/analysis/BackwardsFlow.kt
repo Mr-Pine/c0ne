@@ -15,6 +15,8 @@ abstract class BackwardsFlow<InValue, OutValue>(protected val schedule: Schedule
 
     data class BackwardsFlowResult<InValue, OutValue>(val inValue: InValue, val outValue: OutValue)
 
+    private val queue = mutableListOf<NodeInBlock>()
+
     val result: Map<NodeInBlock, BackwardsFlowResult<InValue, OutValue>>
         get() = buildMap {
             for (key in outValues.keys) {
@@ -26,7 +28,10 @@ abstract class BackwardsFlow<InValue, OutValue>(protected val schedule: Schedule
         for ((block, node) in schedule.blockSchedules.mapNotNull { (key, value) ->
             value.nodeOrder.firstNotNullOfOrNull { it as? ReturnNode }?.let { key to it }
         }) {
-            analyzeNode(NodeInBlock(node, block))
+            queue.add(NodeInBlock(node, block))
+        }
+        while (queue.isNotEmpty()) {
+            analyzeNode(queue.removeFirst())
         }
     }
 
@@ -38,7 +43,7 @@ abstract class BackwardsFlow<InValue, OutValue>(protected val schedule: Schedule
         inValues[nodeInBlock] = computeInValue(nodeInBlock, outValue)
         computedInputs[nodeInBlock] = inputs
         for (predecessor in predecessors(nodeInBlock)) {
-            analyzeNode(predecessor)
+            queue.add(predecessor)
         }
     }
 
