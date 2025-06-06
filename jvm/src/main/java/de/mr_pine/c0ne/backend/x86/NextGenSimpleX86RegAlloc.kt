@@ -43,7 +43,7 @@ class NextGenSimpleX86RegAlloc(abstractInstructions: List<Instruction>, private 
     }
 
     val overflowCount
-        get() = allocation.values.mapNotNull { it as? Argument.RegMem.StackOverflowSlot }.maxOfOrNull { it.index } ?: 0
+        get() = allocation.values.mapNotNull { it as? Argument.RegMem.StackOverflowSlot }.maxOfOrNull { it.index }?.let { it + 1 } ?: 0
 
     fun concretize(argument: Argument.NodeValue): Argument.RegMem {
         return allocation[argument.nodeValue.node] ?: error("No register allocated for $argument")
