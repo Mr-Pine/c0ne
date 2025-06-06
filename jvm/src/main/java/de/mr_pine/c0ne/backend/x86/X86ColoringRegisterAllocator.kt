@@ -31,14 +31,15 @@ class X86ColoringRegisterAllocator :
     }
 
     override fun allocateRegisters(graph: IrGraph): X86ColoringRegisterAllocation {
-        val interferenceGraph = AllocationInterferenceGraph(graph)
+        TODO()
+        /*val interferenceGraph = AllocationInterferenceGraph(graph)
         val simplicialOrdering = interferenceGraph.buildSimplicialOrdering()
         allocateFromSimplicialOrdering(simplicialOrdering, interferenceGraph)
         val usedOverflowSlots = registerMap.values.mapNotNull { it as? X86Register.OverflowSlot }.maxOfOrNull(
             X86Register.OverflowSlot::index
         ) ?: 0
         println("Used overflow slots: $usedOverflowSlots")
-        return X86ColoringRegisterAllocation(registerMap, usedOverflowSlots)
+        return X86ColoringRegisterAllocation(registerMap, usedOverflowSlots)*/
     }
 
 

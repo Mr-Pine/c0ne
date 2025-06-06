@@ -1,19 +1,20 @@
 package de.mr_pine.c0ne.backend
 
-import de.mr_pine.c0ne.ir.IrGraph
+import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.Node
 
-class AllocationInterferenceGraph(graph: IrGraph) {
+class AllocationInterferenceGraph(schedule: Schedule, startBlock: Block) {
     private val interferenceGraph = mutableMapOf<Node, MutableSet<Node>>()
 
     init {
-        val livenessAnalysis = LivenessAnalysis()
-        livenessAnalysis.analyze(graph)
+        val livenessAnalysis = LivenessAnalysis(startBlock, schedule)
+        livenessAnalysis.analyze()
         val livenessMap = livenessAnalysis.result
 
-        for ((node, live) in livenessMap.filter { (key, _) -> key.needsRegister }) {
+        for ((nodeInBlock, live) in livenessMap.filter { (key, _) -> key.node.needsRegister }) {
+            val node = nodeInBlock.node
             val nodeInterferences = interferenceGraph.getOrPut(node) { mutableSetOf() }
-            val liveNodes = live.outValue.filter(Node::needsRegister)
+            val liveNodes = live.inValue.filter(Node::needsRegister)
             for (liveNode in liveNodes) {
                 if (liveNode != node) nodeInterferences.add(liveNode)
                 interferenceGraph.getOrPut(liveNode) { mutableSetOf() }.apply {

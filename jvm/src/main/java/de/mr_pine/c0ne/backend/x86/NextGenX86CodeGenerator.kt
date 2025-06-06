@@ -10,9 +10,16 @@ import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
 class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
+    val schedules = irGraphs.map(::Schedule)
     val abstractInstructions =
-        irGraphs.map { irGraph -> AbstractCodegen(irGraph, Schedule(irGraph)).abstractInstructions }
-    val regAllocs = abstractInstructions.map { abstractInstructions -> NextGenSimpleX86RegAlloc(abstractInstructions) }
+        irGraphs.zip(schedules).map { (irGraph, schedule) -> AbstractCodegen(irGraph, schedule).abstractInstructions }
+    val regAllocs = abstractInstructions.zip(schedules.zip(irGraphs)).map { (abstractInstructions, graphAndSchedule) ->
+        NextGenSimpleX86RegAlloc(
+            abstractInstructions,
+            graphAndSchedule.second.startBlock,
+            graphAndSchedule.first
+        )
+    }
     val concreteInstructions =
         abstractInstructions.zip(regAllocs) { abstractInstructions, regAlloc -> with(regAlloc) { abstractInstructions.map { it.concretize() } } }
 
@@ -38,7 +45,14 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         val input = tmpdir.resolve("input.s").apply { writeText(generation + "\n") }
         val output = tmpdir.resolve("c0ne_out")
         val assembler =
-            ProcessBuilder("gcc", input.absolutePathString(), "-g", "-o", output.absolutePathString(), "-Wl,-e_main").start()
+            ProcessBuilder(
+                "gcc",
+                input.absolutePathString(),
+                "-g",
+                "-o",
+                output.absolutePathString(),
+                "-Wl,-e_main"
+            ).start()
         if (assembler.waitFor() != 0) {
             throw Exception("gcc assembly failed: ${assembler.errorStream.readAllBytes().decodeToString()}")
         }

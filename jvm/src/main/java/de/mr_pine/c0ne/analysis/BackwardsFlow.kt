@@ -1,42 +1,49 @@
 package de.mr_pine.c0ne.analysis
 
+import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.ir.IrGraph
+import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.ReturnNode
 
-abstract class BackwardsFlow<InValue, OutValue> {
-    private val computedInputs = mutableMapOf<Node, List<InValue?>>()
-    private val outValues = mutableMapOf<Node, OutValue>()
-    private val inValues = mutableMapOf<Node, InValue>()
+abstract class BackwardsFlow<InValue, OutValue>(protected val schedule: Schedule) {
+    private val computedInputs = mutableMapOf<NodeInBlock, List<InValue?>>()
+    private val outValues = mutableMapOf<NodeInBlock, OutValue>()
+    private val inValues = mutableMapOf<NodeInBlock, InValue>()
+
+    data class NodeInBlock(val node: Node, val block: Block)
 
     data class BackwardsFlowResult<InValue, OutValue>(val inValue: InValue, val outValue: OutValue)
-    val result: Map<Node, BackwardsFlowResult<InValue, OutValue>>
+
+    val result: Map<NodeInBlock, BackwardsFlowResult<InValue, OutValue>>
         get() = buildMap {
             for (key in outValues.keys) {
                 put(key, BackwardsFlowResult(inValues[key]!!, outValues[key]!!))
             }
         }
 
-    open fun analyze(graph: IrGraph) {
-        with(graph) {
-            analyzeNode(graph.endBlock)
+    open fun analyze() {
+        for ((block, node) in schedule.blockSchedules.mapNotNull { (key, value) ->
+            value.nodeOrder.firstNotNullOfOrNull { it as? ReturnNode }?.let { key to it }
+        }) {
+            analyzeNode(NodeInBlock(node, block))
         }
     }
 
-    context(graph: IrGraph)
-    private fun analyzeNode(node: Node) {
-        val inputs = successors(node).map { inValues[it] }
-        if (computedInputs[node] == inputs) return
-        val outValue = computeOutValue(node, inputs)
-        outValues[node] = outValue
-        inValues[node] = computeInValue(node, outValue)
-        computedInputs[node] = inputs
-        for (predecessor in predecessors(node)) {
+    private fun analyzeNode(nodeInBlock: NodeInBlock) {
+        val inputs = successors(nodeInBlock).map { inValues[it] }
+        if (computedInputs[nodeInBlock] == inputs) return
+        val outValue = computeOutValue(nodeInBlock, inputs)
+        outValues[nodeInBlock] = outValue
+        inValues[nodeInBlock] = computeInValue(nodeInBlock, outValue)
+        computedInputs[nodeInBlock] = inputs
+        for (predecessor in predecessors(nodeInBlock)) {
             analyzeNode(predecessor)
         }
     }
 
-    abstract fun predecessors(node: Node): List<Node>
-    abstract fun successors(node: Node): List<Node>
-    abstract fun computeOutValue(node: Node, inputs: List<InValue?>): OutValue
-    abstract fun computeInValue(node: Node, outValue: OutValue): InValue
+    abstract fun predecessors(nodeInBlock: NodeInBlock): List<NodeInBlock>
+    abstract fun successors(nodeInBlock: NodeInBlock): List<NodeInBlock>
+    abstract fun computeOutValue(nodeInBlock: NodeInBlock, inputs: List<InValue?>): OutValue
+    abstract fun computeInValue(nodeInBlock: NodeInBlock, outValue: OutValue): InValue
 }
