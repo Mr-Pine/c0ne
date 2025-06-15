@@ -143,7 +143,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         status = forTree.condition.accept(this, status)
         status = status.enterNewScope().enterNewScope()
         status = forTree.loopBody.accept(this, status)
-        status = status.exitScopeWithoutDefs()
+        status = status.exitScope()
         status = forTree.step?.accept(this, status) ?: status
         return status.exitScopeWithoutDefs().exitScope()
     }
