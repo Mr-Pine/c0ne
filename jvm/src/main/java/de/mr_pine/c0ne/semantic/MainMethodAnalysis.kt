@@ -1,19 +1,22 @@
 package de.mr_pine.c0ne.semantic
 
-import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree
-import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree
-import edu.kit.kastel.vads.compiler.parser.visitor.NoOpVisitor
-import edu.kit.kastel.vads.compiler.parser.visitor.Unit
-import edu.kit.kastel.vads.compiler.semantic.SemanticException
+import de.mr_pine.c0ne.parser.ast.FunctionTree
+import de.mr_pine.c0ne.parser.ast.ProgramTree
+import de.mr_pine.c0ne.parser.type.BasicType
+import de.mr_pine.c0ne.parser.visitor.NoOpVisitor
 
-class MainMethodAnalysis : NoOpVisitor<kotlin.Unit> {
+class MainMethodAnalysis : NoOpVisitor<Unit> {
     override fun visit(
         programTree: ProgramTree,
-        data: kotlin.Unit?
-    ): Unit? {
-        val functions: List<FunctionTree> = programTree.topLevelTrees()
-        if (functions.none { it.name.name.asString() == "main" }) {
+        data: Unit
+    ) {
+        val functions: List<FunctionTree> = programTree.topLevelTrees
+        val mainFunction = functions.find { it.name.name.asString() == "main" }
+        if (mainFunction == null) {
             throw SemanticException("No main method defined")
+        }
+        if (mainFunction.returnType.type != BasicType.Integer) {
+            throw SemanticException("main method must return integer")
         }
         return super.visit(programTree, data)
     }

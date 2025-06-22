@@ -63,7 +63,7 @@ You most likely just want to fully replace it with your register allocation and 
 There is a chance something won't work on the first try.
 To figure out the cause, we provide utilities that ease debugging.
 
-- `edu.kit.kastel.vads.compiler.parser.Printer` allows printing the AST.
+- `de.mr_pine.c0ne.parser.Printer` allows printing the AST.
   As it inserts many parentheses, it can be helpful when debugging precedence problems.
 - `edu.kit.kastel.vads.compiler.ir.util.GraphVizPrinter` can generate output in the DOT format.
   There are online tools (e.g., https://magjac.com/graphviz-visual-editor/) that can visualize that output.

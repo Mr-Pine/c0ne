@@ -1,11 +1,18 @@
 package de.mr_pine.c0ne.backend.aasm
 
 import de.mr_pine.c0ne.backend.CodeGenerator
-import de.mr_pine.c0ne.ir.left
-import de.mr_pine.c0ne.ir.result
-import de.mr_pine.c0ne.ir.right
-import edu.kit.kastel.vads.compiler.ir.node.*
-import edu.kit.kastel.vads.compiler.ir.util.NodeSupport
+import de.mr_pine.c0ne.ir.node.AddNode
+import de.mr_pine.c0ne.ir.node.BinaryOperationNode
+import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.ConstIntNode
+import de.mr_pine.c0ne.ir.node.DivNode
+import de.mr_pine.c0ne.ir.node.ModNode
+import de.mr_pine.c0ne.ir.node.MulNode
+import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.ProjNode
+import de.mr_pine.c0ne.ir.node.ReturnNode
+import de.mr_pine.c0ne.ir.node.StartNode
+import de.mr_pine.c0ne.ir.node.SubNode
 
 
 class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.AasmRegisterAllocation> {
@@ -78,7 +85,7 @@ class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.A
     override fun processNode(node: ConstIntNode) {
         builder.indent()
             .append(registers[node])
-            .append(" = const ${node.value()}")
+            .append(" = const ${node.value}")
             .appendLine()
     }
 
@@ -104,5 +111,5 @@ class AasmCodeGenerator : CodeGenerator<VirtualRegister, AasmRegisterAllocator.A
 
     context(registers: AasmRegisterAllocator.AasmRegisterAllocation)
     val Node.registerOrConstValue
-        get() = if (this is ConstIntNode) value() else registers[this]
+        get() = if (this is ConstIntNode) value else registers[this]
 }

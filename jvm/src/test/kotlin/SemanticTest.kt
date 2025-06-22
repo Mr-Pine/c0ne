@@ -1,4 +1,4 @@
-import edu.kit.kastel.vads.compiler.semantic.SemanticException
+import de.mr_pine.c0ne.semantic.SemanticException
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
 import kotlin.test.assertEquals

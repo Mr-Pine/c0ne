@@ -4,17 +4,21 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
+import de.mr_pine.c0ne.backend.Schedule
+import de.mr_pine.c0ne.backend.x86.NextGenX86CodeGenerator
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
-import de.mr_pine.c0ne.ir.optimize.ConstantFolding
+import de.mr_pine.c0ne.ir.SsaTranslation
+import de.mr_pine.c0ne.ir.optimize.ControlFlowPrune
+import de.mr_pine.c0ne.ir.optimize.LocalValueNumbering
 import de.mr_pine.c0ne.ir.optimize.MultiOptimizer
-import edu.kit.kastel.vads.compiler.ir.SsaTranslation
-import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering
-import edu.kit.kastel.vads.compiler.lexer.Lexer
-import edu.kit.kastel.vads.compiler.parser.ParseException
-import edu.kit.kastel.vads.compiler.parser.Parser
-import edu.kit.kastel.vads.compiler.parser.TokenSource
-import edu.kit.kastel.vads.compiler.semantic.SemanticAnalysis
-import edu.kit.kastel.vads.compiler.semantic.SemanticException
+import de.mr_pine.c0ne.ir.util.YCompPrinter
+import de.mr_pine.c0ne.lexer.Lexer
+import de.mr_pine.c0ne.parser.ParseException
+import de.mr_pine.c0ne.parser.Parser
+import de.mr_pine.c0ne.parser.TokenSource
+import de.mr_pine.c0ne.semantic.SemanticAnalysis
+import de.mr_pine.c0ne.semantic.SemanticException
+import java.io.File
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
 import kotlin.io.path.getPosixFilePermissions
@@ -37,12 +41,20 @@ class C0ne : CliktCommand() {
             exitProcess(ExitCodes.SEMANTIC_ERROR.code)
         }
         val graphs = program.topLevelTrees.map { function ->
-            val optimizer = MultiOptimizer(ConstantFolding(), LocalValueNumbering())
-            val translation = SsaTranslation(function, optimizer)
+            val optimizer = MultiOptimizer(/*ConstantFolding(), */LocalValueNumbering())
+            val finishPassOptimizer = ControlFlowPrune()
+            val translation = SsaTranslation(function, optimizer, finishPassOptimizer)
             translation.translate()
         }
 
-        val code = X86CodeGenerator().generateCode(graphs)
+        val firstGraph = graphs.first()
+        File("/tmp/graph.vcg").writeText(YCompPrinter.print(graphs[0]/*, Schedule(firstGraph)*/))
+
+        val nextGenX86CodeGenerator = NextGenX86CodeGenerator(graphs)
+
+
+        //val code = X86CodeGenerator().generateCode(graphs)
+        val code = nextGenX86CodeGenerator.generate()
         output.writeBytes(code)
         output.setPosixFilePermissions(
             setOf(
