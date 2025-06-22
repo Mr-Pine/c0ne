@@ -17,21 +17,12 @@ class Parser(private val tokenSource: TokenSource) {
             val function = parseFunction()
             topLevelElements.add(function)
         }
-        if (topLevelElements.size != 1) {
-            throw ParseException("L2 program should contain exactly one function")
-        }
         return topLevelElements
     }
 
     private fun parseFunction(): FunctionTree {
         val type = parseType()
         val identifier = this.tokenSource.expectIdentifier()
-        // Remove with more functions
-        if (identifier.asString() != "main") {
-            throw ParseException("Only main function allowed")
-        } else if (type.type != BasicType.Integer) {
-            throw ParseException("Main function must return integer")
-        }
         this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
         this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
         val body = parseBlock()
