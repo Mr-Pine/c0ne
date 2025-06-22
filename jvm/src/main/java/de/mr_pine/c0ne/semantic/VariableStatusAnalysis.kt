@@ -20,7 +20,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             throw NotImplementedError("Only assignments to variables are currently supported")
         }
         if (assignmentTree.operator.type.isSelfAssignOperator) {
-            data.checkUsage(assignmentTree.lValue.name, assignmentTree.span)
+            assignmentTree.lValue.references = data.checkUsage(assignmentTree.lValue.name, assignmentTree.span)
         }
         return status.addDefinition(Definition(assignmentTree.lValue.name.name), assignmentTree.span, assignmentTree)
     }
@@ -55,7 +55,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
-        functionTree: FunctionTree, data: VariableStatus
+        functionTree: DeclaredFunctionTree, data: VariableStatus
     ): VariableStatus {
         return functionTree.body.accept(this, data)
     }
@@ -63,7 +63,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     override fun visit(
         identExpressionTree: IdentExpressionTree, data: VariableStatus
     ): VariableStatus {
-        data.checkUsage(identExpressionTree.name, identExpressionTree.span)
+        identExpressionTree.references = data.checkUsage(identExpressionTree.name, identExpressionTree.span)
         return data
     }
 
@@ -173,6 +173,27 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         return data
     }
 
+    override fun visit(
+        callTree: CallTree,
+        data: VariableStatus
+    ): VariableStatus {
+        TODO("Not yet implemented")
+    }
+
+    override fun visit(
+        builtinFunction: FunctionTree.BuiltinFunction,
+        data: VariableStatus
+    ): VariableStatus {
+        TODO("Not yet implemented")
+    }
+
+    override fun <V : Tree> visit(
+        parenthesizedListTree: ParenthesizedListTree<V>,
+        data: VariableStatus
+    ): VariableStatus {
+        TODO("Not yet implemented")
+    }
+
     data class Declaration(val name: Name, val declaration: DeclarationTree)
     data class Definition(val name: Name)
 
@@ -222,7 +243,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             if (existingDeclaration == null) {
                 throw SemanticException("Variable ${definition.name.asString()} defined but not declared at $span")
             }
-            (assignmentTree?.lValue as? LValueIdentTree)?.apply { name.references = existingDeclaration.declaration }
+            (assignmentTree?.lValue as? LValueIdentTree)?.let { it.references = existingDeclaration.declaration }
             return VariableStatus(
                 scopes.dropLast(1) + ScopeStatus(
                     scopes.last().declarations, scopes.last().definitions + definition
@@ -230,15 +251,15 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             )
         }
 
-        fun checkUsage(name: NameTree, span: Span) {
+        fun checkUsage(name: NameTree, span: Span): DeclarationTree {
             val declaration = declarationFor(name.name)
             if (declaration == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not defined at $span")
             }
-            name.references = declaration.declaration
             if (definitionFor(name.name) == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not declared at $span")
             }
+            return declaration.declaration
         }
 
         fun defineAllUndefined(): VariableStatus {

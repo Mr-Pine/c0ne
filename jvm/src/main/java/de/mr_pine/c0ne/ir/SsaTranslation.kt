@@ -23,7 +23,7 @@ import java.util.*
  *
  * We recommend reading the paper to better understand the mechanics implemented here. */
 class SsaTranslation(
-    private val function: FunctionTree,
+    private val function: DeclaredFunctionTree,
     optimizer: Optimizer,
     private val finishPassOptimizer: FinishPassOptimizer
 ) {
@@ -188,7 +188,7 @@ class SsaTranslation(
             return NOT_AN_EXPRESSION
         }
 
-        override fun visit(functionTree: FunctionTree, data: SsaTranslation): Node? {
+        override fun visit(functionTree: DeclaredFunctionTree, data: SsaTranslation): Node? {
             pushSpan(functionTree)
             val start = data.constructor.newStart()
             data.constructor.writeCurrentSideEffect(data.constructor.newSideEffectProj(start))
@@ -437,6 +437,18 @@ class SsaTranslation(
 
         override fun visit(typeTree: TypeTree, data: SsaTranslation): Node? {
             throw UnsupportedOperationException()
+        }
+
+        override fun visit(callTree: CallTree, data: SsaTranslation): Node? {
+            TODO("SSA calls not yet implemented")
+        }
+
+        override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {
+            return NOT_AN_EXPRESSION
+        }
+
+        override fun <V : Tree> visit(parenthesizedListTree: ParenthesizedListTree<V>, data: SsaTranslation): Node? {
+            error("Plain parenthesized lists are not supported in SSA translation")
         }
 
         private enum class ShortCircuitType {

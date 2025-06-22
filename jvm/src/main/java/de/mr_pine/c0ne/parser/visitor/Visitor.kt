@@ -13,7 +13,7 @@ interface Visitor<T, R> {
 
     fun visit(declarationTree: DeclarationTree, data: T): R
 
-    fun visit(functionTree: FunctionTree, data: T): R
+    fun visit(functionTree: DeclaredFunctionTree, data: T): R
 
     fun visit(identExpressionTree: IdentExpressionTree, data: T): R
 
@@ -44,4 +44,10 @@ interface Visitor<T, R> {
     fun visit(returnTree: ReturnTree, data: T): R
 
     fun visit(typeTree: TypeTree, data: T): R
+
+    fun visit(callTree: CallTree, data: T): R
+
+    fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R
+
+    fun <V: Tree> visit(parenthesizedListTree: ParenthesizedListTree<V>, data: T): R
 }

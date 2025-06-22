@@ -1,7 +1,7 @@
 package de.mr_pine.c0ne.semantic
 
 import de.mr_pine.c0ne.parser.ast.BlockTree
-import de.mr_pine.c0ne.parser.ast.FunctionTree
+import de.mr_pine.c0ne.parser.ast.DeclaredFunctionTree
 import de.mr_pine.c0ne.parser.ast.IfTree
 import de.mr_pine.c0ne.parser.ast.ReturnTree
 import de.mr_pine.c0ne.parser.ast.StatementTree
@@ -39,7 +39,7 @@ class ReturnAnalysis : NoOpVisitor<ReturnAnalysis.ReturnState> {
         super.visit(ifTree, data)
     }
 
-    override fun visit(functionTree: FunctionTree, data: ReturnState) {
+    override fun visit(functionTree: DeclaredFunctionTree, data: ReturnState) {
         val body = functionTree.body
         if (body !in data.returningStatements) {
             throw SemanticException("function " + functionTree.name + " does not return")

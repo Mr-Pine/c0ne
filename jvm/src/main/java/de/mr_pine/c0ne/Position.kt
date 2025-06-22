@@ -9,4 +9,9 @@ interface Position {
             return "$line:$column"
         }
     }
+
+    data object SyntheticPosition : Position {
+        override val line = 0
+        override val column = 0
+    }
 }

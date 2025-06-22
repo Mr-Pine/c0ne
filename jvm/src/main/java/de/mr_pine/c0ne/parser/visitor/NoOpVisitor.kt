@@ -19,7 +19,7 @@ interface NoOpVisitor<T> : Visitor<T, Unit> {
     override fun visit(declarationTree: DeclarationTree, data: T) {
     }
 
-    override fun visit(functionTree: FunctionTree, data: T) {
+    override fun visit(functionTree: DeclaredFunctionTree, data: T) {
     }
 
     override fun visit(identExpressionTree: IdentExpressionTree, data: T) {
@@ -65,5 +65,17 @@ interface NoOpVisitor<T> : Visitor<T, Unit> {
     }
 
     override fun visit(typeTree: TypeTree, data: T) {
+    }
+
+    override fun visit(callTree: CallTree, data: T) {
+    }
+
+    override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T) {
+    }
+
+    override fun <V : Tree> visit(
+        parenthesizedListTree: ParenthesizedListTree<V>,
+        data: T
+    ) {
     }
 }

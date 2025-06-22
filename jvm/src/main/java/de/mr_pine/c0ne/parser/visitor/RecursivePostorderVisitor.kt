@@ -43,8 +43,8 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         return r
     }
 
-    override fun visit(functionTree: FunctionTree, data: T): R {
-        var r = functionTree.returnType.accept(this, data)
+    override fun visit(functionTree: DeclaredFunctionTree, data: T): R {
+        var r = functionTree.returnTypeTree.accept(this, data)
         r = functionTree.name.accept(this, accumulate(data, r))
         r = functionTree.body.accept(this, accumulate(data, r))
         r = this.visitor.visit(functionTree, accumulate(data, r))
@@ -146,6 +146,28 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
 
     override fun visit(typeTree: TypeTree, data: T): R {
         return this.visitor.visit(typeTree, data)
+    }
+
+    override fun visit(callTree: CallTree, data: T): R {
+        var r = callTree.identifier.accept(this, data)
+        callTree.arguments.accept(this, accumulate(data, r))
+        return this.visitor.visit(callTree, accumulate(data, r))
+    }
+
+    override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R {
+        return this.visitor.visit(builtinFunction, data)
+    }
+
+    override fun <V : Tree> visit(
+        parenthesizedListTree: ParenthesizedListTree<V>,
+        data: T
+    ): R {
+        var d = data
+        for (statement in parenthesizedListTree.elements) {
+            val r = statement.accept(this, d)
+            d = accumulate(d, r)
+        }
+        return this.visitor.visit(parenthesizedListTree, d)
     }
 
     protected fun accumulate(data: T, value: R): T {

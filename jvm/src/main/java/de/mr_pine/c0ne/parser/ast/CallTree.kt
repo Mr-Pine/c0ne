@@ -1,14 +1,17 @@
 package de.mr_pine.c0ne.parser.ast
 
+import de.mr_pine.c0ne.Position
 import de.mr_pine.c0ne.Span
+import de.mr_pine.c0ne.Span.SimpleSpan
 import de.mr_pine.c0ne.parser.visitor.Visitor
-import kotlin.getValue
 
-data class IdentExpressionTree(val name: NameTree) : ExpressionTree {
-    override val span: Span
-        get() = name.span
+data class CallTree(
+    val identifier: NameTree,
+    val arguments: ParenthesizedListTree<ExpressionTree>
+) : Tree, StatementTree, ExpressionTree {
+    override val span = this.identifier.span merge arguments.span
 
-    var references: DeclarationTree? = null
+    var references: FunctionTree? = null
         set(value) {
             requireNotNull(value)
             field = value
@@ -16,7 +19,7 @@ data class IdentExpressionTree(val name: NameTree) : ExpressionTree {
 
     override val type by lazy {
         val declarationTree = references!!
-        declarationTree.type
+        declarationTree.returnType
     }
 
     override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
