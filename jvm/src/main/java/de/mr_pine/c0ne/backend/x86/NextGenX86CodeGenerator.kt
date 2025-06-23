@@ -28,9 +28,27 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         
         _main:
         call main
+        push RAX
+        call flush
+        pop RAX
         mov EDI, EAX
         mov EAX, 0x3c
         syscall
+        
+        .extern putchar
+        .global print
+        print = putchar
+        
+        .extern getchar
+        .global read
+        read = getchar
+        
+        .extern fflush
+        .global flush
+        flush:
+        mov RDI, 0
+        call fflush
+        ret
     """.trimIndent() + "\n\n"
 
     private fun generateAssembly(): String {
@@ -305,27 +323,14 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
 
             override fun visit(node: CallNode) {
                 val returnTarget = Argument.NodeValue(node)
-                val toSave = callerSaved.filter { Argument.RegMem.Register.RealRegister(it) != returnTarget }
-                for (reg in toSave) {
-                    instructionList.add(Push(Argument.RegMem.Register.RealRegister(reg)))
-                }
-
                 instructionList.add(
                     Call(
                         node.target,
+                        returnTarget,
                         node.predecessors()
                             .filter { it !is ProjNode || it.projectionInfo() !is ProjNode.SimpleProjectionInfo }
                             .map { Argument.NodeValue(it) })
                 )
-                instructionList.add(
-                    Mov(
-                        returnTarget, Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RAX)
-                    )
-                )
-
-                for (reg in toSave.reversed()) {
-                    instructionList.add(Pop(Argument.RegMem.Register.RealRegister(reg)))
-                }
             }
         }
     }
