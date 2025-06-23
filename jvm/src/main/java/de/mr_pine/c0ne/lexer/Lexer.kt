@@ -24,6 +24,7 @@ class Lexer private constructor(private val source: String) {
             '{' -> separator(SeparatorType.BRACE_OPEN)
             '}' -> separator(SeparatorType.BRACE_CLOSE)
             ';' -> separator(SeparatorType.SEMICOLON)
+            ',' -> separator(SeparatorType.COMMA)
             '-' -> singleOrWithEquals(Operator.OperatorType.MINUS, Operator.OperatorType.ASSIGN_MINUS)
             '+' -> singleOrWithEquals(Operator.OperatorType.PLUS, Operator.OperatorType.ASSIGN_PLUS)
             '*' -> singleOrWithEquals(Operator.OperatorType.MUL, Operator.OperatorType.ASSIGN_MUL)
