@@ -7,7 +7,7 @@ import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.type.BasicType
 import de.mr_pine.c0ne.parser.visitor.NoOpVisitor
 
-class FunctionNameAnalysis(program: ProgramTree) : NoOpVisitor<Unit> {
+class FunctionAnalysis(program: ProgramTree) : NoOpVisitor<Unit> {
     val builtins = listOf(
         FunctionTree.BuiltinFunction(IdentName("print"), BasicType.Integer, listOf(BasicType.Integer)),
         FunctionTree.BuiltinFunction(IdentName("read"), BasicType.Integer, listOf()),
@@ -26,6 +26,9 @@ class FunctionNameAnalysis(program: ProgramTree) : NoOpVisitor<Unit> {
         val name = callTree.identifier.name
         val function = functions.find { it.name == name }
             ?: throw SemanticException("Unknown function $name at ${callTree.span} call")
+        if (function.parameterTypes.size != callTree.arguments.elements.size) {
+            throw SemanticException("Wrong number of arguments for function $name at ${callTree.span} call. Expected ${function.parameterTypes.size} got ${callTree.arguments.elements.size}")
+        }
         callTree.references = function
         super.visit(callTree, data)
     }

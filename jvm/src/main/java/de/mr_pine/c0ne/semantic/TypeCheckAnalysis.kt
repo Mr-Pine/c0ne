@@ -1,17 +1,7 @@
 package de.mr_pine.c0ne.semantic
 
 import de.mr_pine.c0ne.lexer.Operator
-import de.mr_pine.c0ne.parser.ast.AssignmentTree
-import de.mr_pine.c0ne.parser.ast.BinaryOperationTree
-import de.mr_pine.c0ne.parser.ast.DeclarationTree
-import de.mr_pine.c0ne.parser.ast.ForTree
-import de.mr_pine.c0ne.parser.ast.DeclaredFunctionTree
-import de.mr_pine.c0ne.parser.ast.IfTree
-import de.mr_pine.c0ne.parser.ast.LValueIdentTree
-import de.mr_pine.c0ne.parser.ast.ReturnTree
-import de.mr_pine.c0ne.parser.ast.TernaryOperationTree
-import de.mr_pine.c0ne.parser.ast.UnaryOperationTree
-import de.mr_pine.c0ne.parser.ast.WhileTree
+import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.type.BasicType
 import de.mr_pine.c0ne.parser.visitor.NoOpVisitor
 
@@ -95,12 +85,23 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
     }
 
     override fun visit(
+        callTree: CallTree,
+        data: MutableList<ReturnTree>
+    ) {
+        for ((argument, parameterTypes) in callTree.arguments.elements.zip(callTree.references!!.parameterTypes)) {
+            if (argument.type != parameterTypes) throw SemanticException("Type mismatch at ${argument.span} for argument ${argument.type} in call to ${callTree.references!!.name} at ${callTree.span}")
+        }
+    }
+
+    override fun visit(
         ternaryOperationTree: TernaryOperationTree,
         data: MutableList<ReturnTree>
     ) {
         if (ternaryOperationTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${ternaryOperationTree.span} for condition of ternary operation: Expected ${BasicType.Boolean} got ${ternaryOperationTree.condition.type}")
 
-        if (ternaryOperationTree.thenExpression.type != ternaryOperationTree.elseExpression.type) throw SemanticException("Type mismatch at ${ternaryOperationTree.span} for then and else expression of ternary operation: Expected ${ternaryOperationTree.thenExpression.type} got ${ternaryOperationTree.elseExpression.type}")
+        if (ternaryOperationTree.thenExpression.type != ternaryOperationTree.elseExpression.type) throw SemanticException(
+            "Type mismatch at ${ternaryOperationTree.span} for then and else expression of ternary operation: Expected ${ternaryOperationTree.thenExpression.type} got ${ternaryOperationTree.elseExpression.type}"
+        )
 
         super.visit(
             ternaryOperationTree,
