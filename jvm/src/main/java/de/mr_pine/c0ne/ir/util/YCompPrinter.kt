@@ -3,6 +3,7 @@ package de.mr_pine.c0ne.ir.util
 import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
 import de.mr_pine.c0ne.backend.RegisterAllocator
 import de.mr_pine.c0ne.backend.Schedule
+import de.mr_pine.c0ne.backend.x86.instructions.Call
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.node.ProjNode.SimpleProjectionInfo
@@ -220,6 +221,7 @@ class YCompPrinter(
 
             is UndefNode -> VcgColor.SPECIAL
 
+            is CallNode -> VcgColor.CONTROL_FLOW
             is ReturnNode -> VcgColor.CONTROL_FLOW
             is StartNode -> VcgColor.CONTROL_FLOW
             is IfNode -> VcgColor.CONTROL_FLOW

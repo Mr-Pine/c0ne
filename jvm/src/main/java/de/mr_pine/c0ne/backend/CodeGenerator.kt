@@ -65,6 +65,7 @@ interface CodeGenerator<R : Register, A : RegisterAllocator.RegisterAllocation<R
                 is JumpNode -> TODO()
                 is StartNode -> processNode(node)
                 is UndefNode -> {}
+                is CallNode -> TODO()
             }
         }
     }

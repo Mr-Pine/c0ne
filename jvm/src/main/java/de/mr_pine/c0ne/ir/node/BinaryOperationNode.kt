@@ -58,7 +58,7 @@ sealed class BinaryOperationNode : Node {
     }
 
     val left
-        get() = NodeSupport.predecessorSkipProj(this, LEFT)
+        get() = NodeSupport.predecessorSkipSimpleProj(this, LEFT)
     val right
-        get() = NodeSupport.predecessorSkipProj(this, RIGHT)
+        get() = NodeSupport.predecessorSkipSimpleProj(this, RIGHT)
 }

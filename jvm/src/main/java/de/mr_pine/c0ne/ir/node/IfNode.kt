@@ -13,5 +13,5 @@ class IfNode(block: Block, condition: Node) : ExitNode(block, condition) {
     }
 
     val condition
-        get() = NodeSupport.predecessorSkipProj(this, CONDITION)
+        get() = NodeSupport.predecessorSkipSimpleProj(this, CONDITION)
 }

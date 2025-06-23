@@ -192,6 +192,10 @@ class SsaTranslation(
             pushSpan(functionTree)
             val start = data.constructor.newStart()
             data.constructor.writeCurrentSideEffect(data.constructor.newSideEffectProj(start))
+            for ((i, functionParameter) in functionTree.parameters.elements.withIndex()) {
+                val node = data.constructor.newParameterProj(start, functionParameter.name.name, i)
+                data.constructor.writeVariable(functionParameter.name.name, data.currentBlock(), node)
+            }
             functionTree.body.accept(this, data)
             popSpan()
             return NOT_AN_EXPRESSION
@@ -440,7 +444,15 @@ class SsaTranslation(
         }
 
         override fun visit(callTree: CallTree, data: SsaTranslation): Node? {
-            TODO("SSA calls not yet implemented")
+            val arguments = buildList {
+                for (arg in callTree.arguments.elements) {
+                    val argNode = arg.accept(this@SsaTranslationVisitor, data)!!
+                    add(argNode)
+                }
+            }
+            val call = data.constructor.newCall(callTree.identifier.name, arguments)
+            data.constructor.writeCurrentSideEffect(call)
+            return call
         }
 
         override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {

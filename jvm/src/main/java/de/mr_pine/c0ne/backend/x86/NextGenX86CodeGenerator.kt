@@ -15,8 +15,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         irGraphs.zip(schedules).map { (irGraph, schedule) -> AbstractCodegen(irGraph, schedule).abstractInstructions }
     val regAllocs = schedules.zip(irGraphs).map { (schedule, irGraph) ->
         NextGenSimpleX86RegAlloc(
-            irGraph.startBlock,
-            schedule
+            irGraph.startBlock, schedule
         )
     }
     val concreteInstructions =
@@ -43,15 +42,9 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         val tmpdir = createTempDirectory("c0ne")
         val input = tmpdir.resolve("input.s").apply { writeText(generation + "\n") }
         val output = tmpdir.resolve("c0ne_out")
-        val assembler =
-            ProcessBuilder(
-                "gcc",
-                input.absolutePathString(),
-                "-g",
-                "-o",
-                output.absolutePathString(),
-                "-Wl,-e_main"
-            ).start()
+        val assembler = ProcessBuilder(
+            "gcc", input.absolutePathString(), "-g", "-o", output.absolutePathString(), "-Wl,-e_main"
+        ).start()
         if (assembler.waitFor() != 0) {
             throw Exception("gcc assembly failed: ${assembler.errorStream.readAllBytes().decodeToString()}")
         }
@@ -64,6 +57,42 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
 
     class AbstractCodegen(irGraph: IrGraph, schedule: Schedule) {
 
+        companion object {
+
+            // rax, rdi, rsi, rdx, rcx, r8, r9, r10, r11
+            val callerSaved = listOf(
+                X86Register.RealRegister.RAX,
+                X86Register.RealRegister.RDI,
+                X86Register.RealRegister.RSI,
+                X86Register.RealRegister.RDX,
+                X86Register.RealRegister.RCX,
+                X86Register.RealRegister.R8,
+                X86Register.RealRegister.R9,
+                X86Register.RealRegister.R10,
+                X86Register.RealRegister.R11
+            )
+
+            // rbx, rsp, rbp, r12, r13, r14
+            val calleeSaved = listOf(
+                X86Register.RealRegister.RBX,
+                X86Register.RealRegister.RSP,
+                X86Register.RealRegister.RBP,
+                X86Register.RealRegister.R12,
+                X86Register.RealRegister.R13,
+                X86Register.RealRegister.R14
+            )
+
+            // rdi, rsi, rdx, rcx, r8, r9
+            val arguments = listOf(
+                X86Register.RealRegister.RDI,
+                X86Register.RealRegister.RSI,
+                X86Register.RealRegister.RDX,
+                X86Register.RealRegister.RCX,
+                X86Register.RealRegister.R8,
+                X86Register.RealRegister.R9
+            )
+        }
+
         val abstractInstructions = buildList {
             val visitor = AbstractCodegenVisitor(this, irGraph, schedule.blockOrder.first())
             for (block in schedule.blockOrder) {
@@ -75,15 +104,11 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         }
 
         inner class AbstractCodegenVisitor(
-            val instructionList: MutableList<Instruction>,
-            val irGraph: IrGraph,
-            private var currentBlock: Block
-        ) :
-            SSAVisitor<Unit> {
+            val instructionList: MutableList<Instruction>, val irGraph: IrGraph, private var currentBlock: Block
+        ) : SSAVisitor<Unit> {
 
             private fun visitNormalBinop(
-                node: BinaryOperationNode,
-                instructionConstructor: (Argument.RegMem.Register, Argument) -> Instruction
+                node: BinaryOperationNode, instructionConstructor: (Argument.RegMem.Register, Argument) -> Instruction
             ) {
                 val arg1 = Argument.NodeValue(node.left)
                 val arg2 = Argument.NodeValue(node.right)
@@ -256,7 +281,14 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             }
 
             override fun visit(node: StartNode) {
-                instructionList.add(Enter(node))
+                instructionList.add(
+                    Enter(
+                        node,
+                        irGraph.successors(node)
+                            .mapNotNull { (it as? ProjNode)?.takeIf { it.projectionInfo() is ProjNode.NamedParameterProjectionInfo } }
+                            .map { Argument.NodeValue(it) }
+                    )
+                )
             }
 
             override fun visit(node: SubNode) {
@@ -269,6 +301,31 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
 
             override fun visit(node: XorNode) {
                 visitNormalBinop(node, ::Xor)
+            }
+
+            override fun visit(node: CallNode) {
+                val returnTarget = Argument.NodeValue(node)
+                val toSave = callerSaved.filter { Argument.RegMem.Register.RealRegister(it) != returnTarget }
+                for (reg in toSave) {
+                    instructionList.add(Push(Argument.RegMem.Register.RealRegister(reg)))
+                }
+
+                instructionList.add(
+                    Call(
+                        node.target,
+                        node.predecessors()
+                            .filter { it !is ProjNode || it.projectionInfo() !is ProjNode.SimpleProjectionInfo }
+                            .map { Argument.NodeValue(it) })
+                )
+                instructionList.add(
+                    Mov(
+                        returnTarget, Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RAX)
+                    )
+                )
+
+                for (reg in toSave.reversed()) {
+                    instructionList.add(Pop(Argument.RegMem.Register.RealRegister(reg)))
+                }
             }
         }
     }

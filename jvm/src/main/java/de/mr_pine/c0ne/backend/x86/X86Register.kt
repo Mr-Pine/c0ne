@@ -27,6 +27,7 @@ sealed interface X86Register : Register {
             return when (size) {
                 1 -> size1
                 4 -> size4
+                8 -> name.lowercase()
                 else -> error("Unknown register size")
             }
         }

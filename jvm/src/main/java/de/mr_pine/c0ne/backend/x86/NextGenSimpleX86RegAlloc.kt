@@ -8,6 +8,7 @@ import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.Node
+import de.mr_pine.c0ne.ir.node.ProjNode
 import kotlin.collections.set
 
 class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedule: Schedule) {

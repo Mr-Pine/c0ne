@@ -9,7 +9,7 @@ class Phi(block: Block) : Node(block) {
         addPredecessor(node)
     }
 
-    operator fun get(index: Int) = NodeSupport.predecessorSkipProj(this, index)
+    operator fun get(index: Int) = NodeSupport.predecessorSkipSimpleProj(this, index)
 
     val isSideEffectPhi
         get() = checkSideeffect(mutableSetOf())

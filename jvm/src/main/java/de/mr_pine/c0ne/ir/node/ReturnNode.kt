@@ -14,5 +14,5 @@ class ReturnNode(block: Block, sideEffect: Node, result: Node) : ExitNode(block,
     }
 
     val result
-        get() = NodeSupport.predecessorSkipProj(this, RESULT)
+        get() = NodeSupport.predecessorSkipSimpleProj(this, RESULT)
 }

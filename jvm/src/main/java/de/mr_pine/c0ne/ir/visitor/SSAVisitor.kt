@@ -7,6 +7,7 @@ import de.mr_pine.c0ne.ir.node.BitwiseAndNode
 import de.mr_pine.c0ne.ir.node.BitwiseNotNode
 import de.mr_pine.c0ne.ir.node.BitwiseOrNode
 import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.CallNode
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.DivNode
@@ -50,4 +51,5 @@ interface SSAVisitor<R> {
     fun visit(node: SubNode): R
     fun visit(node: UndefNode): R
     fun visit(node: XorNode): R
+    fun visit(node: CallNode): R
 }

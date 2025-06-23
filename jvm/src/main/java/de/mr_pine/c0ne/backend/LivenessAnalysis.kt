@@ -1,21 +1,7 @@
 package de.mr_pine.c0ne.backend
 
 import de.mr_pine.c0ne.analysis.BackwardsControlFlow
-import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
-import de.mr_pine.c0ne.ir.IrGraph
-import de.mr_pine.c0ne.ir.node.BinaryOperationNode
-import de.mr_pine.c0ne.ir.node.Block
-import de.mr_pine.c0ne.ir.node.ConstBoolNode
-import de.mr_pine.c0ne.ir.node.ConstIntNode
-import de.mr_pine.c0ne.ir.node.ExitNode
-import de.mr_pine.c0ne.ir.node.IfNode
-import de.mr_pine.c0ne.ir.node.Node
-import de.mr_pine.c0ne.ir.node.Phi
-import de.mr_pine.c0ne.ir.node.ProjNode
-import de.mr_pine.c0ne.ir.node.ReturnNode
-import de.mr_pine.c0ne.ir.node.StartNode
-import de.mr_pine.c0ne.ir.node.UnaryOperationNode
-import de.mr_pine.c0ne.ir.node.UndefNode
+import de.mr_pine.c0ne.ir.node.*
 
 class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
     BackwardsControlFlow<Set<Node>, Set<Node>>(schedule) {
@@ -46,6 +32,7 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
     private fun defined(node: Node): Set<Node> {
         return when (node) {
             is BinaryOperationNode, is UnaryOperationNode, is Phi, is ConstIntNode, is ConstBoolNode -> setOf(node)
+            is ProjNode if node.projectionInfo() is ProjNode.NamedParameterProjectionInfo -> setOf(node)
             else -> setOf()
         }
     }
@@ -59,8 +46,10 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
                 val predecessorIndex = node.block.predecessors().indexOfFirst { it.block == nodeInBlock.block }
                 setOf(node[predecessorIndex])
             }
+
             is ReturnNode -> setOf(node.result)
             is IfNode -> setOf(node.condition)
+            is CallNode -> node.predecessors().dropLast(1).toSet()
             is ExitNode, is ProjNode, is ConstIntNode, is ConstBoolNode, is Block, is StartNode, is UndefNode -> setOf()
         }
     }
