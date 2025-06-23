@@ -37,7 +37,10 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         
         .extern putchar
         .global print
-        print = putchar
+        print:
+            call putchar
+            mov RAX, 0
+            ret
         
         .extern getchar
         .global read
@@ -46,9 +49,10 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         .extern fflush
         .global flush
         flush:
-        mov RDI, 0
-        call fflush
-        ret
+            mov RDI, 0
+            call fflush
+            mov RAX, 0
+            ret
     """.trimIndent() + "\n\n"
 
     private fun generateAssembly(): String {
@@ -328,7 +332,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                         node.target,
                         returnTarget,
                         node.predecessors()
-                            .filter { it !is ProjNode || it.projectionInfo() !is ProjNode.SimpleProjectionInfo }
+                            .filterIndexed { index, _ -> index != node.sideEffectIndex }
                             .map { Argument.NodeValue(it) })
                 )
             }

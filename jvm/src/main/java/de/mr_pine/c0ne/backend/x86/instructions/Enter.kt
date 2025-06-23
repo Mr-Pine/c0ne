@@ -13,9 +13,12 @@ class Enter(val node: StartNode, val parameters: List<Argument>, val overflowCou
         val calleeSavePush = NextGenX86CodeGenerator.AbstractCodegen.calleeSaved.joinToString("\n") {
             Push(Argument.RegMem.Register.RealRegister(it)).render()
         }
-        val parameterMove = parameters.zip(NextGenX86CodeGenerator.AbstractCodegen.arguments).joinToString("\n") { (target, source) ->
-            Mov(target, Argument.RegMem.Register.RealRegister(source)).render()
-        }
+        val parameterMove =
+            NextGenX86CodeGenerator.AbstractCodegen.arguments.take(parameters.size).reversed().joinToString("\n") {
+                Push(Argument.RegMem.Register.RealRegister(it)).render()
+            } + "\n" + parameters.joinToString("\n") { value ->
+                Pop(value).render()
+            }
         return """
             .global ${node.graph.name()}
             ${node.graph.name()}:

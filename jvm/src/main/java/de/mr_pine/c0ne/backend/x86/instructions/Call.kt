@@ -24,10 +24,12 @@ class Call(val target: Name, val returnTarget: Argument, val callArguments: List
             returnTarget, Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RAX)
         ).render()
         val argumentMoves =
-            callArguments.zip(NextGenX86CodeGenerator.AbstractCodegen.arguments)
-                .joinToString("\n") { (source, target) ->
-                    Mov(Argument.RegMem.Register.RealRegister(target), source).render()
-                }
+            callArguments.joinToString("\n") { value ->
+                Push(value).render()
+            } + "\n" + NextGenX86CodeGenerator.AbstractCodegen.arguments.take(callArguments.size).reversed().joinToString("\n") {
+                Pop(Argument.RegMem.Register.RealRegister(it)).render()
+            }
+
         return """
             $callerSave
             $argumentMoves
