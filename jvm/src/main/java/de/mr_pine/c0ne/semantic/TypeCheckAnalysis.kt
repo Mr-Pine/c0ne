@@ -10,6 +10,7 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
         for (returnTree in data) {
             if (returnTree.expression.type != functionTree.returnType) throw SemanticException("Return type ${returnTree.expression.type} at ${returnTree.span} does not match expected type ${functionTree.returnType}")
         }
+        data.clear()
 
         super.visit(functionTree, data)
     }
