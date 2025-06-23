@@ -43,7 +43,9 @@ class Schedule(private val irGraph: IrGraph) {
                 if (!node.isSideEffectPhi) {
                     for (predBlock in blockPredecessors.map { it.block }.toSet()) {
                         val nodes = relevantNodes[predBlock]!!
-                        val predecessorPhiIndex = nodes.indexOfFirst { it is Phi && it in node.predecessors() }.takeIf { it != -1 } ?: nodes.size
+                        val predecessorPhiIndex =
+                            nodes.indexOfFirst { it is Phi && it in node.predecessors() }.takeIf { it != -1 }
+                                ?: nodes.size
                         nodes.add(predecessorPhiIndex, node)
                     }
                 }
@@ -56,8 +58,7 @@ class Schedule(private val irGraph: IrGraph) {
         return buildMap {
             for ((block, nodes) in relevantNodes) {
                 put(
-                    block,
-                    BlockSchedule(block, nodes)
+                    block, BlockSchedule(block, nodes)
                 )
             }
         }
@@ -77,12 +78,12 @@ class Schedule(private val irGraph: IrGraph) {
                 when (it.key) {
                     is ExitNode -> Int.MAX_VALUE
                     is StartNode -> Int.MIN_VALUE
+                    is ProjNode if (it.key as ProjNode).projectionInfo() is ProjNode.NamedParameterProjectionInfo -> it.value + Int.MIN_VALUE / 2
                     is Phi -> it.value + maxFinishNumber
                     else -> it.value
                 }
             }
-            return mappedFinishNumbers.entries.sortedBy { it.value }
-                .map { it.key }
+            return mappedFinishNumbers.entries.sortedBy { it.value }.map { it.key }
         }
 
         inner class Dfs {
