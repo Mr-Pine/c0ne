@@ -3,9 +3,9 @@ package de.mr_pine.c0ne.parser
 import de.mr_pine.c0ne.lexer.*
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import de.mr_pine.c0ne.parser.ast.*
+import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.type.BasicType
-import java.lang.reflect.Parameter
 
 class Parser(private val tokenSource: TokenSource) {
     fun parseProgram(): ProgramTree {
@@ -29,7 +29,7 @@ class Parser(private val tokenSource: TokenSource) {
         return DeclaredFunctionTree(type, name(identifier), parameterList, body)
     }
 
-    private fun <T: Tree> parseParenthesizedList(elementParser: Parser.() -> T): ParenthesizedListTree<T> {
+    private fun <T : Tree> parseParenthesizedList(elementParser: Parser.() -> T): ParenthesizedListTree<T> {
         val startSpan = tokenSource.expectSeparator(SeparatorType.PAREN_OPEN).span
 
         val elements = buildList {
@@ -49,7 +49,9 @@ class Parser(private val tokenSource: TokenSource) {
         return ParenthesizedListTree(elements, startSpan merge endSpan)
     }
 
-    private fun parseArgumentList(): ParenthesizedListTree<ExpressionTree> = parseParenthesizedList { parseExpression() }
+    private fun parseArgumentList(): ParenthesizedListTree<ExpressionTree> =
+        parseParenthesizedList { parseExpression() }
+
     private fun parseParameterList(): ParenthesizedListTree<ParameterTree> =
         parseParenthesizedList {
             val type = parseType()
@@ -113,6 +115,15 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseSimple(): StatementTree {
+        // Special case print, read, flush
+        if (this.tokenSource.peekAs<Keyword>()
+                ?.let { it.type in listOf(KeywordType.PRINT, KeywordType.READ, KeywordType.FLUSH) } == true
+        ) {
+            val keyword = this.tokenSource.consume() as Keyword
+            val arguments = parseArgumentList()
+            return CallTree(NameTree(IdentName(keyword.type.name), keyword.span), arguments)
+        }
+
         val lValue = parseLValue()
         if (this.tokenSource.peekAs<Separator>()?.type == SeparatorType.PAREN_OPEN) {
             val arguments = parseArgumentList()
