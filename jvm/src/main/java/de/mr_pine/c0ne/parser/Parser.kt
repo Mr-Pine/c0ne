@@ -6,6 +6,7 @@ import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.type.BasicType
+import kotlin.collections.listOf
 
 class Parser(private val tokenSource: TokenSource) {
     fun parseProgram(): ProgramTree {
@@ -121,7 +122,7 @@ class Parser(private val tokenSource: TokenSource) {
         ) {
             val keyword = this.tokenSource.consume() as Keyword
             val arguments = parseArgumentList()
-            return CallTree(NameTree(IdentName(keyword.type.name), keyword.span), arguments)
+            return CallTree(NameTree(IdentName(keyword.type.name.lowercase()), keyword.span), arguments)
         }
 
         val lValue = parseLValue()
@@ -306,6 +307,12 @@ class Parser(private val tokenSource: TokenSource) {
             is Keyword if nextToken.isBooleanLiteral -> {
                 this.tokenSource.consume()
                 LiteralTree.LiteralBoolTree(nextToken)
+            }
+
+            is Keyword if nextToken.type in listOf(KeywordType.PRINT, KeywordType.READ, KeywordType.FLUSH) -> {
+                val keyword = this.tokenSource.consume() as Keyword
+                val arguments = parseArgumentList()
+                return CallTree(NameTree(IdentName(keyword.type.name.lowercase()), keyword.span), arguments)
             }
 
             is Identifier -> {
