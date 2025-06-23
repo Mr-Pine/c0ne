@@ -8,7 +8,7 @@ data class IdentExpressionTree(val name: NameTree) : ExpressionTree {
     override val span: Span
         get() = name.span
 
-    var references: DeclarationTree? = null
+    var references: Declaration? = null
         set(value) {
             requireNotNull(value)
             field = value

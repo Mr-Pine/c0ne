@@ -73,6 +73,9 @@ interface NoOpVisitor<T> : Visitor<T, Unit> {
     override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T) {
     }
 
+    override fun visit(parameterTree: ParameterTree, data: T) {
+    }
+
     override fun <V : Tree> visit(
         parenthesizedListTree: ParenthesizedListTree<V>,
         data: T

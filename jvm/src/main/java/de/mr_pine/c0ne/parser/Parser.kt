@@ -5,6 +5,7 @@ import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.type.BasicType
+import java.lang.reflect.Parameter
 
 class Parser(private val tokenSource: TokenSource) {
     fun parseProgram(): ProgramTree {
@@ -49,8 +50,12 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseArgumentList(): ParenthesizedListTree<ExpressionTree> = parseParenthesizedList { parseExpression() }
-    private fun parseParameterList(): ParenthesizedListTree<NameTree> =
-        parseParenthesizedList { name(tokenSource.expectIdentifier()) }
+    private fun parseParameterList(): ParenthesizedListTree<ParameterTree> =
+        parseParenthesizedList {
+            val type = parseType()
+            val name = name(tokenSource.expectIdentifier())
+            ParameterTree(type, name)
+        }
 
     private fun parseBlock(): BlockTree {
         val bodyOpen = this.tokenSource.expectSeparator(SeparatorType.BRACE_OPEN)

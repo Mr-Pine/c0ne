@@ -4,10 +4,10 @@ import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
 data class DeclarationTree(
-    val typeDeclaration: TypeTree,
-    val name: NameTree,
+    override val typeDeclaration: TypeTree,
+    override val name: NameTree,
     val initializer: ExpressionTree?
-) : StatementTree {
+) : StatementTree, Declaration {
     override val span: Span
         get() {
             if (this.initializer != null) {
@@ -15,8 +15,6 @@ data class DeclarationTree(
             }
             return this.typeDeclaration.span.merge(this.name.span)
         }
-
-    val type = typeDeclaration.type
 
     override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
         return visitor.visit(this, data)

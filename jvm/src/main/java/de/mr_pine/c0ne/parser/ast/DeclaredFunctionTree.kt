@@ -7,7 +7,7 @@ import de.mr_pine.c0ne.parser.visitor.Visitor
 data class DeclaredFunctionTree(
     val returnTypeTree: TypeTree,
     val name: NameTree,
-    val parameters: ParenthesizedListTree<NameTree>,
+    val parameters: ParenthesizedListTree<ParameterTree>,
     val body: BlockTree
 ) : FunctionTree {
     override val span: Span

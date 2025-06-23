@@ -49,5 +49,7 @@ interface Visitor<T, R> {
 
     fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R
 
+    fun visit(parameterTree: ParameterTree, data: T): R
+
     fun <V: Tree> visit(parenthesizedListTree: ParenthesizedListTree<V>, data: T): R
 }
