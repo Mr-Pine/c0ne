@@ -177,21 +177,25 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         callTree: CallTree,
         data: VariableStatus
     ): VariableStatus {
-        TODO("Not yet implemented")
+        return callTree.arguments.accept(this, data)
     }
 
     override fun visit(
         builtinFunction: FunctionTree.BuiltinFunction,
         data: VariableStatus
     ): VariableStatus {
-        TODO("Not yet implemented")
+        return data
     }
 
     override fun <V : Tree> visit(
         parenthesizedListTree: ParenthesizedListTree<V>,
         data: VariableStatus
     ): VariableStatus {
-        TODO("Not yet implemented")
+        var status = data
+        for (elem in parenthesizedListTree.elements) {
+            status = elem.accept(this, status)
+        }
+        return status
     }
 
     data class Declaration(val name: Name, val declaration: DeclarationTree)
