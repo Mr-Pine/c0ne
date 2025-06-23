@@ -61,7 +61,9 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     override fun visit(
         functionTree: DeclaredFunctionTree, data: VariableStatus
     ): VariableStatus {
-        return functionTree.body.accept(this, data)
+        var status = data.enterNewScope()
+        status = functionTree.parameters.accept(this, status)
+        return functionTree.body.accept(this, status).exitScopeWithoutDefs()
     }
 
     override fun visit(
