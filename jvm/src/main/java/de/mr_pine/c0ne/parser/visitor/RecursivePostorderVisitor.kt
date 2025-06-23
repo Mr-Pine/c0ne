@@ -45,7 +45,7 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
 
     override fun visit(functionTree: DeclaredFunctionTree, data: T): R {
         var r = functionTree.returnTypeTree.accept(this, data)
-        r = functionTree.name.accept(this, accumulate(data, r))
+        r = functionTree.nameTree.accept(this, accumulate(data, r))
         r = functionTree.body.accept(this, accumulate(data, r))
         r = this.visitor.visit(functionTree, accumulate(data, r))
         return r
@@ -149,13 +149,17 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
     }
 
     override fun visit(callTree: CallTree, data: T): R {
-        var r = callTree.identifier.accept(this, data)
+        val r = callTree.identifier.accept(this, data)
         callTree.arguments.accept(this, accumulate(data, r))
         return this.visitor.visit(callTree, accumulate(data, r))
     }
 
     override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R {
         return this.visitor.visit(builtinFunction, data)
+    }
+
+    override fun visit(parameterTree: ParameterTree, data: T): R {
+        return this.visitor.visit(parameterTree, data)
     }
 
     override fun <V : Tree> visit(

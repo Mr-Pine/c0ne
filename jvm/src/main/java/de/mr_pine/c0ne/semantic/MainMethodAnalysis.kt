@@ -11,7 +11,7 @@ class MainMethodAnalysis : NoOpVisitor<Unit> {
         data: Unit
     ) {
         val functions: List<DeclaredFunctionTree> = programTree.topLevelTrees
-        val mainFunction = functions.find { it.name.name.asString() == "main" }
+        val mainFunction = functions.find { it.nameTree.name.asString() == "main" }
         if (mainFunction == null) {
             throw SemanticException("No main method defined")
         }

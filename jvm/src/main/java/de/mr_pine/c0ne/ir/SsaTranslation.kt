@@ -27,7 +27,7 @@ class SsaTranslation(
     optimizer: Optimizer,
     private val finishPassOptimizer: FinishPassOptimizer
 ) {
-    private val constructor: GraphConstructor = GraphConstructor(optimizer, function.name.name.asString())
+    private val constructor: GraphConstructor = GraphConstructor(optimizer, function.nameTree.name.asString())
 
     fun translate(): IrGraph {
         val visitor = SsaTranslationVisitor()
@@ -445,6 +445,13 @@ class SsaTranslation(
 
         override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {
             return NOT_AN_EXPRESSION
+        }
+
+        override fun visit(
+            parameterTree: ParameterTree,
+            data: SsaTranslation
+        ): Node? {
+            return null
         }
 
         override fun <V : Tree> visit(parenthesizedListTree: ParenthesizedListTree<V>, data: SsaTranslation): Node? {

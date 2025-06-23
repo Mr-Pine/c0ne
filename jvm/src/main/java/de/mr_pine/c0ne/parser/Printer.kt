@@ -42,7 +42,7 @@ class Printer(private val ast: Tree) {
             is DeclaredFunctionTree -> {
                 printTree(tree.returnTypeTree)
                 space()
-                printTree(tree.name)
+                printTree(tree.nameTree)
                 print("(")
                 printTree(tree.parameters)
                 print(")")

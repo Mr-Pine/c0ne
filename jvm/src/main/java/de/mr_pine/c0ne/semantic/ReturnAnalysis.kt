@@ -42,7 +42,7 @@ class ReturnAnalysis : NoOpVisitor<ReturnAnalysis.ReturnState> {
     override fun visit(functionTree: DeclaredFunctionTree, data: ReturnState) {
         val body = functionTree.body
         if (body !in data.returningStatements) {
-            throw SemanticException("function " + functionTree.name + " does not return")
+            throw SemanticException("function " + functionTree.nameTree + " does not return")
         }
         data.returningStatements.clear()
         return super.visit(functionTree, data)
