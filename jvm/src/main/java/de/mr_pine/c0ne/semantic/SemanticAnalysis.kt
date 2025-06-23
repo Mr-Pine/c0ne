@@ -26,7 +26,7 @@ class SemanticAnalysis(private val program: ProgramTree) {
             RecursivePostorderVisitor(ReturnAnalysis()), ReturnState()
         )
         this.program.accept(
-            RecursivePostorderVisitor(MainMethodAnalysis()), Unit
+            RecursivePostorderVisitor(MainFunctionAnalysis()), Unit
         )
     }
 }
