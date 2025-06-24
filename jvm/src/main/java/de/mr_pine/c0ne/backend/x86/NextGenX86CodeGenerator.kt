@@ -4,6 +4,7 @@ import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.backend.x86.instructions.*
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
+import de.mr_pine.c0ne.ir.util.NodeSupport
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempDirectory
@@ -97,8 +98,6 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             // rbx, rsp, rbp, r12, r13, r14
             val calleeSaved = listOf(
                 X86Register.RealRegister.RBX,
-                X86Register.RealRegister.RSP,
-                X86Register.RealRegister.RBP,
                 X86Register.RealRegister.R12,
                 X86Register.RealRegister.R13,
                 X86Register.RealRegister.R14
@@ -305,12 +304,10 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             override fun visit(node: StartNode) {
                 instructionList.add(
                     Enter(
-                        node,
-                        irGraph.successors(node)
-                            .mapNotNull { (it as? ProjNode)?.takeIf { it.projectionInfo() is ProjNode.NamedParameterProjectionInfo } }
-                            .map { Argument.NodeValue(it) }
-                    )
-                )
+                    node,
+                    irGraph.successors(node)
+                        .mapNotNull { (it as? ProjNode)?.takeIf { it.projectionInfo() is ProjNode.NamedParameterProjectionInfo } }
+                        .map { Argument.NodeValue(it) }))
             }
 
             override fun visit(node: SubNode) {
@@ -331,9 +328,8 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                     Call(
                         node.target,
                         returnTarget,
-                        node.predecessors()
-                            .filterIndexed { index, _ -> index != node.sideEffectIndex }
-                            .map { Argument.NodeValue(it) })
+                        (0..<node.predecessors().size).map { NodeSupport.predecessorSkipSimpleProj(node, it) }
+                            .filterIndexed { index, _ -> index != node.sideEffectIndex }.map { Argument.NodeValue(it) })
                 )
             }
         }

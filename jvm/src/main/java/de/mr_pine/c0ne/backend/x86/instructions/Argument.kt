@@ -47,12 +47,11 @@ sealed interface Argument {
             context(alloc: NextGenSimpleX86RegAlloc)
             override fun concretize() = alloc.concretize(this)
             private fun sizePrefix(size: Int): String {
-                return if (size == 4) {
-                    "DWORD"
-                } else if (size == 1) {
-                    "BYTE"
-                } else {
-                    error("Unknown size $size")
+                return when (size) {
+                    8 -> "QWORD"
+                    4 -> "DWORD"
+                    1 -> "BYTE"
+                    else -> error("Unknown size $size")
                 }
             }
             override fun render(size: Int) = "${sizePrefix(size)} PTR [${RealRegister.RSP} + ${index * 4}]"
