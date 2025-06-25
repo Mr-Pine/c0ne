@@ -23,12 +23,13 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
     val concreteInstructions =
         abstractInstructions.zip(regAllocs) { abstractInstructions, regAlloc -> with(regAlloc) { abstractInstructions.map { it.concretize() } } }
 
+    val entryName = "_c0ne_main_ae6b3e77fd3ff2765aa254f7e7d5cf0a"
     val prefix = """
         .intel_syntax noprefix
-        .global _main
+        .global $entryName
         .text
         
-        _main:
+        $entryName:
         call main
         push RAX
         call flush
