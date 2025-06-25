@@ -115,7 +115,11 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         }
 
         val abstractInstructions = buildList {
-            val visitor = AbstractCodegenVisitor(this, irGraph, schedule.blockOrder.first())
+            val visitor = AbstractCodegenVisitor(
+                this,
+                irGraph,
+                schedule.blockOrder.first(),
+                isInSchedule = { node, block -> node in schedule.blockSchedules[block]!!.nodeOrder })
             for (block in schedule.blockOrder) {
                 block.accept(visitor)
                 for (node in schedule.blockSchedules[block]?.nodeOrder ?: emptyList()) {
@@ -125,7 +129,10 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         }
 
         inner class AbstractCodegenVisitor(
-            val instructionList: MutableList<Instruction>, val irGraph: IrGraph, private var currentBlock: Block
+            val instructionList: MutableList<Instruction>,
+            val irGraph: IrGraph,
+            private var currentBlock: Block,
+            private val isInSchedule: (Node, Block) -> Boolean
         ) : SSAVisitor<Unit> {
 
             private fun visitNormalBinop(
@@ -304,10 +311,12 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             override fun visit(node: StartNode) {
                 instructionList.add(
                     Enter(
-                    node,
-                    irGraph.successors(node)
-                        .mapNotNull { (it as? ProjNode)?.takeIf { it.projectionInfo() is ProjNode.NamedParameterProjectionInfo } }
-                        .map { Argument.NodeValue(it) }))
+                        node,
+                        irGraph.successors(node)
+                            .mapNotNull { (it as? ProjNode)?.takeIf { it.projectionInfo() is ProjNode.NamedParameterProjectionInfo } }
+                            .map { it.takeIf { isInSchedule(it, currentBlock) } }
+                            .map { it?.let { Argument.NodeValue(it) } })
+                )
             }
 
             override fun visit(node: SubNode) {
