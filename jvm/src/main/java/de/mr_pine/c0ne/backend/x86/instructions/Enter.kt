@@ -9,13 +9,14 @@ class Enter(val node: StartNode, val parameters: List<Argument?>, val overflowCo
     context(alloc: NextGenSimpleX86RegAlloc)
     override fun concretize() = Enter(node, parameters.map { it?.concretize() }, alloc.overflowCount)
 
-    override fun render(): String {
+    override fun render(size: Int): String {
+        require(size == 4) { "Size must be 4 for ENTER" }
         val calleeSavePush = NextGenX86CodeGenerator.AbstractCodegen.calleeSaved.joinToString("\n") {
             Push(Argument.RegMem.Register.RealRegister(it)).render()
         }
         val parameterMove =
-            NextGenX86CodeGenerator.AbstractCodegen.arguments.take(parameters.size).filterIndexed { index, _ -> parameters[index] != null }.reversed().joinToString("\n") {
-                Push(Argument.RegMem.Register.RealRegister(it)).render()
+            NextGenX86CodeGenerator.AbstractCodegen.arguments.take(parameters.size).filterIndexed { index, _ -> parameters[index] != null }.toList().reversed().joinToString("\n") {
+                Push(it).render()
             } + "\n" + parameters.filterNotNull().joinToString("\n") { value ->
                 Pop(value).render()
             }

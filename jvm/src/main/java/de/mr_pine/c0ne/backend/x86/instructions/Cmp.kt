@@ -8,7 +8,8 @@ class Cmp(val target: Argument.RegMem, val source: Argument, val size: Int = 4) 
         return Cmp(target.concretize() as Argument.RegMem, source.concretize(), size)
     }
 
-    override fun render(): String {
-        return "$mnemonic ${arguments.joinToString(", ") {it.render(size)}}"
+    override fun render(size: Int): String {
+        require(size == this.size || size == 4)
+        return "$mnemonic ${arguments.joinToString(", ") {it.render(this.size)}}"
     }
 }

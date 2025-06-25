@@ -6,7 +6,7 @@ import de.mr_pine.c0ne.ir.node.Block
 class Label(val block: Block) : Instruction("block_${processLabel(block.toString())}_${block.hashCode()}") {
     context(alloc: NextGenSimpleX86RegAlloc)
     override fun concretize() = this
-    override fun render(): String {
+    override fun render(size: Int): String {
         return "$mnemonic:"
     }
 

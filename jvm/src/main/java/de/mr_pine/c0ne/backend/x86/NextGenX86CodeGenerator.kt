@@ -6,6 +6,7 @@ import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.util.NodeSupport
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
+import java.util.Stack
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
@@ -104,14 +105,14 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             )
 
             // rdi, rsi, rdx, rcx, r8, r9
-            val arguments = listOf(
+            val arguments = sequenceOf(
                 X86Register.RealRegister.RDI,
                 X86Register.RealRegister.RSI,
                 X86Register.RealRegister.RDX,
                 X86Register.RealRegister.RCX,
                 X86Register.RealRegister.R8,
                 X86Register.RealRegister.R9
-            )
+            ).map { Argument.RegMem.Register.RealRegister(it) } + generateSequence(Argument.RegMem.StackOverflowSlot(-4)) { Argument.RegMem.StackOverflowSlot(it.index - 2) }
         }
 
         val abstractInstructions = buildList {

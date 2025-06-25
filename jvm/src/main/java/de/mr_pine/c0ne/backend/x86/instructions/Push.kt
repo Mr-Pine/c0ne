@@ -8,7 +8,7 @@ class Push(val value: Argument) : Instruction("PUSH", value) {
         return Push(value.concretize())
     }
 
-    override fun render(): String {
+    override fun render(size: Int): String {
         return "$mnemonic ${value.render(8)}"
     }
 }

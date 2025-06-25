@@ -8,7 +8,7 @@ class Pop(val value: Argument) : Instruction("POP", value) {
         return Pop(value.concretize() as Argument.RegMem)
     }
 
-    override fun render(): String {
+    override fun render(size: Int): String {
         return "$mnemonic ${value.render(8)}"
     }
 }

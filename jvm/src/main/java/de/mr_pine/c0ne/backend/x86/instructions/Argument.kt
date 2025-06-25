@@ -54,7 +54,7 @@ sealed interface Argument {
                     else -> error("Unknown size $size")
                 }
             }
-            override fun render(size: Int) = "${sizePrefix(size)} PTR [${RealRegister.RSP} + ${index * 4}]"
+            override fun render(size: Int) = "${sizePrefix(size)} PTR [${RealRegister.RBP} - ${index * 4}]"
         }
 
         data class RegMemFor(val arg: Argument) : RegMem {

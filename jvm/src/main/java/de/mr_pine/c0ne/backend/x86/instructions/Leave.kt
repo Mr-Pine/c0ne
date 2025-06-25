@@ -7,7 +7,8 @@ class Leave : Instruction("LEAVE") {
     context(alloc: NextGenSimpleX86RegAlloc)
     override fun concretize() = this
 
-    override fun render(): String {
+    override fun render(size: Int): String {
+        require(size == 4) { "Size must be 4 for LEAVE" }
         val calleeSavePop = NextGenX86CodeGenerator.AbstractCodegen.calleeSaved.reversed().joinToString("\n") {
             Pop(Argument.RegMem.Register.RealRegister(it)).render()
         }
