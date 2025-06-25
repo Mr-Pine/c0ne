@@ -7,8 +7,7 @@ import de.mr_pine.c0ne.backend.x86.X86Register
 import de.mr_pine.c0ne.parser.symbol.Name
 
 class Call(val target: Name, val returnTarget: Argument, val callArguments: List<Argument>) : Instruction("CALL") {
-    context(alloc: NextGenSimpleX86RegAlloc)
-    override fun concretize(): Instruction {
+    context(alloc: NextGenSimpleX86RegAlloc) override fun concretize(): Instruction {
         return Call(target, returnTarget.concretize(), callArguments.map { it.concretize() })
     }
 
@@ -29,20 +28,18 @@ class Call(val target: Name, val returnTarget: Argument, val callArguments: List
             callArguments.zip(NextGenX86CodeGenerator.AbstractCodegen.arguments.take(callArguments.size).toList())
         val registerArguments = argumentsWithLocations.filter { it.second is Argument.RegMem.Register }
         val memoryArguments = argumentsWithLocations.filter { it.second is Argument.RegMem.StackOverflowSlot }
-        val argumentMoves =
-            registerArguments.joinToString("\n") { (value, _) ->
-                Push(value).render()
-            } + "\n" + registerArguments.reversed().joinToString("\n") { (_, target) ->
-                Pop(target).render()
-            } + "\n" + memoryArguments.reversed().joinToString("\n") { (value, _) ->
-                Push(value).render()
-            }
+        val argumentMoves = memoryArguments.reversed().joinToString("\n") { (value, _) ->
+            Push(value).render()
+        } + "\n" + registerArguments.joinToString("\n") { (value, _) ->
+            Push(value).render()
+        } + "\n" + registerArguments.reversed().joinToString("\n") { (_, target) ->
+            Pop(target).render()
+        }
         val stackArgReset = if (memoryArguments.isNotEmpty()) {
             Add(
                 Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RSP),
                 Argument.Immediate(8 * memoryArguments.size)
-            )
-                .render(8)
+            ).render(8)
         } else ""
 
         return """

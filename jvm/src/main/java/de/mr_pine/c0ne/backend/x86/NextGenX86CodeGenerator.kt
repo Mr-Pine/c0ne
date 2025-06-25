@@ -68,7 +68,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
         val input = tmpdir.resolve("input.s").apply { writeText(generation + "\n") }
         val output = tmpdir.resolve("c0ne_out")
         val assembler = ProcessBuilder(
-            "gcc", input.absolutePathString(), "-g", "-o", output.absolutePathString(), "-Wl,-e_main"
+            "gcc", input.absolutePathString(), "-g", "-o", output.absolutePathString(), "-Wl,-e$entryName"
         ).start()
         if (assembler.waitFor() != 0) {
             throw Exception("gcc assembly failed: ${assembler.errorStream.readAllBytes().decodeToString()}")

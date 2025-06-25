@@ -3,6 +3,7 @@ package de.mr_pine.c0ne.backend.x86.instructions
 import de.mr_pine.c0ne.backend.x86.NextGenSimpleX86RegAlloc
 import de.mr_pine.c0ne.backend.x86.NextGenX86CodeGenerator
 import de.mr_pine.c0ne.ir.node.StartNode
+import kotlin.math.ceil
 
 class Enter(val node: StartNode, val parameters: List<Argument?>, val overflowCount: Int? = null) :
     Instruction("ENTER") {
@@ -23,7 +24,7 @@ class Enter(val node: StartNode, val parameters: List<Argument?>, val overflowCo
         return """
             .global ${node.graph.name()}
             ${node.graph.name()}:
-            $mnemonic ${overflowCount!! * 4}, 0
+            $mnemonic ${ceil(overflowCount!! / 2.0).toInt() * 8}, 0
             $calleeSavePush
             $parameterMove
         """.trimIndent()

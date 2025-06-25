@@ -20,7 +20,7 @@ class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedu
         X86Register.RealRegister.RSP,
         X86Register.RealRegister.R15
     )).map { Argument.RegMem.Register.RealRegister(it) }
-        .asSequence() + generateSequence(Argument.RegMem.StackOverflowSlot(0)) { Argument.RegMem.StackOverflowSlot(it.index + 1) }
+        .asSequence() + generateSequence(Argument.RegMem.StackOverflowSlot(2 /*RBP + 0..4 == Return ptr*/)) { Argument.RegMem.StackOverflowSlot(it.index + 1) }
 
     private val allocation = allocateRegisters()
 
