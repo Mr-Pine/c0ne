@@ -49,7 +49,7 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
 
             is ReturnNode -> setOf(node.result)
             is IfNode -> setOf(node.condition)
-            is CallNode -> node.predecessors().dropLast(1).toSet()
+            is CallNode -> node.arguments.toSet()
             is ExitNode, is ProjNode, is ConstIntNode, is ConstBoolNode, is Block, is StartNode, is UndefNode -> setOf()
         }
     }

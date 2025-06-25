@@ -13,6 +13,10 @@ class CallNode(block: Block, val target: Name, arguments: List<Node>, sideEffect
         return visitor.visit(this)
     }
 
+    val arguments
+        get() = (0..<predecessors().size).map { NodeSupport.predecessorSkipSimpleProj(this, it) }
+            .filterIndexed { index, _ -> index != sideEffectIndex }
+
     val sideEffect
         get() = NodeSupport.predecessorSkipSimpleProj(this, sideEffectIndex)
 }

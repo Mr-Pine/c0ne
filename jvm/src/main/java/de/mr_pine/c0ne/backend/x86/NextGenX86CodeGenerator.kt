@@ -339,8 +339,7 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                     Call(
                         node.target,
                         returnTarget,
-                        (0..<node.predecessors().size).map { NodeSupport.predecessorSkipSimpleProj(node, it) }
-                            .filterIndexed { index, _ -> index != node.sideEffectIndex }.map { Argument.NodeValue(it) })
+                        node.arguments.map { Argument.NodeValue(it) })
                 )
             }
         }
