@@ -41,7 +41,7 @@ sealed interface Argument {
             }
         }
 
-        data class StackOverflowSlot(val index: Int) : RegMem {
+        data class StackOverflowSlot(val offset: Int) : RegMem {
             override val nodeValue = null
 
             context(alloc: NextGenSimpleX86RegAlloc)
@@ -54,7 +54,7 @@ sealed interface Argument {
                     else -> error("Unknown size $size")
                 }
             }
-            override fun render(size: Int) = "${sizePrefix(size)} PTR [${RealRegister.RBP} - ${index * 4}]"
+            override fun render(size: Int) = "${sizePrefix(size)} PTR [${RealRegister.RBP} - $offset]"
         }
 
         data class RegMemFor(val arg: Argument) : RegMem {

@@ -8,7 +8,6 @@ import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.Node
-import de.mr_pine.c0ne.ir.node.ProjNode
 import kotlin.collections.set
 
 class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedule: Schedule) {
@@ -20,7 +19,7 @@ class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedu
         X86Register.RealRegister.RSP,
         X86Register.RealRegister.R15
     )).map { Argument.RegMem.Register.RealRegister(it) }
-        .asSequence() + generateSequence(Argument.RegMem.StackOverflowSlot(2 /*RBP + 0..4 == Return ptr*/)) { Argument.RegMem.StackOverflowSlot(it.index + 1) }
+        .asSequence() + generateSequence(Argument.RegMem.StackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { Argument.RegMem.StackOverflowSlot(it.offset + 8) }
 
     private val allocation = allocateRegisters()
 
@@ -43,7 +42,7 @@ class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedu
     }
 
     val overflowCount
-        get() = allocation.values.mapNotNull { it as? Argument.RegMem.StackOverflowSlot }.maxOfOrNull { it.index }?.let { it + 1 } ?: 0
+        get() = allocation.values.mapNotNull { it as? Argument.RegMem.StackOverflowSlot }.maxOfOrNull { it.offset }?.let { it + 1 } ?: 0
 
     fun concretize(argument: Argument.NodeValue): Argument {
         return when (argument.node) {

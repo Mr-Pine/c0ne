@@ -24,7 +24,7 @@ class Enter(val node: StartNode, val parameters: List<Argument?>, val overflowCo
         return """
             .global ${node.graph.name()}
             ${node.graph.name()}:
-            $mnemonic ${ceil(overflowCount!! / 2.0).toInt() * 8}, 0
+            $mnemonic ${overflowCount!! * 8}, 0
             $calleeSavePush
             $parameterMove
         """.trimIndent()

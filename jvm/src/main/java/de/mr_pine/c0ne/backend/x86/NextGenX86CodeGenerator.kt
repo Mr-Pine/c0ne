@@ -113,9 +113,9 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                 X86Register.RealRegister.RCX,
                 X86Register.RealRegister.R8,
                 X86Register.RealRegister.R9
-            ).map { Argument.RegMem.Register.RealRegister(it) } + generateSequence(Argument.RegMem.StackOverflowSlot(-4)) {
+            ).map { Argument.RegMem.Register.RealRegister(it) } + generateSequence(Argument.RegMem.StackOverflowSlot(-16)) {
                 Argument.RegMem.StackOverflowSlot(
-                    it.index - 2
+                    it.offset - 8
                 )
             }
         }
