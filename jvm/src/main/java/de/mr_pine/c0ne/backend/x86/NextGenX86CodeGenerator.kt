@@ -4,9 +4,7 @@ import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.backend.x86.instructions.*
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
-import de.mr_pine.c0ne.ir.util.NodeSupport
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
-import java.util.Stack
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
@@ -23,13 +21,12 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
     val concreteInstructions =
         abstractInstructions.zip(regAllocs) { abstractInstructions, regAlloc -> with(regAlloc) { abstractInstructions.map { it.concretize() } } }
 
-    val entryName = "_c0ne_main_ae6b3e77fd3ff2765aa254f7e7d5cf0a"
     val prefix = """
         .intel_syntax noprefix
-        .global $entryName
+        .global $ENTRY_NAME
         .text
         
-        $entryName:
+        $ENTRY_NAME:
         call main
         push RAX
         call flush
@@ -58,22 +55,25 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
             ret
     """.trimIndent() + "\n\n"
 
-    private fun generateAssembly(): String {
+    fun generateAssembly(): String {
         val functionAssembly = concreteInstructions.map { it.joinToString(separator = "\n") { it.render() } }
         return prefix + functionAssembly.joinToString("\n\n")
     }
 
-    private fun postprocess(generation: String): ByteArray {
-        val tmpdir = createTempDirectory("c0ne")
-        val input = tmpdir.resolve("input.s").apply { writeText(generation + "\n") }
-        val output = tmpdir.resolve("c0ne_out")
-        val assembler = ProcessBuilder(
-            "gcc", input.absolutePathString(), "-g", "-o", output.absolutePathString(), "-Wl,-e$entryName"
-        ).start()
-        if (assembler.waitFor() != 0) {
-            throw Exception("gcc assembly failed: ${assembler.errorStream.readAllBytes().decodeToString()}")
+    companion object {
+        const val ENTRY_NAME = "_c0ne_main_ae6b3e77fd3ff2765aa254f7e7d5cf0a"
+        fun postprocess(generation: String): ByteArray {
+            val tmpdir = createTempDirectory("c0ne")
+            val input = tmpdir.resolve("input.s").apply { writeText(generation + "\n") }
+            val output = tmpdir.resolve("c0ne_out")
+            val assembler = ProcessBuilder(
+                "gcc", input.absolutePathString(), "-g", "-o", output.absolutePathString(), "-Wl,-e$ENTRY_NAME"
+            ).start()
+            if (assembler.waitFor() != 0) {
+                throw Exception("gcc assembly failed: ${assembler.errorStream.readAllBytes().decodeToString()}")
+            }
+            return output.toFile().readBytes()
         }
-        return output.toFile().readBytes()
     }
 
     fun generate(): ByteArray {
@@ -113,7 +113,11 @@ class NextGenX86CodeGenerator(irGraphs: List<IrGraph>) {
                 X86Register.RealRegister.RCX,
                 X86Register.RealRegister.R8,
                 X86Register.RealRegister.R9
-            ).map { Argument.RegMem.Register.RealRegister(it) } + generateSequence(Argument.RegMem.StackOverflowSlot(-4)) { Argument.RegMem.StackOverflowSlot(it.index - 2) }
+            ).map { Argument.RegMem.Register.RealRegister(it) } + generateSequence(Argument.RegMem.StackOverflowSlot(-4)) {
+                Argument.RegMem.StackOverflowSlot(
+                    it.index - 2
+                )
+            }
         }
 
         val abstractInstructions = buildList {
