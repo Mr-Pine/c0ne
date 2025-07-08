@@ -21,5 +21,5 @@ sealed class UnaryOperationNode : Node {
     }
 
     val value
-        get() = NodeSupport.predecessorSkipProj(this, VALUE)
+        get() = NodeSupport.predecessorSkipSimpleProj(this, VALUE)
 }

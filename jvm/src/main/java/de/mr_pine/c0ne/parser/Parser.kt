@@ -3,40 +3,62 @@ package de.mr_pine.c0ne.parser
 import de.mr_pine.c0ne.lexer.*
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import de.mr_pine.c0ne.parser.ast.*
+import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.type.BasicType
+import kotlin.collections.listOf
 
 class Parser(private val tokenSource: TokenSource) {
     fun parseProgram(): ProgramTree {
         return ProgramTree(parseTopLevelElements())
     }
 
-    private fun parseTopLevelElements(): MutableList<FunctionTree> {
-        val topLevelElements = mutableListOf<FunctionTree>()
+    private fun parseTopLevelElements(): MutableList<DeclaredFunctionTree> {
+        val topLevelElements = mutableListOf<DeclaredFunctionTree>()
         while (tokenSource.hasMore()) {
             val function = parseFunction()
             topLevelElements.add(function)
         }
-        if (topLevelElements.size != 1) {
-            throw ParseException("L2 program should contain exactly one function")
-        }
         return topLevelElements
     }
 
-    private fun parseFunction(): FunctionTree {
+    private fun parseFunction(): DeclaredFunctionTree {
         val type = parseType()
         val identifier = this.tokenSource.expectIdentifier()
-        // Remove with more functions
-        if (identifier.asString() != "main") {
-            throw ParseException("Only main function allowed")
-        } else if (type.type != BasicType.Integer) {
-            throw ParseException("Main function must return integer")
-        }
-        this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
-        this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
+        val parameterList = parseParameterList()
         val body = parseBlock()
-        return FunctionTree(type, name(identifier), body)
+        return DeclaredFunctionTree(type, name(identifier), parameterList, body)
     }
+
+    private fun <T : Tree> parseParenthesizedList(elementParser: Parser.() -> T): ParenthesizedListTree<T> {
+        val startSpan = tokenSource.expectSeparator(SeparatorType.PAREN_OPEN).span
+
+        val elements = buildList {
+            if (tokenSource.peekAs<Separator>()?.type != SeparatorType.PAREN_CLOSE) while (true) {
+                add(elementParser())
+
+                if (tokenSource.peekAs<Separator>()?.type == SeparatorType.PAREN_CLOSE) {
+                    break
+                }
+
+                tokenSource.expectSeparator(SeparatorType.COMMA)
+            }
+        }
+
+        val endSpan = tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE).span
+
+        return ParenthesizedListTree(elements, startSpan merge endSpan)
+    }
+
+    private fun parseArgumentList(): ParenthesizedListTree<ExpressionTree> =
+        parseParenthesizedList { parseExpression() }
+
+    private fun parseParameterList(): ParenthesizedListTree<ParameterTree> =
+        parseParenthesizedList {
+            val type = parseType()
+            val name = name(tokenSource.expectIdentifier())
+            ParameterTree(type, name)
+        }
 
     private fun parseBlock(): BlockTree {
         val bodyOpen = this.tokenSource.expectSeparator(SeparatorType.BRACE_OPEN)
@@ -94,10 +116,24 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseSimple(): StatementTree {
+        // Special case print, read, flush
+        if (this.tokenSource.peekAs<Keyword>()
+                ?.let { it.type in listOf(KeywordType.PRINT, KeywordType.READ, KeywordType.FLUSH) } == true
+        ) {
+            val keyword = this.tokenSource.consume() as Keyword
+            val arguments = parseArgumentList()
+            return CallTree(NameTree(IdentName(keyword.type.name.lowercase()), keyword.span), arguments)
+        }
+
         val lValue = parseLValue()
-        val assignmentOperator = parseAssignmentOperator()
-        val expression = parseExpression()
-        return AssignmentTree(lValue, assignmentOperator, expression)
+        if (this.tokenSource.peekAs<Separator>()?.type == SeparatorType.PAREN_OPEN) {
+            val arguments = parseArgumentList()
+            return CallTree((lValue as LValueIdentTree).name, arguments)
+        } else {
+            val assignmentOperator = parseAssignmentOperator()
+            val expression = parseExpression()
+            return AssignmentTree(lValue, assignmentOperator, expression)
+        }
     }
 
     private fun parseAssignmentOperator(): Operator {
@@ -273,9 +309,21 @@ class Parser(private val tokenSource: TokenSource) {
                 LiteralTree.LiteralBoolTree(nextToken)
             }
 
+            is Keyword if nextToken.type in listOf(KeywordType.PRINT, KeywordType.READ, KeywordType.FLUSH) -> {
+                val keyword = this.tokenSource.consume() as Keyword
+                val arguments = parseArgumentList()
+                return CallTree(NameTree(IdentName(keyword.type.name.lowercase()), keyword.span), arguments)
+            }
+
             is Identifier -> {
                 this.tokenSource.consume()
-                IdentExpressionTree(name(nextToken))
+                val name = name(nextToken)
+                if (this.tokenSource.peek().isSeparator(SeparatorType.PAREN_OPEN)) {
+                    val arguments = parseArgumentList()
+                    CallTree(name, arguments)
+                } else {
+                    IdentExpressionTree(name)
+                }
             }
 
             else -> throw ParseException("invalid expression starting at $nextToken")

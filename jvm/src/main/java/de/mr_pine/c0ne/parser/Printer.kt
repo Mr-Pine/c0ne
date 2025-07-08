@@ -4,7 +4,7 @@ import de.mr_pine.c0ne.parser.ast.AssignmentTree
 import de.mr_pine.c0ne.parser.ast.BinaryOperationTree
 import de.mr_pine.c0ne.parser.ast.BlockTree
 import de.mr_pine.c0ne.parser.ast.DeclarationTree
-import de.mr_pine.c0ne.parser.ast.FunctionTree
+import de.mr_pine.c0ne.parser.ast.DeclaredFunctionTree
 import de.mr_pine.c0ne.parser.ast.IdentExpressionTree
 import de.mr_pine.c0ne.parser.ast.LValueIdentTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree
@@ -39,11 +39,13 @@ class Printer(private val ast: Tree) {
                 print("}")
             }
 
-            is FunctionTree -> {
-                printTree(tree.returnType)
+            is DeclaredFunctionTree -> {
+                printTree(tree.returnTypeTree)
                 space()
-                printTree(tree.name)
-                print("()")
+                printTree(tree.nameTree)
+                print("(")
+                printTree(tree.parameters)
+                print(")")
                 space()
                 printTree(tree.body)
             }

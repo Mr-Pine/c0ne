@@ -1,7 +1,5 @@
 package de.mr_pine.c0ne.ir.util
 
-import de.mr_pine.c0ne.analysis.nodesInControlFlowOrder
-import de.mr_pine.c0ne.backend.RegisterAllocator
 import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
@@ -11,7 +9,6 @@ import java.util.*
 class YCompPrinter(
     private val graph: IrGraph,
     private val schedule: Schedule?,
-    val registers: RegisterAllocator.RegisterAllocation<*>?
 ) {
     private val clusters: MutableMap<Block, MutableSet<Node>> = mutableMapOf()
     private val ids: MutableMap<Node, Int> = mutableMapOf()
@@ -220,6 +217,7 @@ class YCompPrinter(
 
             is UndefNode -> VcgColor.SPECIAL
 
+            is CallNode -> VcgColor.CONTROL_FLOW
             is ReturnNode -> VcgColor.CONTROL_FLOW
             is StartNode -> VcgColor.CONTROL_FLOW
             is IfNode -> VcgColor.CONTROL_FLOW
@@ -242,8 +240,6 @@ class YCompPrinter(
     private fun nodeLabel(node: Node): String {
         if (node is Block) {
             return "block ${node.label}"
-        } else if (registers != null && registers.getOrNull(node) != null) {
-            return "${node}\n${registers[node]}"
         }
         return node.toString()
     }
@@ -284,8 +280,8 @@ class YCompPrinter(
     }
 
     companion object {
-        fun print(graph: IrGraph, schedule: Schedule? = null, registers: RegisterAllocator.RegisterAllocation<*>? = null): String {
-            val printer = YCompPrinter(graph, schedule, registers)
+        fun print(graph: IrGraph, schedule: Schedule? = null): String {
+            val printer = YCompPrinter(graph, schedule)
             printer.prepare(graph.endBlock, HashSet<Node>())
             return printer.dumpGraphAsString()
         }

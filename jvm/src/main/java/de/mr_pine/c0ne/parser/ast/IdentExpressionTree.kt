@@ -8,8 +8,14 @@ data class IdentExpressionTree(val name: NameTree) : ExpressionTree {
     override val span: Span
         get() = name.span
 
+    var references: Declaration? = null
+        set(value) {
+            requireNotNull(value)
+            field = value
+        }
+
     override val type by lazy {
-        val declarationTree = name.references!!
+        val declarationTree = references!!
         declarationTree.type
     }
 

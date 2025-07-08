@@ -20,9 +20,13 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             throw NotImplementedError("Only assignments to variables are currently supported")
         }
         if (assignmentTree.operator.type.isSelfAssignOperator) {
-            data.checkUsage(assignmentTree.lValue.name, assignmentTree.span)
+            assignmentTree.lValue.references = data.checkUsage(assignmentTree.lValue.name, assignmentTree.span)
         }
-        return status.addDefinition(Definition(assignmentTree.lValue.name.name), assignmentTree.span, assignmentTree)
+        return status.addDefinition(
+            VariableDefinition(assignmentTree.lValue.name.name),
+            assignmentTree.span,
+            assignmentTree
+        )
     }
 
     override fun visit(
@@ -46,24 +50,26 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     override fun visit(
         declarationTree: DeclarationTree, data: VariableStatus
     ): VariableStatus {
-        var status = data.addDeclaration(Declaration(declarationTree.name.name, declarationTree))
+        var status = data.addDeclaration(VariableDeclaration(declarationTree.name.name, declarationTree))
         if (declarationTree.initializer != null) {
             status = declarationTree.initializer.accept(this, status)
-            status = status.addDefinition(Definition(declarationTree.name.name), declarationTree.span, null)
+            status = status.addDefinition(VariableDefinition(declarationTree.name.name), declarationTree.span, null)
         }
         return status
     }
 
     override fun visit(
-        functionTree: FunctionTree, data: VariableStatus
+        functionTree: DeclaredFunctionTree, data: VariableStatus
     ): VariableStatus {
-        return functionTree.body.accept(this, data)
+        var status = data.enterNewScope()
+        status = functionTree.parameters.accept(this, status)
+        return functionTree.body.accept(this, status).exitScopeWithoutDefs()
     }
 
     override fun visit(
         identExpressionTree: IdentExpressionTree, data: VariableStatus
     ): VariableStatus {
-        data.checkUsage(identExpressionTree.name, identExpressionTree.span)
+        identExpressionTree.references = data.checkUsage(identExpressionTree.name, identExpressionTree.span)
         return data
     }
 
@@ -119,9 +125,9 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     override fun visit(
         ifTree: IfTree, data: VariableStatus
     ): VariableStatus {
-        val status = ifTree.condition.accept(this, data).enterNewScope()
-        val afterThenStatus = ifTree.thenTree.accept(this, status).exitScope()
-        val afterElseStatus = ifTree.elseTree?.accept(this, status)?.exitScope()
+        val status = ifTree.condition.accept(this, data)
+        val afterThenStatus = ifTree.thenTree.accept(this, status.enterNewScope()).exitScope()
+        val afterElseStatus = ifTree.elseTree?.accept(this, status.enterNewScope())?.exitScope()
 
         return afterElseStatus?.intersectLastDefinitions(afterThenStatus) ?: status
     }
@@ -173,11 +179,45 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         return data
     }
 
-    data class Declaration(val name: Name, val declaration: DeclarationTree)
-    data class Definition(val name: Name)
+    override fun visit(
+        callTree: CallTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return callTree.arguments.accept(this, data)
+    }
+
+    override fun visit(
+        builtinFunction: FunctionTree.BuiltinFunction,
+        data: VariableStatus
+    ): VariableStatus {
+        return data
+    }
+
+    override fun visit(
+        parameterTree: ParameterTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return data.addDeclaration(VariableDeclaration(parameterTree.name.name, parameterTree)).addDefinition(
+            VariableDefinition(parameterTree.name.name), parameterTree.span, null
+        )
+    }
+
+    override fun <V : Tree> visit(
+        parenthesizedListTree: ParenthesizedListTree<V>,
+        data: VariableStatus
+    ): VariableStatus {
+        var status = data
+        for (elem in parenthesizedListTree.elements) {
+            status = elem.accept(this, status)
+        }
+        return status
+    }
+
+    data class VariableDeclaration(val name: Name, val declaration: Declaration)
+    data class VariableDefinition(val name: Name)
 
     private data class ScopeStatus(
-        val declarations: Set<Declaration>, val definitions: Set<Definition>
+        val declarations: Set<VariableDeclaration>, val definitions: Set<VariableDefinition>
     )
 
     @ConsistentCopyVisibility
@@ -195,7 +235,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             if (scopes.size <= 1) {
                 return initial
             }
-            val declarations = scopes.last().declarations.map(Declaration::name)
+            val declarations = scopes.last().declarations.map(VariableDeclaration::name)
             val definitions = scopes.last().definitions.filter { it.name !in declarations }
             val updatedPrevious = scopes[scopes.size - 2].let { it.copy(definitions = it.definitions + definitions) }
             return copy(scopes = scopes.dropLast(2) + updatedPrevious)
@@ -205,7 +245,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             return copy(scopes = scopes.dropLast(1))
         }
 
-        fun addDeclaration(declaration: Declaration): VariableStatus {
+        fun addDeclaration(declaration: VariableDeclaration): VariableStatus {
             val existingDeclaration = declarationFor(declaration.name)
             if (existingDeclaration != null) {
                 throw SemanticException("Variable ${declaration.name.asString()} declared at ${declaration.declaration.span} already declared at ${existingDeclaration.declaration.span}")
@@ -217,12 +257,12 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             )
         }
 
-        fun addDefinition(definition: Definition, span: Span, assignmentTree: AssignmentTree?): VariableStatus {
+        fun addDefinition(definition: VariableDefinition, span: Span, assignmentTree: AssignmentTree?): VariableStatus {
             val existingDeclaration = declarationFor(definition.name)
             if (existingDeclaration == null) {
                 throw SemanticException("Variable ${definition.name.asString()} defined but not declared at $span")
             }
-            (assignmentTree?.lValue as? LValueIdentTree)?.apply { name.references = existingDeclaration.declaration }
+            (assignmentTree?.lValue as? LValueIdentTree)?.let { it.references = existingDeclaration.declaration }
             return VariableStatus(
                 scopes.dropLast(1) + ScopeStatus(
                     scopes.last().declarations, scopes.last().definitions + definition
@@ -230,20 +270,21 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             )
         }
 
-        fun checkUsage(name: NameTree, span: Span) {
+        fun checkUsage(name: NameTree, span: Span): Declaration {
             val declaration = declarationFor(name.name)
             if (declaration == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not defined at $span")
             }
-            name.references = declaration.declaration
             if (definitionFor(name.name) == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not declared at $span")
             }
+            return declaration.declaration
         }
 
         fun defineAllUndefined(): VariableStatus {
             val undefinedDefinitions =
-                scopes.flatMap { it.declarations }.filter { definitionFor(it.name) == null }.map { Definition(it.name) }
+                scopes.flatMap { it.declarations }.filter { definitionFor(it.name) == null }
+                    .map { VariableDefinition(it.name) }
             return VariableStatus(
                 scopes.dropLast(1) + scopes.last().copy(definitions = scopes.last().definitions + undefinedDefinitions)
             )

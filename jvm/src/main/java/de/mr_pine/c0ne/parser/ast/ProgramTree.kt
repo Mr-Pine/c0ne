@@ -4,11 +4,11 @@ import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.Span.SimpleSpan
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
-class ProgramTree(topLevelTrees: List<FunctionTree>) : Tree {
+class ProgramTree(topLevelTrees: List<DeclaredFunctionTree>) : Tree {
     override val span: Span
         get() {
-            val first: FunctionTree = topLevelTrees.first()
-            val last: FunctionTree = topLevelTrees.last()
+            val first: DeclaredFunctionTree = topLevelTrees.first()
+            val last: DeclaredFunctionTree = topLevelTrees.last()
             return SimpleSpan(first.span.start, last.span.end)
         }
 
@@ -16,7 +16,7 @@ class ProgramTree(topLevelTrees: List<FunctionTree>) : Tree {
         return visitor.visit(this, data)
     }
 
-    val topLevelTrees: List<FunctionTree>
+    val topLevelTrees: List<DeclaredFunctionTree>
 
     init {
         var topLevelTrees = topLevelTrees

@@ -4,8 +4,6 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
-import de.mr_pine.c0ne.backend.Schedule
-import de.mr_pine.c0ne.backend.x86.NextGenX86CodeGenerator
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import de.mr_pine.c0ne.ir.SsaTranslation
 import de.mr_pine.c0ne.ir.optimize.ControlFlowPrune
@@ -16,6 +14,7 @@ import de.mr_pine.c0ne.lexer.Lexer
 import de.mr_pine.c0ne.parser.ParseException
 import de.mr_pine.c0ne.parser.Parser
 import de.mr_pine.c0ne.parser.TokenSource
+import de.mr_pine.c0ne.parser.ast.ProgramTree
 import de.mr_pine.c0ne.semantic.SemanticAnalysis
 import de.mr_pine.c0ne.semantic.SemanticException
 import java.io.File
@@ -33,28 +32,17 @@ class C0ne : CliktCommand() {
 
 
     override fun run() {
-        val program = lexAndParse(input)
-        try {
-            SemanticAnalysis(program).analyze()
-        } catch (e: SemanticException) {
-            e.printStackTrace()
+        val input = input.readText()
+        val assembly = try {
+            compileToAssembly(input)
+        } catch (semantic: SemanticException) {
+            semantic.printStackTrace()
             exitProcess(ExitCodes.SEMANTIC_ERROR.code)
+        } catch (parse: ParseException) {
+            parse.printStackTrace()
+            exitProcess(ExitCodes.LEX_PARSE_ERROR.code)
         }
-        val graphs = program.topLevelTrees.map { function ->
-            val optimizer = MultiOptimizer(/*ConstantFolding(), */LocalValueNumbering())
-            val finishPassOptimizer = ControlFlowPrune()
-            val translation = SsaTranslation(function, optimizer, finishPassOptimizer)
-            translation.translate()
-        }
-
-        val firstGraph = graphs.first()
-        File("/tmp/graph.vcg").writeText(YCompPrinter.print(graphs[0]/*, Schedule(firstGraph)*/))
-
-        val nextGenX86CodeGenerator = NextGenX86CodeGenerator(graphs)
-
-
-        //val code = X86CodeGenerator().generateCode(graphs)
-        val code = nextGenX86CodeGenerator.generate()
+        val code = X86CodeGenerator.postprocess(assembly)
         output.writeBytes(code)
         output.setPosixFilePermissions(
             setOf(
@@ -65,14 +53,30 @@ class C0ne : CliktCommand() {
     }
 
     companion object {
-        private fun lexAndParse(input: Path) = try {
-            val lexer = Lexer.forString(input.readText())
+        fun compileToAssembly(source: String): String {
+            val program = lexAndParse(source)
+            SemanticAnalysis(program).analyze()
+            val graphs = program.topLevelTrees.map { function ->
+                val optimizer = MultiOptimizer(/*ConstantFolding(), */LocalValueNumbering())
+                val finishPassOptimizer = ControlFlowPrune()
+                val translation = SsaTranslation(function, optimizer, finishPassOptimizer)
+                translation.translate()
+            }
+
+            val firstGraph = graphs.first()
+            graphs.map {
+                File("/tmp/graph-${it.name()}.vcg").writeText(YCompPrinter.print(it/*, Schedule(firstGraph)*/))
+            }
+
+            val x86CodeGenerator = X86CodeGenerator(graphs)
+            return x86CodeGenerator.generateAssembly()
+        }
+
+        private fun lexAndParse(input: String): ProgramTree {
+            val lexer = Lexer.forString(input)
             val tokenSource = TokenSource(lexer)
             val parser = Parser(tokenSource)
-            parser.parseProgram()
-        } catch (e: ParseException) {
-            e.printStackTrace()
-            exitProcess(ExitCodes.LEX_PARSE_ERROR.code)
+            return parser.parseProgram()
         }
     }
 }

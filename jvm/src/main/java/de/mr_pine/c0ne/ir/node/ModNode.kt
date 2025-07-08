@@ -24,5 +24,5 @@ class ModNode(block: Block, left: Node, right: Node, sideEffect: Node) :
     }
 
     val sideEffect
-        get() = NodeSupport.predecessorSkipProj(this, DivNode.Companion.SIDE_EFFECT)
+        get() = NodeSupport.predecessorSkipSimpleProj(this, DivNode.Companion.SIDE_EFFECT)
 }

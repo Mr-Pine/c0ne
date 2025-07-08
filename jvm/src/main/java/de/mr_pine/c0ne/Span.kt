@@ -15,4 +15,11 @@ interface Span {
             return "[" + this.start + "|" + this.end + "]"
         }
     }
+
+    object Synthetic: Span {
+        override val start = Position.SyntheticPosition
+        override val end = Position.SyntheticPosition
+
+        override fun merge(later: Span) = later
+    }
 }

@@ -23,11 +23,11 @@ import java.util.*
  *
  * We recommend reading the paper to better understand the mechanics implemented here. */
 class SsaTranslation(
-    private val function: FunctionTree,
+    private val function: DeclaredFunctionTree,
     optimizer: Optimizer,
     private val finishPassOptimizer: FinishPassOptimizer
 ) {
-    private val constructor: GraphConstructor = GraphConstructor(optimizer, function.name.name.asString())
+    private val constructor: GraphConstructor = GraphConstructor(optimizer, function.nameTree.name.asString())
 
     fun translate(): IrGraph {
         val visitor = SsaTranslationVisitor()
@@ -188,10 +188,14 @@ class SsaTranslation(
             return NOT_AN_EXPRESSION
         }
 
-        override fun visit(functionTree: FunctionTree, data: SsaTranslation): Node? {
+        override fun visit(functionTree: DeclaredFunctionTree, data: SsaTranslation): Node? {
             pushSpan(functionTree)
             val start = data.constructor.newStart()
             data.constructor.writeCurrentSideEffect(data.constructor.newSideEffectProj(start))
+            for ((i, functionParameter) in functionTree.parameters.elements.withIndex()) {
+                val node = data.constructor.newParameterProj(start, functionParameter.name.name, i)
+                data.constructor.writeVariable(functionParameter.name.name, data.currentBlock(), node)
+            }
             functionTree.body.accept(this, data)
             popSpan()
             return NOT_AN_EXPRESSION
@@ -437,6 +441,33 @@ class SsaTranslation(
 
         override fun visit(typeTree: TypeTree, data: SsaTranslation): Node? {
             throw UnsupportedOperationException()
+        }
+
+        override fun visit(callTree: CallTree, data: SsaTranslation): Node? {
+            val arguments = buildList {
+                for (arg in callTree.arguments.elements) {
+                    val argNode = arg.accept(this@SsaTranslationVisitor, data)!!
+                    add(argNode)
+                }
+            }
+            val call = data.constructor.newCall(callTree.identifier.name, arguments)
+            data.constructor.writeCurrentSideEffect(call)
+            return call
+        }
+
+        override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {
+            return NOT_AN_EXPRESSION
+        }
+
+        override fun visit(
+            parameterTree: ParameterTree,
+            data: SsaTranslation
+        ): Node? {
+            return null
+        }
+
+        override fun <V : Tree> visit(parenthesizedListTree: ParenthesizedListTree<V>, data: SsaTranslation): Node? {
+            error("Plain parenthesized lists are not supported in SSA translation")
         }
 
         private enum class ShortCircuitType {

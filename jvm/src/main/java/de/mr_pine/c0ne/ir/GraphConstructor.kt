@@ -123,8 +123,16 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return this.optimizer.transform(JumpNode(currentBlock))
     }
 
+    fun newCall(function: Name, arguments: List<Node>): Node {
+        return this.optimizer.transform(CallNode(currentBlock, function, arguments, readCurrentSideEffect()))
+    }
+
     fun newSideEffectProj(node: Node): Node {
         return this.optimizer.transform(ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.SIDE_EFFECT))
+    }
+
+    fun newParameterProj(node: Node, name: Name, index: Int): Node {
+        return this.optimizer.transform(ProjNode(currentBlock, node, ProjNode.NamedParameterProjectionInfo(name, index)))
     }
 
     fun newResultProj(node: Node): Node {

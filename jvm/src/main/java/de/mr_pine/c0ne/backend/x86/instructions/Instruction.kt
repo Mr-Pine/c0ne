@@ -1,6 +1,6 @@
 package de.mr_pine.c0ne.backend.x86.instructions
 
-import de.mr_pine.c0ne.backend.x86.NextGenSimpleX86RegAlloc
+import de.mr_pine.c0ne.backend.x86.X86RegAlloc
 
 sealed class Instruction(val mnemonic: String, vararg val arguments: Argument) {
     override fun toString() = "$mnemonic ${arguments.joinToString(", ")}"
@@ -8,10 +8,10 @@ sealed class Instruction(val mnemonic: String, vararg val arguments: Argument) {
     val sources
         get() = arguments
 
-    context(alloc: NextGenSimpleX86RegAlloc)
+    context(alloc: X86RegAlloc)
     abstract fun concretize(): Instruction
-    open fun render(): String {
-        return "$mnemonic ${arguments.joinToString(", ") {it.render()}}"
+    open fun render(size: Int = 4): String {
+        return "$mnemonic ${arguments.joinToString(", ") {it.render(size)}}"
     }
 }
 

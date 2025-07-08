@@ -14,7 +14,8 @@ data class Separator(val type: SeparatorType, override val span: Span) : Token {
         PAREN_CLOSE(")"),
         BRACE_OPEN("{"),
         BRACE_CLOSE("}"),
-        SEMICOLON(";");
+        SEMICOLON(";"),
+        COMMA(",");
 
         override fun toString() = value
     }
