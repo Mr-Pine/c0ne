@@ -4,11 +4,11 @@ import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.Span.SimpleSpan
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
-class ProgramTree(topLevelTrees: List<DeclaredFunctionTree>) : Tree {
+class ProgramTree(val topLevelTrees: List<TopLevelTree>) : Tree {
     override val span: Span
         get() {
-            val first: DeclaredFunctionTree = topLevelTrees.first()
-            val last: DeclaredFunctionTree = topLevelTrees.last()
+            val first = topLevelTrees.first()
+            val last = topLevelTrees.last()
             return SimpleSpan(first.span.start, last.span.end)
         }
 
@@ -16,11 +16,10 @@ class ProgramTree(topLevelTrees: List<DeclaredFunctionTree>) : Tree {
         return visitor.visit(this, data)
     }
 
-    val topLevelTrees: List<DeclaredFunctionTree>
+    val functions
+        get() = topLevelTrees.filterIsInstance<DeclaredFunctionTree>()
 
     init {
-        var topLevelTrees = topLevelTrees
         assert(topLevelTrees.isNotEmpty()) { "must be non-empty" }
-        this.topLevelTrees = topLevelTrees.toList()
     }
 }
