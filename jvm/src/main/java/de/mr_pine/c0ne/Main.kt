@@ -4,7 +4,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
-import de.mr_pine.c0ne.backend.x86.NextGenX86CodeGenerator
+import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import de.mr_pine.c0ne.ir.SsaTranslation
 import de.mr_pine.c0ne.ir.optimize.ControlFlowPrune
 import de.mr_pine.c0ne.ir.optimize.LocalValueNumbering
@@ -42,7 +42,7 @@ class C0ne : CliktCommand() {
             parse.printStackTrace()
             exitProcess(ExitCodes.LEX_PARSE_ERROR.code)
         }
-        val code = NextGenX86CodeGenerator.postprocess(assembly)
+        val code = X86CodeGenerator.postprocess(assembly)
         output.writeBytes(code)
         output.setPosixFilePermissions(
             setOf(
@@ -68,8 +68,8 @@ class C0ne : CliktCommand() {
                 File("/tmp/graph-${it.name()}.vcg").writeText(YCompPrinter.print(it/*, Schedule(firstGraph)*/))
             }
 
-            val nextGenX86CodeGenerator = NextGenX86CodeGenerator(graphs)
-            return nextGenX86CodeGenerator.generateAssembly()
+            val x86CodeGenerator = X86CodeGenerator(graphs)
+            return x86CodeGenerator.generateAssembly()
         }
 
         private fun lexAndParse(input: String): ProgramTree {

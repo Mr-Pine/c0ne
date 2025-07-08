@@ -4,21 +4,22 @@ import de.mr_pine.c0ne.backend.AllocationInterferenceGraph
 import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.backend.needsRegister
 import de.mr_pine.c0ne.backend.x86.instructions.Argument
+import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.Register.RealRegister
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.Node
 import kotlin.collections.set
 
-class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedule: Schedule) {
-    private var allocatable = (X86Register.RealRegister.entries - listOf(
-        X86Register.RealRegister.RAX,
-        X86Register.RealRegister.RDX,
-        X86Register.RealRegister.RCX,
-        X86Register.RealRegister.RBP,
-        X86Register.RealRegister.RSP,
-        X86Register.RealRegister.R15
-    )).map { Argument.RegMem.Register.RealRegister(it) }
+class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule) {
+    private var allocatable = (RealRegister.entries - listOf(
+        RealRegister.RAX,
+        RealRegister.RDX,
+        RealRegister.RCX,
+        RealRegister.RBP,
+        RealRegister.RSP,
+        RealRegister.R15
+    ))
         .asSequence() + generateSequence(Argument.RegMem.StackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { Argument.RegMem.StackOverflowSlot(it.offset + 8) }
 
     private val allocation = allocateRegisters()
@@ -52,21 +53,21 @@ class NextGenSimpleX86RegAlloc(private val startBlock: Block, private val schedu
         }
     }
 
-    fun concretize(argument: Argument.RegMem.Register.RegisterFor): Argument.RegMem.Register.RealRegister {
+    fun concretize(argument: Argument.RegMem.Register.RegisterFor): RealRegister {
         val concreteArg = argument.arg.concretize()
-        return concreteArg as? Argument.RegMem.Register.RealRegister
-            ?: Argument.RegMem.Register.RealRegister(X86Register.RealRegister.R15)
+        return concreteArg as? RealRegister
+            ?: RealRegister.R15
     }
 
     fun concretize(argument: Argument.RegMem.RegMemFor): Argument {
         val concreteArg = argument.arg.concretize()
         return concreteArg as? Argument.RegMem
-            ?: Argument.RegMem.Register.RealRegister(X86Register.RealRegister.R15)
+            ?: RealRegister.R15
     }
 
     fun concretize(argument: Argument.RegMem.StackOverflowSlot) = argument
-    fun concretize(argument: Argument.RegMem.Register.RealRegister) = argument
+    fun concretize(argument: RealRegister) = argument
     fun concretize(argument: Argument.Immediate) = argument
-    fun concretize(argument: Argument.RegMem.Register.EcxOf) = Argument.RegMem.Register.RealRegister(X86Register.RealRegister.RCX)
+    fun concretize(argument: Argument.RegMem.Register.EcxOf) = RealRegister.RCX
 
 }
