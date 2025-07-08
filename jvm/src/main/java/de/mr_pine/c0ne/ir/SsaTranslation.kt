@@ -142,18 +142,10 @@ class SsaTranslation(
                 Operator.OperatorType.GREATER_THAN_OR_EQUAL -> data.constructor.newGreaterThanOrEqual(lhs, rhs)
 
                 Operator.OperatorType.EQUALS -> {
-                    val size = when (binaryOperationTree.lhs.type) {
-                        BasicType.Boolean -> 1
-                        BasicType.Integer -> 4
-                    }
-                    data.constructor.newEquals(lhs, rhs, size)
+                    data.constructor.newEquals(lhs, rhs, binaryOperationTree.lhs.type.smallSize)
                 }
                 Operator.OperatorType.NOT_EQUALS -> {
-                    val size = when (binaryOperationTree.lhs.type) {
-                        BasicType.Boolean -> 1
-                        BasicType.Integer -> 4
-                    }
-                    data.constructor.newNotEquals(lhs, rhs, size)
+                    data.constructor.newNotEquals(lhs, rhs, binaryOperationTree.lhs.type.smallSize)
                 }
 
                 else -> throw java.lang.IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType)
@@ -460,6 +452,10 @@ class SsaTranslation(
             val call = data.constructor.newCall(callTree.identifier.name, arguments)
             data.constructor.writeCurrentSideEffect(call)
             return call
+        }
+
+        override fun visit(heapAllocationTree: HeapAllocationTree, data: SsaTranslation): Node? {
+            TODO("Heap allocation SSA")
         }
 
         override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {

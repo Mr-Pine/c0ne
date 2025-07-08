@@ -194,6 +194,13 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
+        heapAllocationTree: HeapAllocationTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return data
+    }
+
+    override fun visit(
         builtinFunction: FunctionTree.BuiltinFunction,
         data: VariableStatus
     ): VariableStatus {

@@ -163,6 +163,11 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         return this.visitor.visit(callTree, accumulate(data, r))
     }
 
+    override fun visit(heapAllocationTree: HeapAllocationTree, data: T): R {
+        val r = heapAllocationTree.typeTree.accept(this, data)
+        return this.visitor.visit(heapAllocationTree, accumulate(data, r))
+    }
+
     override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R {
         return this.visitor.visit(builtinFunction, data)
     }

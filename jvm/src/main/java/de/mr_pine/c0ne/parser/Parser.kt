@@ -5,7 +5,10 @@ import de.mr_pine.c0ne.lexer.Separator.SeparatorType
 import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.symbol.Name
+import de.mr_pine.c0ne.parser.type.ArrayType
 import de.mr_pine.c0ne.parser.type.BasicType
+import de.mr_pine.c0ne.parser.type.PointerType
+import de.mr_pine.c0ne.parser.type.StructType
 import kotlin.collections.listOf
 
 class Parser(private val tokenSource: TokenSource) {
@@ -131,13 +134,38 @@ class Parser(private val tokenSource: TokenSource) {
 
     private fun parseType(): TypeTree {
         val typeKeyword = this.tokenSource.expectAnyKeyword(TYPE_KEYWORDS)
-        val type = when (typeKeyword.type) {
+        var span = typeKeyword.span
+        var type = when (typeKeyword.type) {
             KeywordType.INT -> BasicType.Integer
             KeywordType.BOOL -> BasicType.Boolean
+            KeywordType.STRUCT -> {
+                val name = tokenSource.expectIdentifier()
+                span = span merge name.span
+                StructType(Name.forIdentifier(name))
+            }
+
             else -> throw ParseException("expected type but got $typeKeyword")
         }
 
-        return TypeTree(type, typeKeyword.span)
+        while (this.tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.MUL || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN) {
+            val token = this.tokenSource.consume()
+            when (token) {
+                is Operator if token.type == Operator.OperatorType.MUL -> {
+                    span = span merge token.span
+                    type = PointerType(type)
+                }
+
+                is Separator if token.type == SeparatorType.BRACKET_OPEN -> {
+                    span = span merge token.span
+                    tokenSource.expectSeparator(SeparatorType.BRACKET_CLOSE)
+                    type = ArrayType(type)
+                }
+
+                else -> throw ParseException("expected * or [ but got $token")
+            }
+        }
+
+        return TypeTree(type, span)
     }
 
     private fun parseSimple(): StatementTree {
@@ -340,6 +368,27 @@ class Parser(private val tokenSource: TokenSource) {
                 return CallTree(NameTree(IdentName(keyword.type.name.lowercase()), keyword.span), arguments)
             }
 
+            is Keyword if nextToken.type in listOf(KeywordType.ALLOC, KeywordType.ALLOC_ARRAY) -> {
+                val allocKeyword = tokenSource.expectAnyKeyword(listOf(KeywordType.ALLOC, KeywordType.ALLOC_ARRAY))
+                tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
+                val allocationType = parseType()
+
+                val allocation = if (allocKeyword.type == KeywordType.ALLOC) {
+                    val closingParenthesis = tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
+                    HeapAllocationTree(allocationType, null, allocKeyword.span merge closingParenthesis.span)
+                } else {
+                    tokenSource.expectSeparator(SeparatorType.COMMA)
+                    val nextToken = tokenSource.consume();
+                    val countToken = nextToken as? NumberLiteral
+                        ?: throw ParseException("Expected array allocation count, got $nextToken at ${nextToken.span}")
+                    val count = countToken.value.toInt(radix = countToken.base)
+                    val closingParenthesis = tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
+                    HeapAllocationTree(allocationType, count, allocKeyword.span merge closingParenthesis.span)
+                }
+
+                allocation
+            }
+
             is Identifier -> {
                 this.tokenSource.consume()
                 val name = name(nextToken)
@@ -356,7 +405,7 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     companion object {
-        private val TYPE_KEYWORDS = listOf(KeywordType.INT, KeywordType.BOOL)
+        private val TYPE_KEYWORDS = listOf(KeywordType.INT, KeywordType.BOOL, KeywordType.STRUCT)
         private val CONTROL_KEYWORDS = listOf(
             KeywordType.IF,
             KeywordType.FOR,
