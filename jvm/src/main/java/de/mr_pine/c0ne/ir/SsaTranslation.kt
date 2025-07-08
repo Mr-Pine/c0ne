@@ -188,6 +188,13 @@ class SsaTranslation(
             return NOT_AN_EXPRESSION
         }
 
+        override fun visit(
+            structureTree: StructureTree,
+            data: SsaTranslation
+        ): Node? {
+            error("What is SSA on a struct definition supposed to mean? Why did you call it then?")
+        }
+
         override fun visit(functionTree: DeclaredFunctionTree, data: SsaTranslation): Node? {
             pushSpan(functionTree)
             val start = data.constructor.newStart()

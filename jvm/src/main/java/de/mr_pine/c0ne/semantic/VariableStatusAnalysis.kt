@@ -67,6 +67,13 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
+        structureTree: StructureTree,
+        data: VariableStatus
+    ): VariableStatus {
+        error("Should not be called for structures. Only functions should be visited here.")
+    }
+
+    override fun visit(
         identExpressionTree: IdentExpressionTree, data: VariableStatus
     ): VariableStatus {
         identExpressionTree.references = data.checkUsage(identExpressionTree.name, identExpressionTree.span)
@@ -116,7 +123,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         programTree: ProgramTree, data: VariableStatus
     ): VariableStatus {
         var status = data
-        for (function in programTree.topLevelTrees) {
+        for (function in programTree.functions) {
             status = function.accept(this, status)
         }
         return status

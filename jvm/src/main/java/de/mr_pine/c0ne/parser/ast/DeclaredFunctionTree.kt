@@ -10,7 +10,7 @@ data class DeclaredFunctionTree(
     val nameTree: NameTree,
     val parameters: ParenthesizedListTree<ParameterTree>,
     val body: BlockTree
-) : FunctionTree {
+) : FunctionTree, TopLevelTree {
     override val span: Span
         get() = SimpleSpan(this.returnTypeTree.span.start, this.body.span.end)
 

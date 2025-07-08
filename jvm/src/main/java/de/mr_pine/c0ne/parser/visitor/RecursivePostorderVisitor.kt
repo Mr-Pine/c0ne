@@ -51,6 +51,15 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         return r
     }
 
+    override fun visit(structureTree: StructureTree, data: T): R {
+        var r = structureTree.nameTree.accept(this, data)
+        for (field in structureTree.fields) {
+            r = field.accept(this, accumulate(data, r))
+        }
+        r = this.visitor.visit(structureTree, accumulate(data, r))
+        return r
+    }
+
     override fun visit(ternaryOperationTree: TernaryOperationTree, data: T): R {
         var r = ternaryOperationTree.condition.accept(this, data)
         r = ternaryOperationTree.thenExpression.accept(this, accumulate(data, r))

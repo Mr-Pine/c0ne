@@ -14,6 +14,7 @@ import de.mr_pine.c0ne.lexer.Lexer
 import de.mr_pine.c0ne.parser.ParseException
 import de.mr_pine.c0ne.parser.Parser
 import de.mr_pine.c0ne.parser.TokenSource
+import de.mr_pine.c0ne.parser.ast.DeclaredFunctionTree
 import de.mr_pine.c0ne.parser.ast.ProgramTree
 import de.mr_pine.c0ne.semantic.SemanticAnalysis
 import de.mr_pine.c0ne.semantic.SemanticException
@@ -56,7 +57,7 @@ class C0ne : CliktCommand() {
         fun compileToAssembly(source: String): String {
             val program = lexAndParse(source)
             SemanticAnalysis(program).analyze()
-            val graphs = program.topLevelTrees.map { function ->
+            val graphs = program.functions.map { function ->
                 val optimizer = MultiOptimizer(/*ConstantFolding(), */LocalValueNumbering())
                 val finishPassOptimizer = ControlFlowPrune()
                 val translation = SsaTranslation(function, optimizer, finishPassOptimizer)

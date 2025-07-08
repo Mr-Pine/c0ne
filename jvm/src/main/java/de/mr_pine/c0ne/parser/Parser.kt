@@ -13,13 +13,15 @@ class Parser(private val tokenSource: TokenSource) {
         return ProgramTree(parseTopLevelElements())
     }
 
-    private fun parseTopLevelElements(): MutableList<DeclaredFunctionTree> {
-        val topLevelElements = mutableListOf<DeclaredFunctionTree>()
+    private fun parseTopLevelElements() = buildList {
         while (tokenSource.hasMore()) {
-            val function = parseFunction()
-            topLevelElements.add(function)
+            val element = if (tokenSource.peekAs<Keyword>()?.type == KeywordType.STRUCT) {
+                parseStructure()
+            } else {
+                parseFunction()
+            }
+            add(element)
         }
-        return topLevelElements
     }
 
     private fun parseFunction(): DeclaredFunctionTree {
@@ -28,6 +30,29 @@ class Parser(private val tokenSource: TokenSource) {
         val parameterList = parseParameterList()
         val body = parseBlock()
         return DeclaredFunctionTree(type, name(identifier), parameterList, body)
+    }
+
+    private fun parseStructure(): StructureTree {
+        val structKeyword = this.tokenSource.expectKeyword(KeywordType.STRUCT)
+        val identifier = this.tokenSource.expectIdentifier()
+
+        this.tokenSource.expectSeparator(SeparatorType.BRACE_OPEN)
+
+        val fields = buildList {
+            while (tokenSource.peekAs<Separator>()?.type != SeparatorType.BRACE_CLOSE) {
+                val declaration = parseDeclaration()
+                if (declaration.initializer != null) {
+                    throw ParseException("struct fields cannot have initializers")
+                }
+                tokenSource.expectSeparator(SeparatorType.SEMICOLON)
+                add(declaration)
+            }
+        }
+
+        this.tokenSource.expectSeparator(SeparatorType.BRACE_CLOSE)
+        val finishingSemicolon = this.tokenSource.expectSeparator(SeparatorType.SEMICOLON)
+
+        return StructureTree(name(identifier), fields, structKeyword.span.merge(finishingSemicolon.span))
     }
 
     private fun <T : Tree> parseParenthesizedList(elementParser: Parser.() -> T): ParenthesizedListTree<T> {
@@ -91,7 +116,7 @@ class Parser(private val tokenSource: TokenSource) {
         return statement
     }
 
-    private fun parseDeclaration(): StatementTree {
+    private fun parseDeclaration(): DeclarationTree {
         val type = parseType()
 
         val ident = this.tokenSource.expectIdentifier()

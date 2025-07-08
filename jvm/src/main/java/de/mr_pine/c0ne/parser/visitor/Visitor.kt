@@ -15,6 +15,8 @@ interface Visitor<T, R> {
 
     fun visit(functionTree: DeclaredFunctionTree, data: T): R
 
+    fun visit(structureTree: StructureTree, data: T): R
+
     fun visit(identExpressionTree: IdentExpressionTree, data: T): R
 
     fun visit(ternaryOperationTree: TernaryOperationTree, data: T): R

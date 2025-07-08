@@ -22,6 +22,9 @@ interface NoOpVisitor<T> : Visitor<T, Unit> {
     override fun visit(functionTree: DeclaredFunctionTree, data: T) {
     }
 
+    override fun visit(structureTree: StructureTree, data: T) {
+    }
+
     override fun visit(identExpressionTree: IdentExpressionTree, data: T) {
     }
 
