@@ -14,7 +14,7 @@ data class Operator(val type: OperatorType, override val span: Span) : Token {
         BITWISE_NOT("~", listOf(1), true),
         MINUS("-", listOf(1, 3), false),
 
-        MUL("*", listOf(2), false),
+        STAR("*", listOf(1, 2), false),
         DIV("/", listOf(2), false),
         MOD("%", listOf(2), false),
 
@@ -53,6 +53,8 @@ data class Operator(val type: OperatorType, override val span: Span) : Token {
         ASSIGN_OR("|=", listOf(), true),
         ASSIGN_LEFT_SHIFT("<<=", listOf(), true),
         ASSIGN_RIGHT_SHIFT(">>=", listOf(), true),
+
+        ARROW("->", listOf(), false),
         ;
 
         companion object {

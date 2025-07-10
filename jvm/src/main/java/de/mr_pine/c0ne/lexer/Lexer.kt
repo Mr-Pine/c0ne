@@ -1,9 +1,9 @@
 package de.mr_pine.c0ne.lexer
 
+import de.mr_pine.c0ne.Position.SimplePosition
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.Span.SimpleSpan
 import de.mr_pine.c0ne.lexer.Separator.SeparatorType
-import de.mr_pine.c0ne.Position.SimplePosition
 
 class Lexer private constructor(private val source: String) {
     private var pos = 0
@@ -27,9 +27,18 @@ class Lexer private constructor(private val source: String) {
             ']' -> separator(SeparatorType.BRACKET_CLOSE)
             ';' -> separator(SeparatorType.SEMICOLON)
             ',' -> separator(SeparatorType.COMMA)
-            '-' -> singleOrWithEquals(Operator.OperatorType.MINUS, Operator.OperatorType.ASSIGN_MINUS)
+            '-' -> {
+                if (hasMore(1) && peek(1) == '=') {
+                    Operator(Operator.OperatorType.ASSIGN_MINUS, buildSpan(2))
+                } else if (hasMore(1) && peek(1) == '>') {
+                    Operator(Operator.OperatorType.ARROW, buildSpan(2))
+                } else {
+                    Operator(Operator.OperatorType.MINUS, buildSpan(1))
+                }
+            }
+
             '+' -> singleOrWithEquals(Operator.OperatorType.PLUS, Operator.OperatorType.ASSIGN_PLUS)
-            '*' -> singleOrWithEquals(Operator.OperatorType.MUL, Operator.OperatorType.ASSIGN_MUL)
+            '*' -> singleOrWithEquals(Operator.OperatorType.STAR, Operator.OperatorType.ASSIGN_MUL)
             '/' -> singleOrWithEquals(Operator.OperatorType.DIV, Operator.OperatorType.ASSIGN_DIV)
             '%' -> singleOrWithEquals(Operator.OperatorType.MOD, Operator.OperatorType.ASSIGN_MOD)
             '!' -> singleOrWithEquals(Operator.OperatorType.LOGICAL_NOT, Operator.OperatorType.NOT_EQUALS)
@@ -227,10 +236,11 @@ class Lexer private constructor(private val source: String) {
     }
 
     private fun singleOrWithEquals(single: Operator.OperatorType, withEquals: Operator.OperatorType): Token {
-        if (hasMore(1) && peek(1) == '=') {
-            return Operator(withEquals, buildSpan(2))
+        return if (hasMore(1) && peek(1) == '=') {
+            Operator(withEquals, buildSpan(2))
+        } else {
+            Operator(single, buildSpan(1))
         }
-        return Operator(single, buildSpan(1))
     }
 
     private fun singleOrDoubleOrWithEquals(

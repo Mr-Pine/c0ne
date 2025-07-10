@@ -11,7 +11,6 @@ import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralBoolTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
 import de.mr_pine.c0ne.parser.symbol.Name
-import de.mr_pine.c0ne.parser.type.BasicType
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.util.*
 
@@ -118,7 +117,7 @@ class SsaTranslation(
             val res = when (binaryOperationTree.operatorType) {
                 Operator.OperatorType.MINUS -> data.constructor.newSub(lhs, rhs)
                 Operator.OperatorType.PLUS -> data.constructor.newAdd(lhs, rhs)
-                Operator.OperatorType.MUL -> data.constructor.newMul(lhs, rhs)
+                Operator.OperatorType.STAR -> data.constructor.newMul(lhs, rhs)
                 Operator.OperatorType.DIV -> projResultDivMod(
                     data,
                     data.constructor.newDiv(lhs, rhs)

@@ -9,7 +9,6 @@ import de.mr_pine.c0ne.parser.type.ArrayType
 import de.mr_pine.c0ne.parser.type.BasicType
 import de.mr_pine.c0ne.parser.type.PointerType
 import de.mr_pine.c0ne.parser.type.StructType
-import kotlin.collections.listOf
 
 class Parser(private val tokenSource: TokenSource) {
     fun parseProgram(): ProgramTree {
@@ -146,10 +145,10 @@ class Parser(private val tokenSource: TokenSource) {
             else -> throw ParseException("expected type but got $typeKeyword")
         }
 
-        while (this.tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.MUL || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN) {
+        while (this.tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.STAR || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN) {
             val token = this.tokenSource.consume()
             when (token) {
-                is Operator if token.type == Operator.OperatorType.MUL -> {
+                is Operator if token.type == Operator.OperatorType.STAR -> {
                     span = span merge token.span
                     type = PointerType(type)
                 }
@@ -204,14 +203,36 @@ class Parser(private val tokenSource: TokenSource) {
     }
 
     private fun parseLValue(): LValueTree {
-        if (this.tokenSource.peek().isSeparator(SeparatorType.PAREN_OPEN)) {
+        var lvalue = parseDereferencedIdentLValue()
+        while (tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.ARROW || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN) {
+            lvalue = if (tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.ARROW) {
+                tokenSource.expectOperator(Operator.OperatorType.ARROW)
+                val field = tokenSource.expectIdentifier()
+                FieldAccessTree(lvalue, name(field))
+            } else {
+                tokenSource.expectSeparator(SeparatorType.BRACKET_OPEN)
+                val index = parseExpression()
+                val closing = tokenSource.expectSeparator(SeparatorType.BRACKET_CLOSE)
+                ArrayAccessTree(lvalue, index, lvalue.span merge closing.span)
+            }
+        }
+        return lvalue
+    }
+
+    private fun parseDereferencedIdentLValue(): LValueTree {
+        return if (this.tokenSource.peek().isSeparator(SeparatorType.PAREN_OPEN)) {
             this.tokenSource.expectSeparator(SeparatorType.PAREN_OPEN)
             val inner = parseLValue()
             this.tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
-            return inner
+            inner
+        } else if (tokenSource.peek().isOperator(Operator.OperatorType.STAR)) {
+            val star = this.tokenSource.expectOperator(Operator.OperatorType.STAR)
+            val dereferencee = parseDereferencedIdentLValue()
+            DereferenceTree(dereferencee, star.span merge dereferencee.span)
+        } else {
+            val identifier = this.tokenSource.expectIdentifier()
+            LValueIdentTree(name(identifier))
         }
-        val identifier = this.tokenSource.expectIdentifier()
-        return LValueIdentTree(name(identifier))
     }
 
     private fun parseControlStatement(): ControlTree {
