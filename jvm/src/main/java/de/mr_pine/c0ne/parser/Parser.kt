@@ -18,26 +18,25 @@ class Parser(private val tokenSource: TokenSource) {
 
     private fun parseTopLevelElements() = buildList {
         while (tokenSource.hasMore()) {
-            val element = if (tokenSource.peekAs<Keyword>()?.type == KeywordType.STRUCT) {
-                parseStructure()
+            val elementType = parseType()
+            val element = if (elementType.type is StructType) {
+                val nameTree = NameTree(elementType.type.name, elementType.span)
+                parseStructure(nameTree)
             } else {
-                parseFunction()
+                parseFunction(elementType)
             }
             add(element)
         }
     }
 
-    private fun parseFunction(): DeclaredFunctionTree {
-        val type = parseType()
+    private fun parseFunction(returnType: TypeTree): DeclaredFunctionTree {
         val identifier = this.tokenSource.expectIdentifier()
         val parameterList = parseParameterList()
         val body = parseBlock()
-        return DeclaredFunctionTree(type, name(identifier), parameterList, body)
+        return DeclaredFunctionTree(returnType, name(identifier), parameterList, body)
     }
 
-    private fun parseStructure(): StructureTree {
-        val structKeyword = this.tokenSource.expectKeyword(KeywordType.STRUCT)
-        val identifier = this.tokenSource.expectIdentifier()
+    private fun parseStructure(name: NameTree): StructureTree {
 
         this.tokenSource.expectSeparator(SeparatorType.BRACE_OPEN)
 
@@ -55,7 +54,7 @@ class Parser(private val tokenSource: TokenSource) {
         this.tokenSource.expectSeparator(SeparatorType.BRACE_CLOSE)
         val finishingSemicolon = this.tokenSource.expectSeparator(SeparatorType.SEMICOLON)
 
-        return StructureTree(name(identifier), fields, structKeyword.span.merge(finishingSemicolon.span))
+        return StructureTree(name, fields, name.span merge finishingSemicolon.span)
     }
 
     private fun <T : Tree> parseParenthesizedList(elementParser: Parser.() -> T): ParenthesizedListTree<T> {
