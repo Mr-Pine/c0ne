@@ -2,26 +2,46 @@ package de.mr_pine.c0ne.semantic
 
 import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.parser.ast.*
-import de.mr_pine.c0ne.parser.type.BasicType
+import de.mr_pine.c0ne.parser.symbol.Name
+import de.mr_pine.c0ne.parser.type.*
 import de.mr_pine.c0ne.parser.visitor.NoOpVisitor
 
-class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
-    override fun visit(functionTree: DeclaredFunctionTree, data: MutableList<ReturnTree>) {
-        for (returnTree in data) {
-            if (returnTree.expression.type != functionTree.returnType) throw SemanticException("Return type ${returnTree.expression.type} at ${returnTree.span} does not match expected type ${functionTree.returnType}")
+class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
+    class TypeData(
+        val returns: MutableList<ReturnTree> = mutableListOf(), private val structDeclarations: Map<Name, StructureTree>
+    ) {
+        fun getStruct(name: Name) = structDeclarations[name]
+        fun resolve(type: Type): Type {
+            when (type) {
+                is StructType -> {
+                    type.references =
+                        structDeclarations[type.name] ?: throw SemanticException("Unknown struct type $type")
+                }
+
+                else -> {}
+            }
+            return type
         }
-        data.clear()
+    }
+
+    override fun visit(functionTree: DeclaredFunctionTree, data: TypeData) {
+        for (returnTree in data.returns) {
+            if (data.resolve(returnTree.expression.type) != data.resolve(functionTree.returnType)) throw SemanticException(
+                "Return type ${returnTree.expression.type} at ${returnTree.span} does not match expected type ${functionTree.returnType}"
+            )
+        }
+        data.returns.clear()
 
         super.visit(functionTree, data)
     }
 
-    override fun visit(returnTree: ReturnTree, data: MutableList<ReturnTree>) {
-        data.add(returnTree)
+    override fun visit(returnTree: ReturnTree, data: TypeData) {
+        data.returns.add(returnTree)
         super.visit(returnTree, data)
     }
 
     override fun visit(
-        declarationTree: DeclarationTree, data: MutableList<ReturnTree>
+        declarationTree: DeclarationTree, data: TypeData
     ) {
         if (declarationTree.initializer != null) {
             if (declarationTree.initializer.type != declarationTree.type) throw SemanticException("Type mismatch at ${declarationTree.span} for ${declarationTree.name.name} initializer: Expected ${declarationTree.type} got ${declarationTree.initializer.type}")
@@ -30,7 +50,7 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
     }
 
     override fun visit(
-        assignmentTree: AssignmentTree, data: MutableList<ReturnTree>
+        assignmentTree: AssignmentTree, data: TypeData
     ) {
         val variableType = (assignmentTree.lValue as LValueIdentTree).references!!.type
         if (assignmentTree.expression.type != variableType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue.name.name}: Expected $variableType got ${assignmentTree.expression.type}")
@@ -42,7 +62,7 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
     }
 
     override fun visit(
-        binaryOperationTree: BinaryOperationTree, data: MutableList<ReturnTree>
+        binaryOperationTree: BinaryOperationTree, data: TypeData
     ) {
         val lhsType = binaryOperationTree.lhs.type
         val rhsType = binaryOperationTree.rhs.type
@@ -60,34 +80,33 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
     }
 
     override fun visit(
-        unaryOperationTree: UnaryOperationTree, data: MutableList<ReturnTree>
+        unaryOperationTree: UnaryOperationTree, data: TypeData
     ) {
         val expressionType = unaryOperationTree.expression.type
         if (unaryOperationTree.operator.type.inputType != expressionType) throw SemanticException("Type mismatch at ${unaryOperationTree.span} for ${unaryOperationTree.expression}: Expected ${unaryOperationTree.operator.type.inputType} got $expressionType")
         super.visit(unaryOperationTree, data)
     }
 
-    override fun visit(ifTree: IfTree, data: MutableList<ReturnTree>) {
+    override fun visit(ifTree: IfTree, data: TypeData) {
         if (ifTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${ifTree.span} for if condition: Expected ${BasicType.Boolean} got ${ifTree.condition.type}")
 
         super.visit(ifTree, data)
     }
 
-    override fun visit(whileTree: WhileTree, data: MutableList<ReturnTree>) {
+    override fun visit(whileTree: WhileTree, data: TypeData) {
         if (whileTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${whileTree.span} for while condition: Expected ${BasicType.Boolean} got ${whileTree.condition.type}")
 
         super.visit(whileTree, data)
     }
 
-    override fun visit(forTree: ForTree, data: MutableList<ReturnTree>) {
+    override fun visit(forTree: ForTree, data: TypeData) {
         if (forTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${forTree.span} for condition of for loop: Expected ${BasicType.Boolean} got ${forTree.condition.type}")
 
         super.visit(forTree, data)
     }
 
     override fun visit(
-        callTree: CallTree,
-        data: MutableList<ReturnTree>
+        callTree: CallTree, data: TypeData
     ) {
         for ((argument, parameterTypes) in callTree.arguments.elements.zip(callTree.references!!.parameterTypes)) {
             if (argument.type != parameterTypes) throw SemanticException("Type mismatch at ${argument.span} for argument ${argument.type} in call to ${callTree.references!!.name} at ${callTree.span}")
@@ -95,8 +114,28 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
     }
 
     override fun visit(
-        ternaryOperationTree: TernaryOperationTree,
-        data: MutableList<ReturnTree>
+        dereferenceTree: DereferenceTree, data: TypeData
+    ) {
+        val pointerType = data.resolve(dereferenceTree.pointerValue.type)
+        if (pointerType !is PointerType) throw SemanticException("Type mismatch at ${dereferenceTree.span} for dereference of ${dereferenceTree.pointerValue.type}: Expected pointer type got $pointerType")
+    }
+
+    override fun visit(
+        fieldAccessTree: FieldAccessTree, data: TypeData
+    ) {
+        val structType = data.resolve(fieldAccessTree.structValue.type)
+        if (structType !is StructType) throw SemanticException("Type mismatch at ${fieldAccessTree.span} for field access of ${fieldAccessTree.structValue.type}: Expected struct type got $structType")
+    }
+
+    override fun visit(
+        arrayAccessTree: ArrayAccessTree, data: TypeData
+    ) {
+        val arrayType = data.resolve(arrayAccessTree.arrayValue.type)
+        if (arrayType !is ArrayType) throw SemanticException("Type mismatch at ${arrayAccessTree.span} for array access of ${arrayAccessTree.arrayValue.type}: Expected array type got $arrayType")
+    }
+
+    override fun visit(
+        ternaryOperationTree: TernaryOperationTree, data: TypeData
     ) {
         if (ternaryOperationTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${ternaryOperationTree.span} for condition of ternary operation: Expected ${BasicType.Boolean} got ${ternaryOperationTree.condition.type}")
 
@@ -105,8 +144,17 @@ class TypeCheckAnalysis : NoOpVisitor<MutableList<ReturnTree>> {
         )
 
         super.visit(
-            ternaryOperationTree,
-            data
+            ternaryOperationTree, data
         )
+    }
+
+    override fun visit(
+        typeTree: TypeTree, data: TypeData
+    ) {
+        if (typeTree.type is StructType) {
+            typeTree.type.references = data.getStruct(typeTree.type.name)
+                ?: throw SemanticException("Unknown struct ${typeTree.type.name} at ${typeTree.span}")
+        }
+        super.visit(typeTree, data)
     }
 }

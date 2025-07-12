@@ -18,6 +18,8 @@ class ProgramTree(val topLevelTrees: List<TopLevelTree>) : Tree {
 
     val functions
         get() = topLevelTrees.filterIsInstance<DeclaredFunctionTree>()
+    val structs
+        get() = topLevelTrees.filterIsInstance<StructureTree>()
 
     init {
         assert(topLevelTrees.isNotEmpty()) { "must be non-empty" }
