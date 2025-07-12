@@ -7,7 +7,7 @@ import de.mr_pine.c0ne.parser.visitor.Visitor
 
 data class HeapAllocationTree(
     val typeTree: TypeTree,
-    val arrayCount: Int?,
+    val arrayCount: ExpressionTree?,
     override val span: Span,
 ) : Tree, StatementTree, ExpressionTree {
 

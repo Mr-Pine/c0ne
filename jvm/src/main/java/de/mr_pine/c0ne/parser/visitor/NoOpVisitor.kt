@@ -76,6 +76,15 @@ interface NoOpVisitor<T> : Visitor<T, Unit> {
     override fun visit(heapAllocationTree: HeapAllocationTree, data: T) {
     }
 
+    override fun visit(arrayAccessTree: ArrayAccessTree, data: T) {
+    }
+
+    override fun visit(fieldAccessTree: FieldAccessTree, data: T) {
+    }
+
+    override fun visit(dereferenceTree: DereferenceTree, data: T) {
+    }
+
     override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T) {
     }
 

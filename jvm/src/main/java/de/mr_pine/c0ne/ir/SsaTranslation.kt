@@ -457,6 +457,27 @@ class SsaTranslation(
             TODO("Heap allocation SSA")
         }
 
+        override fun visit(
+            arrayAccessTree: ArrayAccessTree,
+            data: SsaTranslation
+        ): Node? {
+            TODO("array access SSA")
+        }
+
+        override fun visit(
+            fieldAccessTree: FieldAccessTree,
+            data: SsaTranslation
+        ): Node? {
+            TODO("field access SSA")
+        }
+
+        override fun visit(
+            dereferenceTree: DereferenceTree,
+            data: SsaTranslation
+        ): Node? {
+            TODO("dereference SSA")
+        }
+
         override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {
             return NOT_AN_EXPRESSION
         }

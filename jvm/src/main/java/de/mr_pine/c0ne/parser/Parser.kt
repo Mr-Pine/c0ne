@@ -79,12 +79,11 @@ class Parser(private val tokenSource: TokenSource) {
     private fun parseArgumentList(): ParenthesizedListTree<ExpressionTree> =
         parseParenthesizedList { parseExpression() }
 
-    private fun parseParameterList(): ParenthesizedListTree<ParameterTree> =
-        parseParenthesizedList {
-            val type = parseType()
-            val name = name(tokenSource.expectIdentifier())
-            ParameterTree(type, name)
-        }
+    private fun parseParameterList(): ParenthesizedListTree<ParameterTree> = parseParenthesizedList {
+        val type = parseType()
+        val name = name(tokenSource.expectIdentifier())
+        ParameterTree(type, name)
+    }
 
     private fun parseBlock(): BlockTree {
         val bodyOpen = this.tokenSource.expectSeparator(SeparatorType.BRACE_OPEN)
@@ -354,7 +353,11 @@ class Parser(private val tokenSource: TokenSource) {
         if (operator != null && precedence in operator.type.precedences) {
             this.tokenSource.consume()
             val value = parsePrecedenceExpression(precedence)
-            return UnaryOperationTree(operator, value)
+            return if (operator.type == Operator.OperatorType.STAR) {
+                DereferenceTree(value, operator.span merge value.span)
+            } else {
+                UnaryOperationTree(operator, value)
+            }
         }
         return parsePrecedenceExpression(precedence - 1)
     }
@@ -364,7 +367,7 @@ class Parser(private val tokenSource: TokenSource) {
 
     fun parseBasicExpression(): ExpressionTree {
         val nextToken = this.tokenSource.peek()
-        return when (nextToken) {
+        var expression = when (nextToken) {
             is Separator if nextToken.type == SeparatorType.PAREN_OPEN -> {
                 this.tokenSource.consume()
                 val expression = parseExpression()
@@ -398,12 +401,9 @@ class Parser(private val tokenSource: TokenSource) {
                     HeapAllocationTree(allocationType, null, allocKeyword.span merge closingParenthesis.span)
                 } else {
                     tokenSource.expectSeparator(SeparatorType.COMMA)
-                    val nextToken = tokenSource.consume();
-                    val countToken = nextToken as? NumberLiteral
-                        ?: throw ParseException("Expected array allocation count, got $nextToken at ${nextToken.span}")
-                    val count = countToken.value.toInt(radix = countToken.base)
+                    val countTree = parseExpression()
                     val closingParenthesis = tokenSource.expectSeparator(SeparatorType.PAREN_CLOSE)
-                    HeapAllocationTree(allocationType, count, allocKeyword.span merge closingParenthesis.span)
+                    HeapAllocationTree(allocationType, countTree, allocKeyword.span merge closingParenthesis.span)
                 }
 
                 allocation
@@ -422,6 +422,35 @@ class Parser(private val tokenSource: TokenSource) {
 
             else -> throw ParseException("invalid expression starting at $nextToken")
         }
+
+        fun Token.isRelevant() =
+            this is Operator && type in listOf(
+                Operator.OperatorType.ARROW,
+                Operator.OperatorType.DOT
+            ) || this is Separator && type == SeparatorType.BRACKET_OPEN
+
+        while (tokenSource.peek().isRelevant()) {
+            when (val nextToken = tokenSource.consume()) {
+                is Operator if nextToken.type == Operator.OperatorType.DOT -> {
+                    val ident = tokenSource.expectIdentifier()
+                    expression = FieldAccessTree(expression, name(ident))
+                }
+
+                is Operator if nextToken.type == Operator.OperatorType.ARROW -> {
+                    val ident = tokenSource.expectIdentifier()
+                    expression =
+                        FieldAccessTree(DereferenceTree(expression, expression.span merge nextToken.span), name(ident))
+                }
+                is Separator if nextToken.type == SeparatorType.BRACKET_OPEN -> {
+                    val index = parseExpression()
+                    val closing = tokenSource.expectSeparator(SeparatorType.BRACKET_CLOSE)
+                    expression = ArrayAccessTree(expression, index, expression.span merge closing.span)
+                }
+                else -> throw ParseException("expected . or -> or array access but got $nextToken")
+            }
+        }
+
+        return expression
     }
 
     companion object {

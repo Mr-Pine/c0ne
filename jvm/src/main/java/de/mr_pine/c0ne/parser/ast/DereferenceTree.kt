@@ -6,7 +6,7 @@ import de.mr_pine.c0ne.parser.visitor.Visitor
 
 data class DereferenceTree(val pointerValue: ExpressionTree, override val span: Span) : LValueTree {
     override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
-        TODO("Not yet implemented")
+        return visitor.visit(this, data)
     }
 
     override val type

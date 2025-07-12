@@ -10,7 +10,7 @@ val Operator.OperatorType.outType
 
         Operator.OperatorType.BITWISE_NOT, Operator.OperatorType.MINUS, Operator.OperatorType.STAR, Operator.OperatorType.DIV, Operator.OperatorType.MOD, Operator.OperatorType.PLUS, Operator.OperatorType.LEFT_SHIFT, Operator.OperatorType.RIGHT_SHIFT, Operator.OperatorType.BITWISE_AND, Operator.OperatorType.BITWISE_XOR, Operator.OperatorType.BITWISE_OR -> BasicType.Integer
 
-        Operator.OperatorType.ARROW -> TODO()
+        Operator.OperatorType.ARROW, Operator.OperatorType.DOT -> TODO()
 
         Operator.OperatorType.TERNARY_QUESTION, Operator.OperatorType.TERNARY_COLON, Operator.OperatorType.ASSIGN, Operator.OperatorType.ASSIGN_PLUS, Operator.OperatorType.ASSIGN_MINUS, Operator.OperatorType.ASSIGN_MUL, Operator.OperatorType.ASSIGN_DIV, Operator.OperatorType.ASSIGN_MOD, Operator.OperatorType.ASSIGN_AND, Operator.OperatorType.ASSIGN_XOR, Operator.OperatorType.ASSIGN_OR, Operator.OperatorType.ASSIGN_LEFT_SHIFT, Operator.OperatorType.ASSIGN_RIGHT_SHIFT -> throw Exception(
             "Determining output type for assignment $this is not supported"
@@ -36,7 +36,7 @@ val Operator.OperatorType.inputType: Type?
         Operator.OperatorType.ASSIGN_LEFT_SHIFT -> Operator.OperatorType.LEFT_SHIFT.inputType
         Operator.OperatorType.ASSIGN_RIGHT_SHIFT -> Operator.OperatorType.RIGHT_SHIFT.inputType
 
-        Operator.OperatorType.ARROW -> TODO()
+        Operator.OperatorType.ARROW, Operator.OperatorType.DOT -> TODO()
 
         Operator.OperatorType.TERNARY_QUESTION, Operator.OperatorType.TERNARY_COLON, Operator.OperatorType.ASSIGN -> throw Exception(
             "Determining input type for assignment $this is not supported"

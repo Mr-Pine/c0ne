@@ -36,6 +36,7 @@ class Lexer private constructor(private val source: String) {
                     Operator(Operator.OperatorType.MINUS, buildSpan(1))
                 }
             }
+            '.' -> Operator(Operator.OperatorType.DOT, buildSpan(1))
 
             '+' -> singleOrWithEquals(Operator.OperatorType.PLUS, Operator.OperatorType.ASSIGN_PLUS)
             '*' -> singleOrWithEquals(Operator.OperatorType.STAR, Operator.OperatorType.ASSIGN_MUL)

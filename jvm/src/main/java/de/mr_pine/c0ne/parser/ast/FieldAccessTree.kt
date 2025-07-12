@@ -8,6 +8,6 @@ data class FieldAccessTree(val structValue: ExpressionTree, val member: NameTree
         get() = structValue.type
 
     override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
-        TODO("Not yet implemented")
+        return visitor.visit(this, data)
     }
 }

@@ -51,6 +51,12 @@ interface Visitor<T, R> {
 
     fun visit(heapAllocationTree: HeapAllocationTree, data: T): R
 
+    fun visit(arrayAccessTree: ArrayAccessTree, data: T): R
+
+    fun visit(fieldAccessTree: FieldAccessTree, data: T): R
+
+    fun visit(dereferenceTree: DereferenceTree, data: T): R
+
     fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R
 
     fun visit(parameterTree: ParameterTree, data: T): R

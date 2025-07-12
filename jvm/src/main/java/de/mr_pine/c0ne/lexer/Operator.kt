@@ -55,6 +55,7 @@ data class Operator(val type: OperatorType, override val span: Span) : Token {
         ASSIGN_RIGHT_SHIFT(">>=", listOf(), true),
 
         ARROW("->", listOf(), false),
+        DOT(".", listOf(), false),
         ;
 
         companion object {

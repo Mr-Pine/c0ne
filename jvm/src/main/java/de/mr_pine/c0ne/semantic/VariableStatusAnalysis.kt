@@ -201,6 +201,27 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
+        arrayAccessTree: ArrayAccessTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return arrayAccessTree.arrayValue.accept(this, data)
+    }
+
+    override fun visit(
+        fieldAccessTree: FieldAccessTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return fieldAccessTree.structValue.accept(this, data)
+    }
+
+    override fun visit(
+        dereferenceTree: DereferenceTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return dereferenceTree.pointerValue.accept(this, data)
+    }
+
+    override fun visit(
         builtinFunction: FunctionTree.BuiltinFunction,
         data: VariableStatus
     ): VariableStatus {
