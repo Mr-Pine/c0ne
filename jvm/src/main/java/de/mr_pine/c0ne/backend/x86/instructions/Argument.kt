@@ -66,7 +66,7 @@ sealed interface Argument {
             }
         }
 
-        data class StackOverflowSlot(val offset: Int) : RegMem {
+        data class MemoryReference(val base: Register, val offset: Register?, val constantOffset: Int) : RegMem {
             override val nodeValue = null
 
             context(alloc: X86RegAlloc)
@@ -80,7 +80,11 @@ sealed interface Argument {
                 }
             }
 
-            override fun render(size: Int) = "${sizePrefix(size)} PTR [${Register.RealRegister.RBP} - $offset]"
+            companion object {
+                fun stackOverflowSlot(offset: Int) = MemoryReference(Register.RealRegister.RBP, null, -offset)
+            }
+
+            override fun render(size: Int) = "${sizePrefix(size)} PTR [$base${offset?.let { " + $it" } ?: ""} + $constantOffset]"
         }
 
         data class RegMemFor(val arg: Argument) : RegMem {

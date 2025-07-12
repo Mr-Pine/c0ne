@@ -2,6 +2,7 @@ package de.mr_pine.c0ne.backend.x86
 
 import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.backend.x86.instructions.*
+import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.MemoryReference.Companion.stackOverflowSlot
 import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.Register.RealRegister
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.*
@@ -54,6 +55,19 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
             call fflush
             mov RAX, 0
             ret
+            
+        .extern calloc
+        .global alloc
+        alloc:
+            mov R15D, ESI
+            mov RSI, 1
+            call calloc
+            cmp R15D, 0
+            je 1f
+            mov DWORD PTR [RAX], R15D
+         1:
+            ret
+            
     """.trimIndent() + "\n\n"
 
     fun generateAssembly(): String {
@@ -110,9 +124,9 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 RealRegister.RCX,
                 RealRegister.R8,
                 RealRegister.R9
-            ) + generateSequence(Argument.RegMem.StackOverflowSlot(-16)) {
-                Argument.RegMem.StackOverflowSlot(
-                    it.offset - 8
+            ) + generateSequence(stackOverflowSlot(-16)) {
+                stackOverflowSlot(
+                    it.constantOffset - 8
                 )
             }
         }
@@ -342,6 +356,21 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                         returnTarget,
                         node.arguments.map { Argument.NodeValue(it) })
                 )
+            }
+
+            override fun visit(node: MemoryRead) {
+                val base = Argument.NodeValue(node.base)
+                val offset = Argument.NodeValue(node.offset)
+
+                val baseInReg = RealRegister.R14
+                val offsetReg = Argument.RegMem.Register.RegisterFor(offset)
+                instructionList.add(Mov(baseInReg, base))
+                instructionList.add(Mov(offsetReg, offset))
+                val source = Argument.RegMem.MemoryReference(baseInReg, offsetReg, node.constantOffset)
+
+                val target = Argument.NodeValue(node)
+
+                instructionList.add(Mov(target, source))
             }
         }
     }

@@ -127,6 +127,10 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return this.optimizer.transform(CallNode(currentBlock, function, arguments, readCurrentSideEffect()))
     }
 
+    fun newMemoryRead(base: Node, offset: Node, constantOffset: Int): Node {
+        return this.optimizer.transform(MemoryRead(currentBlock, base, offset, constantOffset, readCurrentSideEffect()))
+    }
+
     fun newSideEffectProj(node: Node): Node {
         return this.optimizer.transform(ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.SIDE_EFFECT))
     }

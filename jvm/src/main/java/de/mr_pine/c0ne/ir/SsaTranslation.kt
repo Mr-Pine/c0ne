@@ -10,7 +10,9 @@ import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralBoolTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
+import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.symbol.Name
+import de.mr_pine.c0ne.parser.type.Type
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.util.*
 
@@ -67,15 +69,13 @@ class SsaTranslation(
                 Operator.OperatorType.ASSIGN_MUL -> data.constructor::newMul
                 Operator.OperatorType.ASSIGN_DIV -> { lhs: Node, rhs: Node ->
                     projResultDivMod(
-                        data,
-                        data.constructor.newDiv(lhs, rhs)
+                        data, data.constructor.newDiv(lhs, rhs)
                     )
                 }
 
                 Operator.OperatorType.ASSIGN_MOD -> { lhs: Node, rhs: Node ->
                     projResultDivMod(
-                        data,
-                        data.constructor.newMod(lhs, rhs)
+                        data, data.constructor.newMod(lhs, rhs)
                     )
                 }
 
@@ -119,13 +119,11 @@ class SsaTranslation(
                 Operator.OperatorType.PLUS -> data.constructor.newAdd(lhs, rhs)
                 Operator.OperatorType.STAR -> data.constructor.newMul(lhs, rhs)
                 Operator.OperatorType.DIV -> projResultDivMod(
-                    data,
-                    data.constructor.newDiv(lhs, rhs)
+                    data, data.constructor.newDiv(lhs, rhs)
                 )
 
                 Operator.OperatorType.MOD -> projResultDivMod(
-                    data,
-                    data.constructor.newMod(lhs, rhs)
+                    data, data.constructor.newMod(lhs, rhs)
                 )
 
                 Operator.OperatorType.LEFT_SHIFT -> data.constructor.newLeftShift(lhs, rhs)
@@ -141,10 +139,11 @@ class SsaTranslation(
                 Operator.OperatorType.GREATER_THAN_OR_EQUAL -> data.constructor.newGreaterThanOrEqual(lhs, rhs)
 
                 Operator.OperatorType.EQUALS -> {
-                    data.constructor.newEquals(lhs, rhs, binaryOperationTree.lhs.type.smallSize)
+                    data.constructor.newEquals(lhs, rhs, (binaryOperationTree.lhs.type as Type.SmallType).smallSize)
                 }
+
                 Operator.OperatorType.NOT_EQUALS -> {
-                    data.constructor.newNotEquals(lhs, rhs, binaryOperationTree.lhs.type.smallSize)
+                    data.constructor.newNotEquals(lhs, rhs, (binaryOperationTree.lhs.type as Type.SmallType).smallSize)
                 }
 
                 else -> throw java.lang.IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType)
@@ -170,8 +169,7 @@ class SsaTranslation(
             pushSpan(declarationTree)
             if (declarationTree.initializer != null) {
                 val rhs = declarationTree.initializer.accept(
-                    this,
-                    data
+                    this, data
                 )!!
                 data.writeVariable(declarationTree.name.name, data.currentBlock(), rhs)
             }
@@ -180,8 +178,7 @@ class SsaTranslation(
         }
 
         override fun visit(
-            structureTree: StructureTree,
-            data: SsaTranslation
+            structureTree: StructureTree, data: SsaTranslation
         ): Node? {
             error("What is SSA on a struct definition supposed to mean? Why did you call it then?")
         }
@@ -263,8 +260,7 @@ class SsaTranslation(
         override fun visit(unaryOperationTree: UnaryOperationTree, data: SsaTranslation): Node? {
             pushSpan(unaryOperationTree)
             val node = unaryOperationTree.expression.accept(
-                this,
-                data
+                this, data
             )!!
             val res = when (unaryOperationTree.operator.type) {
                 Operator.OperatorType.MINUS -> data.constructor.newSub(data.constructor.newConstInt(0), node)
@@ -454,28 +450,49 @@ class SsaTranslation(
         }
 
         override fun visit(heapAllocationTree: HeapAllocationTree, data: SsaTranslation): Node? {
-            TODO("Heap allocation SSA")
+            val baseSize = when (heapAllocationTree.typeTree.type) {
+                is Type.SmallType -> heapAllocationTree.type.smallSize
+                else -> TODO("Large type size")
+            }
+            val arraySize = heapAllocationTree.arrayCount?.accept(this, data) ?: data.constructor.newConstInt(0)
+            val sizeNode = if (heapAllocationTree.arrayCount != null) {
+                data.constructor.newAdd(
+                    data.constructor.newMul(
+                        data.constructor.newConstInt(baseSize), arraySize
+                    ), data.constructor.newConstInt(8) // Write array size here
+                )
+            } else {
+                data.constructor.newConstInt(baseSize)
+            }
+
+            val callNode = data.constructor.newCall(IdentName("alloc"), listOf(sizeNode, arraySize))
+
+            return callNode
         }
 
         override fun visit(
-            arrayAccessTree: ArrayAccessTree,
-            data: SsaTranslation
+            arrayAccessTree: ArrayAccessTree, data: SsaTranslation
         ): Node? {
             TODO("array access SSA")
         }
 
         override fun visit(
-            fieldAccessTree: FieldAccessTree,
-            data: SsaTranslation
+            fieldAccessTree: FieldAccessTree, data: SsaTranslation
         ): Node? {
             TODO("field access SSA")
         }
 
         override fun visit(
-            dereferenceTree: DereferenceTree,
-            data: SsaTranslation
+            dereferenceTree: DereferenceTree, data: SsaTranslation
         ): Node? {
-            TODO("dereference SSA")
+            if (dereferenceTree.type !is Type.SmallType) {
+                error("Cannot just dereference large type")
+            }
+            val base = dereferenceTree.pointerValue.accept(this, data)!!
+            val offset = data.constructor.newConstInt(0)
+            val dereferenced = data.constructor.newMemoryRead(base, offset, 0)
+            data.constructor.writeCurrentSideEffect(dereferenced)
+            return dereferenced
         }
 
         override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {
@@ -483,8 +500,7 @@ class SsaTranslation(
         }
 
         override fun visit(
-            parameterTree: ParameterTree,
-            data: SsaTranslation
+            parameterTree: ParameterTree, data: SsaTranslation
         ): Node? {
             return null
         }

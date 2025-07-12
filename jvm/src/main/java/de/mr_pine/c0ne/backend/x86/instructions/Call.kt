@@ -1,8 +1,8 @@
 package de.mr_pine.c0ne.backend.x86.instructions
 
-import de.mr_pine.c0ne.backend.x86.X86RegAlloc
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator.AbstractCodegen.Companion.callerSaved
+import de.mr_pine.c0ne.backend.x86.X86RegAlloc
 import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.Register.RealRegister
 import de.mr_pine.c0ne.parser.symbol.Name
 
@@ -27,7 +27,7 @@ class Call(val target: Name, val returnTarget: Argument, val callArguments: List
         val argumentsWithLocations =
             callArguments.zip(X86CodeGenerator.AbstractCodegen.arguments.take(callArguments.size).toList())
         val registerArguments = argumentsWithLocations.filter { it.second is Argument.RegMem.Register }
-        val memoryArguments = argumentsWithLocations.filter { it.second is Argument.RegMem.StackOverflowSlot }
+        val memoryArguments = argumentsWithLocations.filter { it.second is Argument.RegMem.MemoryReference }
         val argumentMoves = memoryArguments.reversed().joinToString("\n") { (value, _) ->
             Push(value).render()
         } + "\n" + registerArguments.joinToString("\n") { (value, _) ->

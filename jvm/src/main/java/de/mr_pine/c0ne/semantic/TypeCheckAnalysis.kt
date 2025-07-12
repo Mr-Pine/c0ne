@@ -67,6 +67,10 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
         val lhsType = binaryOperationTree.lhs.type
         val rhsType = binaryOperationTree.rhs.type
 
+        if (lhsType !is Type.SmallType) {
+            throw SemanticException("Type mismatch at ${binaryOperationTree.span} for ${binaryOperationTree.lhs}: Expected small type got $lhsType")
+        }
+
         val inputType = binaryOperationTree.operatorType.inputType
 
         if (inputType != null) {
