@@ -52,11 +52,11 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
     override fun visit(
         assignmentTree: AssignmentTree, data: TypeData
     ) {
-        val variableType = (assignmentTree.lValue as LValueIdentTree).references!!.type
-        if (assignmentTree.expression.type != variableType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue.name.name}: Expected $variableType got ${assignmentTree.expression.type}")
+        val lType = assignmentTree.lValue.type
+        if (assignmentTree.expression.type != lType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue}: Expected $lType got ${assignmentTree.expression.type}")
         if (assignmentTree.operator.type != Operator.OperatorType.ASSIGN) {
             val operatorType = assignmentTree.operator.type.inputType
-            if (variableType != operatorType) throw SemanticException("Type mismatch at ${assignmentTree.span}: Operator ${assignmentTree.operator.type} expects $operatorType but got $variableType")
+            if (lType != operatorType) throw SemanticException("Type mismatch at ${assignmentTree.span}: Operator ${assignmentTree.operator.type} expects $operatorType but got $lType")
         }
         super.visit(assignmentTree, data)
     }

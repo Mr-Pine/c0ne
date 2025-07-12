@@ -16,17 +16,24 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         assignmentTree: AssignmentTree, data: VariableStatus
     ): VariableStatus {
         val status = assignmentTree.expression.accept(this, data)
-        if (assignmentTree.lValue !is LValueIdentTree) {
-            throw NotImplementedError("Only assignments to variables are currently supported")
+        return when (assignmentTree.lValue) {
+            is LValueIdentTree -> {
+                assignmentTree.lValue.accept(this, status)
+                status.addDefinition(
+                    VariableDefinition(assignmentTree.lValue.name.name),
+                    assignmentTree.span,
+                    assignmentTree
+                )
+            }
+
+            is ArrayAccessTree -> {
+                val res = assignmentTree.lValue.arrayValue.accept(this, status)
+                assignmentTree.lValue.index.accept(this, res)
+            }
+
+            is DereferenceTree -> assignmentTree.lValue.pointerValue.accept(this, status)
+            is FieldAccessTree -> assignmentTree.lValue.structValue.accept(this, status)
         }
-        if (assignmentTree.operator.type.isSelfAssignOperator) {
-            assignmentTree.lValue.references = data.checkUsage(assignmentTree.lValue.name, assignmentTree.span)
-        }
-        return status.addDefinition(
-            VariableDefinition(assignmentTree.lValue.name.name),
-            assignmentTree.span,
-            assignmentTree
-        )
     }
 
     override fun visit(
@@ -104,6 +111,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     override fun visit(
         lValueIdentTree: LValueIdentTree, data: VariableStatus
     ): VariableStatus {
+        lValueIdentTree.references = data.checkUsage(lValueIdentTree.name, lValueIdentTree.span)
         return data
     }
 

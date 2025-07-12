@@ -29,4 +29,5 @@ interface SSAVisitor<R> {
     fun visit(node: XorNode): R
     fun visit(node: CallNode): R
     fun visit(node: MemoryRead): R
+    fun visit(node: MemoryWrite): R
 }

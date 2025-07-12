@@ -50,7 +50,8 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
             is ReturnNode -> setOf(node.result)
             is IfNode -> setOf(node.condition)
             is CallNode -> node.arguments.toSet()
-            is MemoryRead -> setOf(node.base, node.offset)
+            is MemoryRead -> setOfNotNull(node.base, node.offset)
+            is MemoryWrite -> setOfNotNull(node.base, node.offset, node.value)
             is ExitNode, is ProjNode, is ConstIntNode, is ConstBoolNode, is Block, is StartNode, is UndefNode -> setOf()
         }
     }

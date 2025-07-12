@@ -98,7 +98,32 @@ class SsaTranslation(
                     data.writeVariable(assignmentTree.lValue.name.name, data.currentBlock(), rhs)
                 }
 
-                else -> throw IllegalStateException("Unexpected value: " + assignmentTree.lValue)
+                else -> {
+                    val rhs = assignmentTree.expression.accept(this, data)!!
+
+                    val (base, offset, constOffset) = when (assignmentTree.lValue) {
+                        is ArrayAccessTree -> TODO()
+                        is DereferenceTree -> Triple(
+                            assignmentTree.lValue.pointerValue.accept(this, data)!!,
+                            null,
+                            0
+                        )
+
+                        is FieldAccessTree -> TODO()
+                        is LValueIdentTree -> throw IllegalStateException("LValueIdentTree is not handled here")
+                    }
+
+                    val value = if (desugar != null) {
+                        val selfValue = data.constructor.newMemoryRead(base, offset, constOffset)
+                        data.constructor.writeCurrentSideEffect(selfValue)
+                        desugar(selfValue, rhs)
+                    } else {
+                        rhs
+                    }
+
+                    val write = data.constructor.newMemoryWrite(base, offset, constOffset, value)
+                    data.constructor.writeCurrentSideEffect(write)
+                }
             }
             popSpan()
             return NOT_AN_EXPRESSION
@@ -250,7 +275,7 @@ class SsaTranslation(
         }
 
         override fun visit(lValueIdentTree: LValueIdentTree, data: SsaTranslation): Node? {
-            return NOT_AN_EXPRESSION
+            return data.readVariable(lValueIdentTree.name.name, data.currentBlock())
         }
 
         override fun visit(nameTree: NameTree, data: SsaTranslation): Node? {
@@ -489,8 +514,7 @@ class SsaTranslation(
                 error("Cannot just dereference large type")
             }
             val base = dereferenceTree.pointerValue.accept(this, data)!!
-            val offset = data.constructor.newConstInt(0)
-            val dereferenced = data.constructor.newMemoryRead(base, offset, 0)
+            val dereferenced = data.constructor.newMemoryRead(base, null, 0)
             data.constructor.writeCurrentSideEffect(dereferenced)
             return dereferenced
         }

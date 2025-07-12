@@ -358,17 +358,30 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 )
             }
 
-            override fun visit(node: MemoryRead) {
-                val base = Argument.NodeValue(node.base)
-                val offset = Argument.NodeValue(node.offset)
+            private fun translateMemAddress(base: Node, offset: Node?, constantOffset: Int): Argument.RegMem.MemoryReference {
+
+                val base = Argument.NodeValue(base)
+                val offset = offset?.let { Argument.NodeValue(it) }
 
                 val baseInReg = RealRegister.R14
-                val offsetReg = Argument.RegMem.Register.RegisterFor(offset)
+                val offsetReg = offset?.let { Argument.RegMem.Register.RegisterFor(it) }
                 instructionList.add(Mov(baseInReg, base))
-                instructionList.add(Mov(offsetReg, offset))
-                val source = Argument.RegMem.MemoryReference(baseInReg, offsetReg, node.constantOffset)
+                if (offset != null) {
+                    instructionList.add(Mov(offsetReg!!, offset))
+                }
+                return Argument.RegMem.MemoryReference(baseInReg, offsetReg, constantOffset)
+            }
 
+            override fun visit(node: MemoryRead) {
+                val source = translateMemAddress(node.base, node.offset, node.constantOffset)
                 val target = Argument.NodeValue(node)
+
+                instructionList.add(Mov(target, source))
+            }
+
+            override fun visit(node: MemoryWrite) {
+                val source = Argument.NodeValue(node.value)
+                val target = translateMemAddress(node.base, node.offset, node.constantOffset)
 
                 instructionList.add(Mov(target, source))
             }
