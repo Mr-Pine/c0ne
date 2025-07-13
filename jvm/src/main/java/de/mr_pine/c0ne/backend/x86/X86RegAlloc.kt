@@ -5,6 +5,7 @@ import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.backend.needsRegister
 import de.mr_pine.c0ne.backend.x86.instructions.Argument
 import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.MemoryReference.Companion.stackOverflowSlot
+import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.MemoryReference.Companion.nextStackOverflowSlot
 import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.Register.RealRegister
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
@@ -21,7 +22,7 @@ class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule)
         RealRegister.R14,
         RealRegister.R15
     ))
-        .asSequence() + generateSequence(stackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { stackOverflowSlot(it.constantOffset + 8) }
+        .asSequence() + generateSequence(stackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { nextStackOverflowSlot(it) }
 
     private val allocation = allocateRegisters()
 

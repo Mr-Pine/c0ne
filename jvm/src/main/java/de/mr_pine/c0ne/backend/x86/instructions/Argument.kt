@@ -82,6 +82,7 @@ sealed interface Argument {
 
             companion object {
                 fun stackOverflowSlot(offset: Int) = MemoryReference(Register.RealRegister.RBP, null, -offset)
+                fun nextStackOverflowSlot(current: MemoryReference) = stackOverflowSlot(-current.constantOffset + 8)
             }
 
             override fun render(size: Int) = "${sizePrefix(size)} PTR [$base${offset?.let { " + $it" } ?: ""} + $constantOffset]"
