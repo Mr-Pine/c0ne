@@ -203,9 +203,13 @@ class Parser(private val tokenSource: TokenSource) {
 
     private fun parseLValue(): LValueTree {
         var lvalue = parseDereferencedIdentLValue()
-        while (tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.ARROW || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN) {
+        while (tokenSource.peekAs<Operator>()?.type in listOf(Operator.OperatorType.ARROW, Operator.OperatorType.DOT) || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN) {
             lvalue = if (tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.ARROW) {
-                tokenSource.expectOperator(Operator.OperatorType.ARROW)
+                val arrow = tokenSource.expectOperator(Operator.OperatorType.ARROW)
+                val field = tokenSource.expectIdentifier()
+                FieldAccessTree(DereferenceTree(lvalue, lvalue.span merge arrow.span), name(field))
+            } else if (tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.DOT) {
+                tokenSource.expectOperator(Operator.OperatorType.DOT)
                 val field = tokenSource.expectIdentifier()
                 FieldAccessTree(lvalue, name(field))
             } else {
