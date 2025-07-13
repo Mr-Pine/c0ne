@@ -25,6 +25,7 @@ class SemanticAnalysis(private val program: ProgramTree) {
                 }
             })
         )
+        this.program.accept(RecursivePostorderVisitor(RecursiveStructAnalysis()), mutableMapOf())
         this.program.accept(RecursivePostorderVisitor(ForStepAnalysis()), Unit)
         this.program.accept(RecursivePostorderVisitor(BreakContinueAnalysis()), mutableListOf())
         this.program.accept(
