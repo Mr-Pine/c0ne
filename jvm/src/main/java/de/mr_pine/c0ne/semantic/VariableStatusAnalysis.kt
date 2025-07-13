@@ -83,7 +83,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     override fun visit(
         identExpressionTree: IdentExpressionTree, data: VariableStatus
     ): VariableStatus {
-        identExpressionTree.references = data.checkUsage(identExpressionTree.name, identExpressionTree.span)
+        identExpressionTree.references = data.checkUsage(identExpressionTree.name, identExpressionTree.span, true)
         return data
     }
 
@@ -111,7 +111,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     override fun visit(
         lValueIdentTree: LValueIdentTree, data: VariableStatus
     ): VariableStatus {
-        lValueIdentTree.references = data.checkUsage(lValueIdentTree.name, lValueIdentTree.span)
+        lValueIdentTree.references = data.checkUsage(lValueIdentTree.name, lValueIdentTree.span, false)
         return data
     }
 
@@ -313,12 +313,12 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             )
         }
 
-        fun checkUsage(name: NameTree, span: Span): Declaration {
+        fun checkUsage(name: NameTree, span: Span, checkDefinition: Boolean): Declaration {
             val declaration = declarationFor(name.name)
             if (declaration == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not defined at $span")
             }
-            if (definitionFor(name.name) == null) {
+            if (checkDefinition && definitionFor(name.name) == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not declared at $span")
             }
             return declaration.declaration
