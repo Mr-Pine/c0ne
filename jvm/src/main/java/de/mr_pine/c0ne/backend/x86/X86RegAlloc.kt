@@ -19,7 +19,6 @@ class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule)
         RealRegister.RCX,
         RealRegister.RBP,
         RealRegister.RSP,
-        RealRegister.R14,
         RealRegister.R15
     ))
         .asSequence() + generateSequence(stackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { nextStackOverflowSlot(it) }

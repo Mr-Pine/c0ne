@@ -363,7 +363,7 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 val base = Argument.NodeValue(base)
                 val offset = offset?.let { Argument.NodeValue(it) }
 
-                val baseInReg = RealRegister.R14
+                val baseInReg = RealRegister.RAX
                 val offsetReg = offset?.let { Argument.RegMem.Register.RegisterFor(it) }
                 instructionList.add(Mov(baseInReg, base))
                 if (offset != null) {
@@ -375,15 +375,19 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
             override fun visit(node: MemoryRead) {
                 val source = translateMemAddress(node.base, node.offset, node.constantOffset)
                 val target = Argument.NodeValue(node)
+                val targetReg = Argument.RegMem.Register.RegisterFor(target)
 
-                instructionList.add(Mov(target, source))
+                instructionList.add(Mov(targetReg, source))
+                instructionList.add(Mov(target, targetReg))
             }
 
             override fun visit(node: MemoryWrite) {
                 val source = Argument.NodeValue(node.value)
+                val sourceReg = RealRegister.RDX
                 val target = translateMemAddress(node.base, node.offset, node.constantOffset)
 
-                instructionList.add(Mov(target, source))
+                instructionList.add(Mov(sourceReg, source))
+                instructionList.add(Mov(target, sourceReg))
             }
         }
     }
