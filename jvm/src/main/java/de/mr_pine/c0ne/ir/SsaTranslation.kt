@@ -12,6 +12,7 @@ import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralBoolTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
 import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.symbol.Name
+import de.mr_pine.c0ne.parser.type.StructType
 import de.mr_pine.c0ne.parser.type.Type
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.util.*
@@ -109,7 +110,13 @@ class SsaTranslation(
                             0
                         )
 
-                        is FieldAccessTree -> TODO()
+                        is FieldAccessTree -> {
+                            val pointerTree = assignmentTree.lValue.structValue as? DereferenceTree ?: error("No raw struct types allowed")
+                            val base = pointerTree.pointerValue.accept(this, data)!!
+                            val offset = (assignmentTree.lValue.structValue.type as StructType).references!!.offsets[assignmentTree.lValue.field.name]!!
+
+                            Triple(base, null, offset)
+                        }
                         is LValueIdentTree -> throw IllegalStateException("LValueIdentTree is not handled here")
                     }
 
@@ -475,10 +482,7 @@ class SsaTranslation(
         }
 
         override fun visit(heapAllocationTree: HeapAllocationTree, data: SsaTranslation): Node? {
-            val baseSize = when (heapAllocationTree.typeTree.type) {
-                is Type.SmallType -> heapAllocationTree.type.smallSize
-                else -> TODO("Large type size")
-            }
+            val baseSize = heapAllocationTree.typeTree.type.size
             val arraySize = heapAllocationTree.arrayCount?.accept(this, data) ?: data.constructor.newConstInt(0)
             val sizeNode = if (heapAllocationTree.arrayCount != null) {
                 data.constructor.newAdd(
@@ -504,7 +508,15 @@ class SsaTranslation(
         override fun visit(
             fieldAccessTree: FieldAccessTree, data: SsaTranslation
         ): Node? {
-            TODO("field access SSA")
+            if (fieldAccessTree.structValue !is DereferenceTree) {
+                error("Expected dereference tree for struct value")
+            }
+
+            val pointerValue = fieldAccessTree.structValue.pointerValue.accept(this, data)!!
+            val fieldOffset = (fieldAccessTree.structValue.type as StructType).references!!.offsets[fieldAccessTree.field.name]!!
+            val fieldValue = data.constructor.newMemoryRead(pointerValue, null, fieldOffset)
+            data.constructor.writeCurrentSideEffect(fieldValue)
+            return fieldValue
         }
 
         override fun visit(
