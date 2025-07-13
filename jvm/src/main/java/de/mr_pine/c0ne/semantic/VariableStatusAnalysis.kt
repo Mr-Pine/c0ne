@@ -212,7 +212,8 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         arrayAccessTree: ArrayAccessTree,
         data: VariableStatus
     ): VariableStatus {
-        return arrayAccessTree.arrayValue.accept(this, data)
+        val result = arrayAccessTree.index.accept(this, data)
+        return arrayAccessTree.arrayValue.accept(this, result)
     }
 
     override fun visit(
