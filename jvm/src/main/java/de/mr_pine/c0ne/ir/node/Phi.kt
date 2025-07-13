@@ -15,7 +15,7 @@ class Phi(block: Block) : Node(block) {
         get() = checkSideeffect(mutableSetOf())
 
     private val Node.isDirectSideeffect
-        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT
+        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || this is MemoryWrite || this is MemoryRead
 
     private fun Phi.checkSideeffect(visited: MutableSet<Phi>): Boolean {
         visited.add(this)
