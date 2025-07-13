@@ -358,7 +358,7 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 )
             }
 
-            private fun translateMemAddress(base: Node, offset: Node?, constantOffset: Int): Argument.RegMem.MemoryReference {
+            private fun translateMemAddress(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int): Argument.RegMem.MemoryReference {
 
                 val base = Argument.NodeValue(base)
                 val offset = offset?.let { Argument.NodeValue(it) }
@@ -369,11 +369,11 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 if (offset != null) {
                     instructionList.add(Mov(offsetReg!!, offset))
                 }
-                return Argument.RegMem.MemoryReference(baseInReg, offsetReg, constantOffset)
+                return Argument.RegMem.MemoryReference(baseInReg, offsetReg, offsetScale, constantOffset)
             }
 
-            override fun visit(node: MemoryRead) {
-                val source = translateMemAddress(node.base, node.offset, node.constantOffset)
+            override fun visit(node: MemoryReadNode) {
+                val source = translateMemAddress(node.base, node.offset, node.offsetScale, node.constantOffset)
                 val target = Argument.NodeValue(node)
                 val targetReg = Argument.RegMem.Register.RegisterFor(target)
 
@@ -381,10 +381,10 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 instructionList.add(Mov(target, targetReg))
             }
 
-            override fun visit(node: MemoryWrite) {
+            override fun visit(node: MemoryWriteNode) {
                 val source = Argument.NodeValue(node.value)
                 val sourceReg = RealRegister.RDX
-                val target = translateMemAddress(node.base, node.offset, node.constantOffset)
+                val target = translateMemAddress(node.base, node.offset, node.offsetScale, node.constantOffset)
 
                 instructionList.add(Mov(sourceReg, source))
                 instructionList.add(Mov(target, sourceReg))

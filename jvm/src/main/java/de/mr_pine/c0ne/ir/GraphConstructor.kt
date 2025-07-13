@@ -127,12 +127,12 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return this.optimizer.transform(CallNode(currentBlock, function, arguments, readCurrentSideEffect()))
     }
 
-    fun newMemoryRead(base: Node, offset: Node?, constantOffset: Int): Node {
-        return this.optimizer.transform(MemoryRead(currentBlock, base, offset, constantOffset, readCurrentSideEffect()))
+    fun newMemoryRead(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int): Node {
+        return this.optimizer.transform(MemoryReadNode(currentBlock, base, offset, offsetScale, constantOffset, readCurrentSideEffect()))
     }
 
-    fun newMemoryWrite(base: Node, offset: Node?, constantOffset: Int, value: Node): Node {
-        return this.optimizer.transform(MemoryWrite(currentBlock, base, offset, constantOffset, value, readCurrentSideEffect()))
+    fun newMemoryWrite(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int, value: Node): Node {
+        return this.optimizer.transform(MemoryWriteNode(currentBlock, base, offset, offsetScale, constantOffset, value, readCurrentSideEffect()))
     }
 
     fun newSideEffectProj(node: Node): Node {
@@ -207,12 +207,15 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         if (other.isEmpty()) {
             return UndefNode(phi.block)
         } else if (other.size == 1) {
-            val replacement = other.first()
-            for (succ in graph.successors(phi)) {
+            var replacement = other.first()
+            for (succ in graph.successors(phi).sortedBy { it !is Phi }) {
                 for ((idx, _) in succ.predecessors().withIndex().filter { it.value == phi }) {
                     succ.setPredecessor(idx, replacement)
                     if (succ is Phi && succ.block in sealedBlocks) {
-                        tryRemoveTrivialPhi(succ)
+                        val succReplacement = tryRemoveTrivialPhi(succ)
+                        if (succ == replacement) {
+                            replacement = succReplacement
+                        }
                     }
                 }
             }

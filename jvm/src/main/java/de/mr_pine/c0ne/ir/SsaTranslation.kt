@@ -62,6 +62,41 @@ class SsaTranslation(
             DebugInfoHelper.debugInfo = this.debugStack.pop()
         }
 
+        fun arrayBoundsCheck(array: Node, index: Node, data: SsaTranslation) {
+            val indexLtZero = data.constructor.newLessThan(index, data.constructor.newConstInt(0))
+            val (trueNode, falseNode) = projectedIfNode(data, indexLtZero)
+
+            val trueLtZeroBlock = data.constructor.newBlock("array-bounds-check-lt-zero")
+            val falseLtZeroBlock = data.constructor.newBlock("array-bounds-check-lt-zero-false")
+            trueLtZeroBlock.addPredecessor(trueNode)
+            falseLtZeroBlock.addPredecessor(falseNode)
+            data.constructor.sealBlock(trueLtZeroBlock)
+            data.constructor.sealBlock(falseLtZeroBlock)
+
+            data.constructor.currentBlock = trueLtZeroBlock
+            val ltZeroAbort = data.constructor.newCall(IdentName("abort"), listOf())
+            data.constructor.writeCurrentSideEffect(ltZeroAbort)
+            falseLtZeroBlock.addPredecessor(data.constructor.newJump())
+
+            data.constructor.currentBlock = falseLtZeroBlock
+            val size = data.constructor.newMemoryRead(array, null, 0, 0)
+            val indexGeqSize = data.constructor.newGreaterThanOrEqual(index, size)
+            val (trueGeqSize, falseGeqSize) = projectedIfNode(data, indexGeqSize)
+            val trueGeqSizeBlock = data.constructor.newBlock("array-bounds-check-geq-size-true")
+            val falseGeqSizeBlock = data.constructor.newBlock("array-bounds-check-geq-size-false")
+            trueGeqSizeBlock.addPredecessor(trueGeqSize)
+            falseGeqSizeBlock.addPredecessor(falseGeqSize)
+            data.constructor.sealBlock(trueGeqSizeBlock)
+            data.constructor.sealBlock(falseGeqSizeBlock)
+
+            data.constructor.currentBlock = trueGeqSizeBlock
+            val arrayIndexOutOfBounds = data.constructor.newCall(IdentName("abort"), listOf())
+            data.constructor.writeCurrentSideEffect(arrayIndexOutOfBounds)
+            falseGeqSizeBlock.addPredecessor(data.constructor.newJump())
+
+            data.constructor.currentBlock = falseGeqSizeBlock
+        }
+
         override fun visit(assignmentTree: AssignmentTree, data: SsaTranslation): Node? {
             pushSpan(assignmentTree)
             val desugar: ((Node, Node) -> Node)? = when (assignmentTree.operator.type) {
@@ -102,33 +137,56 @@ class SsaTranslation(
                 else -> {
                     val rhs = assignmentTree.expression.accept(this, data)!!
 
-                    val (base, offset, constOffset) = when (assignmentTree.lValue) {
-                        is ArrayAccessTree -> TODO()
-                        is DereferenceTree -> Triple(
+                    data class OffsetData(val base: Node, val offset: Node?, val offsetScale: Int, val constOffset: Int)
+
+                    val offsetData = when (assignmentTree.lValue) {
+                        is ArrayAccessTree -> {
+                            val index = assignmentTree.lValue.index.accept(this, data)!!
+                            val array = assignmentTree.lValue.arrayValue.accept(this, data)!!
+                            arrayBoundsCheck(array, index, data)
+                            OffsetData(array, index, assignmentTree.lValue.type.size, 8)
+                        }
+
+                        is DereferenceTree -> OffsetData(
                             assignmentTree.lValue.pointerValue.accept(this, data)!!,
                             null,
+                            0,
                             0
                         )
 
                         is FieldAccessTree -> {
-                            val pointerTree = assignmentTree.lValue.structValue as? DereferenceTree ?: error("No raw struct types allowed")
+                            val pointerTree = assignmentTree.lValue.structValue as? DereferenceTree
+                                ?: error("No raw struct types allowed")
                             val base = pointerTree.pointerValue.accept(this, data)!!
-                            val offset = (assignmentTree.lValue.structValue.type as StructType).references!!.offsets[assignmentTree.lValue.field.name]!!
+                            val offset =
+                                (assignmentTree.lValue.structValue.type as StructType).references!!.offsets[assignmentTree.lValue.field.name]!!
 
-                            Triple(base, null, offset)
+                            OffsetData(base, null, 0, offset)
                         }
+
                         is LValueIdentTree -> throw IllegalStateException("LValueIdentTree is not handled here")
                     }
 
                     val value = if (desugar != null) {
-                        val selfValue = data.constructor.newMemoryRead(base, offset, constOffset)
+                        val selfValue = data.constructor.newMemoryRead(
+                            offsetData.base,
+                            offsetData.offset,
+                            offsetData.offsetScale,
+                            offsetData.constOffset
+                        )
                         data.constructor.writeCurrentSideEffect(selfValue)
                         desugar(selfValue, rhs)
                     } else {
                         rhs
                     }
 
-                    val write = data.constructor.newMemoryWrite(base, offset, constOffset, value)
+                    val write = data.constructor.newMemoryWrite(
+                        offsetData.base,
+                        offsetData.offset,
+                        offsetData.offsetScale,
+                        offsetData.constOffset,
+                        value
+                    )
                     data.constructor.writeCurrentSideEffect(write)
                 }
             }
@@ -501,8 +559,12 @@ class SsaTranslation(
 
         override fun visit(
             arrayAccessTree: ArrayAccessTree, data: SsaTranslation
-        ): Node? {
-            TODO("array access SSA")
+        ): Node {
+            val index = arrayAccessTree.index.accept(this, data)!!
+            val array = arrayAccessTree.arrayValue.accept(this, data)!!
+            val arrayRead = data.constructor.newMemoryRead(array, index, arrayAccessTree.type.size, 8)
+            data.constructor.writeCurrentSideEffect(arrayRead)
+            return arrayRead
         }
 
         override fun visit(
@@ -513,8 +575,9 @@ class SsaTranslation(
             }
 
             val pointerValue = fieldAccessTree.structValue.pointerValue.accept(this, data)!!
-            val fieldOffset = (fieldAccessTree.structValue.type as StructType).references!!.offsets[fieldAccessTree.field.name]!!
-            val fieldValue = data.constructor.newMemoryRead(pointerValue, null, fieldOffset)
+            val fieldOffset =
+                (fieldAccessTree.structValue.type as StructType).references!!.offsets[fieldAccessTree.field.name]!!
+            val fieldValue = data.constructor.newMemoryRead(pointerValue, null, 0, fieldOffset)
             data.constructor.writeCurrentSideEffect(fieldValue)
             return fieldValue
         }
@@ -526,7 +589,7 @@ class SsaTranslation(
                 error("Cannot just dereference large type")
             }
             val base = dereferenceTree.pointerValue.accept(this, data)!!
-            val dereferenced = data.constructor.newMemoryRead(base, null, 0)
+            val dereferenced = data.constructor.newMemoryRead(base, null, 0, 0)
             data.constructor.writeCurrentSideEffect(dereferenced)
             return dereferenced
         }

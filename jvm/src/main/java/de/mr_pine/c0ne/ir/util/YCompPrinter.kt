@@ -218,8 +218,8 @@ class YCompPrinter(
             is UndefNode -> VcgColor.SPECIAL
 
             is CallNode -> VcgColor.CONTROL_FLOW
-            is MemoryRead -> VcgColor.MEMORY
-            is MemoryWrite -> VcgColor.MEMORY
+            is MemoryReadNode -> VcgColor.MEMORY
+            is MemoryWriteNode -> VcgColor.MEMORY
             is ReturnNode -> VcgColor.CONTROL_FLOW
             is StartNode -> VcgColor.CONTROL_FLOW
             is IfNode -> VcgColor.CONTROL_FLOW
