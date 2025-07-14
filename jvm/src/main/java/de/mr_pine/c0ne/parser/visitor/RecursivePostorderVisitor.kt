@@ -81,6 +81,10 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         return this.visitor.visit(literalBoolTree, data)
     }
 
+    override fun visit(literalNullTree: LiteralTree.LiteralNullTree, data: T): R {
+        return this.visitor.visit(literalNullTree, data)
+    }
+
     override fun visit(lValueIdentTree: LValueIdentTree, data: T): R {
         var r = lValueIdentTree.name.accept(this, data)
         r = this.visitor.visit(lValueIdentTree, accumulate(data, r))

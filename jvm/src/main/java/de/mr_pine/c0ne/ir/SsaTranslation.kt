@@ -340,6 +340,16 @@ class SsaTranslation(
             return node
         }
 
+        override fun visit(
+            literalNullTree: LiteralTree.LiteralNullTree,
+            data: SsaTranslation
+        ): Node? {
+            pushSpan(literalNullTree)
+            val node = data.constructor.newConstInt(0)
+            popSpan()
+            return node
+        }
+
         override fun visit(lValueIdentTree: LValueIdentTree, data: SsaTranslation): Node? {
             return data.readVariable(lValueIdentTree.name.name, data.currentBlock())
         }

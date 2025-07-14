@@ -37,6 +37,9 @@ interface NoOpVisitor<T> : Visitor<T, Unit> {
     override fun visit(literalBoolTree: LiteralBoolTree, data: T) {
     }
 
+    override fun visit(literalNullTree: LiteralTree.LiteralNullTree, data: T) {
+    }
+
     override fun visit(lValueIdentTree: LValueIdentTree, data: T) {
     }
 

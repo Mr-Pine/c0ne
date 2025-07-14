@@ -109,6 +109,13 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
+        literalNullTree: LiteralTree.LiteralNullTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return data
+    }
+
+    override fun visit(
         lValueIdentTree: LValueIdentTree, data: VariableStatus
     ): VariableStatus {
         lValueIdentTree.references = data.checkUsage(lValueIdentTree.name, lValueIdentTree.span, false)

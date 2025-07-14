@@ -14,4 +14,8 @@ data class StructType(val name: Name) : Type {
 
     val fieldTypes
         get() = references!!.fields.associate { it.name.name to it.type }
+
+    override fun compatibleWith(other: Type): Boolean {
+        return this == other
+    }
 }

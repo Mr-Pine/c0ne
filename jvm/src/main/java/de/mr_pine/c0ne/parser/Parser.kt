@@ -203,7 +203,11 @@ class Parser(private val tokenSource: TokenSource) {
 
     private fun parseLValue(): LValueTree {
         var lvalue = parseDereferencedIdentLValue()
-        while (tokenSource.peekAs<Operator>()?.type in listOf(Operator.OperatorType.ARROW, Operator.OperatorType.DOT) || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN) {
+        while (tokenSource.peekAs<Operator>()?.type in listOf(
+                Operator.OperatorType.ARROW,
+                Operator.OperatorType.DOT
+            ) || tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACKET_OPEN
+        ) {
             lvalue = if (tokenSource.peekAs<Operator>()?.type == Operator.OperatorType.ARROW) {
                 val arrow = tokenSource.expectOperator(Operator.OperatorType.ARROW)
                 val field = tokenSource.expectIdentifier()
@@ -384,6 +388,11 @@ class Parser(private val tokenSource: TokenSource) {
                 LiteralTree.LiteralIntTree(nextToken.value, nextToken.base, nextToken.span)
             }
 
+            is Keyword if nextToken.type == KeywordType.NULL -> {
+                this.tokenSource.consume()
+                LiteralTree.LiteralNullTree(nextToken)
+            }
+
             is Keyword if nextToken.isBooleanLiteral -> {
                 this.tokenSource.consume()
                 LiteralTree.LiteralBoolTree(nextToken)
@@ -445,11 +454,13 @@ class Parser(private val tokenSource: TokenSource) {
                     expression =
                         FieldAccessTree(DereferenceTree(expression, expression.span merge nextToken.span), name(ident))
                 }
+
                 is Separator if nextToken.type == SeparatorType.BRACKET_OPEN -> {
                     val index = parseExpression()
                     val closing = tokenSource.expectSeparator(SeparatorType.BRACKET_CLOSE)
                     expression = ArrayAccessTree(expression, index, expression.span merge closing.span)
                 }
+
                 else -> throw ParseException("expected . or -> or array access but got $nextToken")
             }
         }

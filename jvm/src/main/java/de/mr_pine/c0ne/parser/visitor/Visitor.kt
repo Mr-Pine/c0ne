@@ -25,6 +25,8 @@ interface Visitor<T, R> {
 
     fun visit(literalBoolTree: LiteralBoolTree, data: T): R
 
+    fun visit(literalNullTree: LiteralTree.LiteralNullTree, data: T): R
+
     fun visit(lValueIdentTree: LValueIdentTree, data: T): R
 
     fun visit(nameTree: NameTree, data: T): R

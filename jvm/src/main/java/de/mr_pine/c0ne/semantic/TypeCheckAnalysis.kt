@@ -4,6 +4,8 @@ import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.type.*
+import de.mr_pine.c0ne.parser.type.Type.SmallType
+import de.mr_pine.c0ne.parser.type.Type.SmallType.*
 import de.mr_pine.c0ne.parser.visitor.NoOpVisitor
 
 class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
@@ -26,7 +28,7 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
 
     override fun visit(functionTree: DeclaredFunctionTree, data: TypeData) {
         for (returnTree in data.returns) {
-            if (data.resolve(returnTree.expression.type) != data.resolve(functionTree.returnType)) throw SemanticException(
+            if (data.resolve(returnTree.expression.type) incompatibleWith data.resolve(functionTree.returnType)) throw SemanticException(
                 "Return type ${returnTree.expression.type} at ${returnTree.span} does not match expected type ${functionTree.returnType}"
             )
         }
@@ -44,7 +46,7 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
         declarationTree: DeclarationTree, data: TypeData
     ) {
         if (declarationTree.initializer != null) {
-            if (declarationTree.initializer.type != declarationTree.type) throw SemanticException("Type mismatch at ${declarationTree.span} for ${declarationTree.name.name} initializer: Expected ${declarationTree.type} got ${declarationTree.initializer.type}")
+            if (declarationTree.initializer.type incompatibleWith declarationTree.type) throw SemanticException("Type mismatch at ${declarationTree.span} for ${declarationTree.name.name} initializer: Expected ${declarationTree.type} got ${declarationTree.initializer.type}")
         }
         super.visit(declarationTree, data)
     }
@@ -53,10 +55,10 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
         assignmentTree: AssignmentTree, data: TypeData
     ) {
         val lType = assignmentTree.lValue.type
-        if (assignmentTree.expression.type != lType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue}: Expected $lType got ${assignmentTree.expression.type}")
+        if (assignmentTree.expression.type incompatibleWith lType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue}: Expected $lType got ${assignmentTree.expression.type}")
         if (assignmentTree.operator.type != Operator.OperatorType.ASSIGN) {
             val operatorType = assignmentTree.operator.type.inputType
-            if (lType != operatorType) throw SemanticException("Type mismatch at ${assignmentTree.span}: Operator ${assignmentTree.operator.type} expects $operatorType but got $lType")
+            if (lType incompatibleWith operatorType!!) throw SemanticException("Type mismatch at ${assignmentTree.span}: Operator ${assignmentTree.operator.type} expects $operatorType but got $lType")
         }
         super.visit(assignmentTree, data)
     }
@@ -67,18 +69,19 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
         val lhsType = binaryOperationTree.lhs.type
         val rhsType = binaryOperationTree.rhs.type
 
-        if (lhsType !is Type.SmallType) {
+        if (lhsType !is SmallType) {
             throw SemanticException("Type mismatch at ${binaryOperationTree.span} for ${binaryOperationTree.lhs}: Expected small type got $lhsType")
         }
 
         val inputType = binaryOperationTree.operatorType.inputType
 
         if (inputType != null) {
-            if (lhsType != inputType) throw SemanticException("Type mismatch at ${binaryOperationTree.span} for ${binaryOperationTree.lhs}: Expected $inputType got $lhsType")
-            if (rhsType != inputType) throw SemanticException("Type mismatch at ${binaryOperationTree.span} for ${binaryOperationTree.rhs}: Expected $inputType got $rhsType")
+            if (lhsType incompatibleWith inputType) throw SemanticException("Type mismatch at ${binaryOperationTree.span} for ${binaryOperationTree.lhs}: Expected $inputType got $lhsType")
+            if (rhsType incompatibleWith inputType) throw SemanticException("Type mismatch at ${binaryOperationTree.span} for ${binaryOperationTree.rhs}: Expected $inputType got $rhsType")
         }
 
-        if (lhsType != rhsType) throw SemanticException("Type mismatch at ${binaryOperationTree.span}: Could not unify types $lhsType and $rhsType")
+        val commonType = Type.commonType(lhsType, rhsType)
+        if (commonType == TypeError) throw SemanticException("Type mismatch at ${binaryOperationTree.span}: Could not unify types $lhsType and $rhsType")
 
         super.visit(binaryOperationTree, data)
     }
@@ -87,24 +90,24 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
         unaryOperationTree: UnaryOperationTree, data: TypeData
     ) {
         val expressionType = unaryOperationTree.expression.type
-        if (unaryOperationTree.operator.type.inputType != expressionType) throw SemanticException("Type mismatch at ${unaryOperationTree.span} for ${unaryOperationTree.expression}: Expected ${unaryOperationTree.operator.type.inputType} got $expressionType")
+        if (expressionType incompatibleWith unaryOperationTree.operator.type.inputType!!) throw SemanticException("Type mismatch at ${unaryOperationTree.span} for ${unaryOperationTree.expression}: Expected ${unaryOperationTree.operator.type.inputType} got $expressionType")
         super.visit(unaryOperationTree, data)
     }
 
     override fun visit(ifTree: IfTree, data: TypeData) {
-        if (ifTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${ifTree.span} for if condition: Expected ${BasicType.Boolean} got ${ifTree.condition.type}")
+        if (ifTree.condition.type incompatibleWith BasicType.Boolean) throw SemanticException("Type mismatch at ${ifTree.span} for if condition: Expected ${BasicType.Boolean} got ${ifTree.condition.type}")
 
         super.visit(ifTree, data)
     }
 
     override fun visit(whileTree: WhileTree, data: TypeData) {
-        if (whileTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${whileTree.span} for while condition: Expected ${BasicType.Boolean} got ${whileTree.condition.type}")
+        if (whileTree.condition.type incompatibleWith BasicType.Boolean) throw SemanticException("Type mismatch at ${whileTree.span} for while condition: Expected ${BasicType.Boolean} got ${whileTree.condition.type}")
 
         super.visit(whileTree, data)
     }
 
     override fun visit(forTree: ForTree, data: TypeData) {
-        if (forTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${forTree.span} for condition of for loop: Expected ${BasicType.Boolean} got ${forTree.condition.type}")
+        if (forTree.condition.type incompatibleWith BasicType.Boolean) throw SemanticException("Type mismatch at ${forTree.span} for condition of for loop: Expected ${BasicType.Boolean} got ${forTree.condition.type}")
 
         super.visit(forTree, data)
     }
@@ -112,8 +115,8 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
     override fun visit(
         callTree: CallTree, data: TypeData
     ) {
-        for ((argument, parameterTypes) in callTree.arguments.elements.zip(callTree.references!!.parameterTypes)) {
-            if (argument.type != parameterTypes) throw SemanticException("Type mismatch at ${argument.span} for argument ${argument.type} in call to ${callTree.references!!.name} at ${callTree.span}")
+        for ((argument, parameterType) in callTree.arguments.elements.zip(callTree.references!!.parameterTypes)) {
+            if (argument.type incompatibleWith parameterType) throw SemanticException("Type mismatch at ${argument.span} for argument ${argument.type} in call to ${callTree.references!!.name} at ${callTree.span}")
         }
     }
 
@@ -141,10 +144,10 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
     override fun visit(
         ternaryOperationTree: TernaryOperationTree, data: TypeData
     ) {
-        if (ternaryOperationTree.condition.type != BasicType.Boolean) throw SemanticException("Type mismatch at ${ternaryOperationTree.span} for condition of ternary operation: Expected ${BasicType.Boolean} got ${ternaryOperationTree.condition.type}")
+        if (ternaryOperationTree.condition.type incompatibleWith BasicType.Boolean) throw SemanticException("Type mismatch at ${ternaryOperationTree.span} for condition of ternary operation: Expected ${BasicType.Boolean} got ${ternaryOperationTree.condition.type}")
 
-        if (ternaryOperationTree.thenExpression.type != ternaryOperationTree.elseExpression.type) throw SemanticException(
-            "Type mismatch at ${ternaryOperationTree.span} for then and else expression of ternary operation: Expected ${ternaryOperationTree.thenExpression.type} got ${ternaryOperationTree.elseExpression.type}"
+        if (ternaryOperationTree.type == TypeError) throw SemanticException(
+            "Type mismatch at ${ternaryOperationTree.span} for then and else expression of ternary operation: No common type of ${ternaryOperationTree.thenExpression.type} got ${ternaryOperationTree.elseExpression.type}"
         )
 
         super.visit(
