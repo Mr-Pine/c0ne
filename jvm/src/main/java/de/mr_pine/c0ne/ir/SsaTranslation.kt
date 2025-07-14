@@ -16,6 +16,7 @@ import de.mr_pine.c0ne.parser.type.StructType
 import de.mr_pine.c0ne.parser.type.Type
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.util.*
+import kotlin.math.max
 
 /** SSA translation as described in
  * [`Simple and Efficient Construction of Static Single Assignment Form`](https://compilers.cs.uni-saarland.de/papers/bbhlmz13cc.pdf).
@@ -144,7 +145,7 @@ class SsaTranslation(
                             val index = assignmentTree.lValue.index.accept(this, data)!!
                             val array = assignmentTree.lValue.arrayValue.accept(this, data)!!
                             arrayBoundsCheck(array, index, data)
-                            OffsetData(array, index, assignmentTree.lValue.type.size, 8)
+                            OffsetData(array, index, max(assignmentTree.lValue.type.size, 8), 8)
                         }
 
                         is DereferenceTree -> OffsetData(
@@ -545,7 +546,7 @@ class SsaTranslation(
             val sizeNode = if (heapAllocationTree.arrayCount != null) {
                 data.constructor.newAdd(
                     data.constructor.newMul(
-                        data.constructor.newConstInt(baseSize), arraySize
+                        data.constructor.newConstInt(max(baseSize, 8)), arraySize
                     ), data.constructor.newConstInt(8) // Write array size here
                 )
             } else {
@@ -562,7 +563,7 @@ class SsaTranslation(
         ): Node {
             val index = arrayAccessTree.index.accept(this, data)!!
             val array = arrayAccessTree.arrayValue.accept(this, data)!!
-            val arrayRead = data.constructor.newMemoryRead(array, index, arrayAccessTree.type.size, 8)
+            val arrayRead = data.constructor.newMemoryRead(array, index, max(arrayAccessTree.type.size, 8), 8)
             data.constructor.writeCurrentSideEffect(arrayRead)
             return arrayRead
         }
