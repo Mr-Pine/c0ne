@@ -3,6 +3,7 @@ package de.mr_pine.c0ne.parser.ast
 import de.mr_pine.c0ne.Span
 import de.mr_pine.c0ne.parser.symbol.Name
 import de.mr_pine.c0ne.parser.visitor.Visitor
+import kotlin.math.floor
 
 data class StructureTree(
     val nameTree: NameTree,
@@ -14,7 +15,7 @@ data class StructureTree(
         return visitor.visit(this, data)
     }
 
-    private fun padTo(size: Int, alignment: Int) = (size - 1) / alignment * alignment + alignment
+    private fun padTo(size: Int, alignment: Int) = floor((size - 1) / alignment.toFloat()).toInt() * alignment + alignment
 
 
     val offsets by lazy {

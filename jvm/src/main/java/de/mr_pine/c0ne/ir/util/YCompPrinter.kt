@@ -112,12 +112,19 @@ class YCompPrinter(
     private fun formatNode(node: Node): String {
         val infoText = "I am an info text for $node"
 
+        val info2 = (when (node) {
+            is MemoryReadNode -> "const offset ${node.constantOffset}"
+            is MemoryWriteNode -> "const offset ${node.constantOffset}"
+            else -> null
+        })?.let { "info2: \"$it\"" } ?: ""
+
         return """
             node: {
               title: "${nodeTitle(node)}"
               label: "${nodeLabel(node)}"
               color: ${nodeColor(node).id()}
               info1: "$infoText"
+              $info2
             }
         """.trimIndent()
     }
@@ -135,10 +142,8 @@ class YCompPrinter(
                 // Return needs no label
                 result.add(formatControlflowEdge(parent, block, "$i"))
             } else if (parent is ProjNode && parent.projectionInfo() in listOf(
-                    SimpleProjectionInfo.IF_TRUE,
-                    SimpleProjectionInfo.IF_FALSE
-                )
-                || parent is JumpNode || parent is IfNode
+                    SimpleProjectionInfo.IF_TRUE, SimpleProjectionInfo.IF_FALSE
+                ) || parent is JumpNode || parent is IfNode
             ) {
                 result.add(formatControlflowEdge(parent, block, "$i"))
             } else {
