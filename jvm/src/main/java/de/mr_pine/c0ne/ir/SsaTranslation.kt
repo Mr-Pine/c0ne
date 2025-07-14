@@ -563,6 +563,7 @@ class SsaTranslation(
         ): Node {
             val index = arrayAccessTree.index.accept(this, data)!!
             val array = arrayAccessTree.arrayValue.accept(this, data)!!
+            arrayBoundsCheck(array, index, data)
             val arrayRead = data.constructor.newMemoryRead(array, index, max(arrayAccessTree.type.size, 8), 8)
             data.constructor.writeCurrentSideEffect(arrayRead)
             return arrayRead
