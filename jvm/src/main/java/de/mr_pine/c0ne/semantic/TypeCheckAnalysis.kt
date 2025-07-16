@@ -149,6 +149,7 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
     ) {
         val pointerType = data.resolve(dereferenceTree.pointerValue.type)
         if (pointerType !is PointerType) throw SemanticException("Type mismatch at ${dereferenceTree.span} for dereference of ${dereferenceTree.pointerValue.type}: Expected pointer type got $pointerType")
+        if (pointerType.baseType == Bottom) throw SemanticException("Type mismatch at ${dereferenceTree.span} for dereference of ${dereferenceTree.pointerValue.type}: Expected pointer to non-bottom type got $pointerType")
     }
 
     override fun visit(
