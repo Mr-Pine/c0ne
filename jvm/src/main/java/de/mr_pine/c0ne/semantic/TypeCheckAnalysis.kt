@@ -45,6 +45,18 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
         super.visit(functionTree, data)
     }
 
+    override fun visit(
+        structureTree: StructureTree,
+        data: TypeData
+    ) {
+        for ((name, declarations) in structureTree.fields.groupBy { it.name.name }) {
+            if (declarations.size > 1) {
+                throw SemanticException("Duplicate field $name at ${declarations[1].name.span}")
+            }
+        }
+        super.visit(structureTree, data)
+    }
+
     override fun visit(returnTree: ReturnTree, data: TypeData) {
         data.returns.add(returnTree)
         super.visit(returnTree, data)
