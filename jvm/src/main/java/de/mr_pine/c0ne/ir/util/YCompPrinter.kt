@@ -195,7 +195,6 @@ class YCompPrinter(
     }
 
     private fun formatSchedule(block: Block): String {
-        // Once you have a schedule, you might want to also emit it :)
         if (schedule == null) return ""
         val blockSchedule = schedule.blockSchedules[block] ?: return ""
         val edges = blockSchedule.nodeOrder.windowed(2).mapIndexed { i, (src, dst) ->
