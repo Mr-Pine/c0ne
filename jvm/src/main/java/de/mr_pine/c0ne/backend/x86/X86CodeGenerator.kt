@@ -130,7 +130,7 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 RealRegister.R9
             ) + generateSequence(stackOverflowSlot(-16)) {
                 stackOverflowSlot(
-                    it.constantOffset - 8
+                    -(it.constantOffset + 8)
                 )
             }
         }
