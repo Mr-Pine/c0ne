@@ -564,6 +564,7 @@ class SsaTranslation(
             }
 
             val callNode = data.constructor.newCall(IdentName("alloc"), listOf(sizeNode, arraySize))
+            data.constructor.writeCurrentSideEffect(callNode)
 
             return callNode
         }
