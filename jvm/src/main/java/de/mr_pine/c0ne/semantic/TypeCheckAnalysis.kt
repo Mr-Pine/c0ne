@@ -27,6 +27,11 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
     }
 
     override fun visit(functionTree: DeclaredFunctionTree, data: TypeData) {
+        for (parameterType in functionTree.parameterTypes) {
+            if (parameterType !is SmallType) {
+                throw SemanticException("Type mismatch at ${functionTree.span} for parameter ${parameterType}: Expected small type got $parameterType")
+            }
+        }
         for (returnTree in data.returns) {
             if (data.resolve(returnTree.expression.type) incompatibleWith data.resolve(functionTree.returnType)) throw SemanticException(
                 "Return type ${returnTree.expression.type} at ${returnTree.span} does not match expected type ${functionTree.returnType}"
