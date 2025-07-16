@@ -13,7 +13,7 @@ class ArraySizeRead : Optimizer {
         val isMemoryReadFromAlloc =
             node is MemoryReadNode && node.base is CallNode && (node.base as CallNode).target == IdentName("alloc")
         val isArrayReadFromAlloc =
-            isMemoryReadFromAlloc && node.offset is ConstIntNode && (node.offset as ConstIntNode).value == 0
+            isMemoryReadFromAlloc && node.offset is ConstIntNode && node.constantOffset == 0 && (node.offset as ConstIntNode).value == 0
 
         if (isArrayReadFromAlloc) {
             return node.base.predecessor(1)
