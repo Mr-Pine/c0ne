@@ -98,6 +98,53 @@ class SsaTranslation(
             data.constructor.currentBlock = falseGeqSizeBlock
         }
 
+        private data class OffsetData(val base: Node, val offset: Node?, val offsetScale: Int, val constOffset: Int)
+
+        private fun getOffsetData(value: ExpressionTree, data: SsaTranslation): OffsetData = when (value) {
+            is ArrayAccessTree -> {
+                val index = value.index.accept(this, data)!!
+                val array = value.arrayValue.accept(this, data)!!
+                val offsetScale = max(value.type.size, 8)
+                val scaledIndex = if (offsetScale > 8) {
+                    data.constructor.newMul(index, data.constructor.newConstInt(offsetScale / 8))
+                } else {
+                    index
+                }
+                arrayBoundsCheck(array, index, data)
+                OffsetData(array, scaledIndex, 8, 8)
+            }
+
+            is DereferenceTree -> OffsetData(
+                value.pointerValue.accept(this, data)!!,
+                null,
+                0,
+                0
+            )
+
+            is FieldAccessTree -> {
+                val constantOffset =
+                    (value.structValue.type as StructType).references!!.offsets[value.field.name]!!
+                when (value.structValue) {
+                    is DereferenceTree -> {
+                        val pointerTree = value.structValue
+                        val base = pointerTree.pointerValue.accept(this, data)!!
+
+                        OffsetData(base, null, 0, constantOffset)
+                    }
+
+                    else -> {
+                        val base = getOffsetData(value.structValue, data)
+
+                        base.copy(constOffset = base.constOffset + constantOffset)
+                    }
+                }
+
+            }
+
+            is LValueIdentTree -> throw IllegalStateException("LValueIdentTree is not handled here")
+            else -> TODO()
+        }
+
         override fun visit(assignmentTree: AssignmentTree, data: SsaTranslation): Node? {
             pushSpan(assignmentTree)
             val desugar: ((Node, Node) -> Node)? = when (assignmentTree.operator.type) {
@@ -138,36 +185,7 @@ class SsaTranslation(
                 else -> {
                     val rhs = assignmentTree.expression.accept(this, data)!!
 
-                    data class OffsetData(val base: Node, val offset: Node?, val offsetScale: Int, val constOffset: Int)
-
-                    val offsetData = when (assignmentTree.lValue) {
-                        is ArrayAccessTree -> {
-                            val index = assignmentTree.lValue.index.accept(this, data)!!
-                            val array = assignmentTree.lValue.arrayValue.accept(this, data)!!
-                            arrayBoundsCheck(array, index, data)
-                            OffsetData(array, index, max(assignmentTree.lValue.type.size, 8), 8)
-                        }
-
-                        is DereferenceTree -> OffsetData(
-                            assignmentTree.lValue.pointerValue.accept(this, data)!!,
-                            null,
-                            0,
-                            0
-                        )
-
-                        is FieldAccessTree -> {
-                            val pointerTree = assignmentTree.lValue.structValue as? DereferenceTree
-                                ?: error("No raw struct types allowed")
-                            val base = pointerTree.pointerValue.accept(this, data)!!
-                            val offset =
-                                (assignmentTree.lValue.structValue.type as StructType).references!!.offsets[assignmentTree.lValue.field.name]!!
-
-                            OffsetData(base, null, 0, offset)
-                        }
-
-                        is LValueIdentTree -> throw IllegalStateException("LValueIdentTree is not handled here")
-                    }
-
+                    val offsetData = getOffsetData(assignmentTree.lValue, data)
                     val value = if (desugar != null) {
                         val selfValue = data.constructor.newMemoryRead(
                             offsetData.base,
@@ -583,14 +601,13 @@ class SsaTranslation(
         override fun visit(
             fieldAccessTree: FieldAccessTree, data: SsaTranslation
         ): Node? {
-            if (fieldAccessTree.structValue !is DereferenceTree) {
-                error("Expected dereference tree for struct value")
-            }
-
-            val pointerValue = fieldAccessTree.structValue.pointerValue.accept(this, data)!!
-            val fieldOffset =
-                (fieldAccessTree.structValue.type as StructType).references!!.offsets[fieldAccessTree.field.name]!!
-            val fieldValue = data.constructor.newMemoryRead(pointerValue, null, 0, fieldOffset)
+            val offsetData = getOffsetData(fieldAccessTree, data)
+            val fieldValue = data.constructor.newMemoryRead(
+                offsetData.base,
+                offsetData.offset,
+                offsetData.offsetScale,
+                offsetData.constOffset
+            )
             data.constructor.writeCurrentSideEffect(fieldValue)
             return fieldValue
         }
