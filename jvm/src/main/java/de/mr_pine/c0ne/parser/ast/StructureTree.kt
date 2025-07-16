@@ -31,7 +31,7 @@ data class StructureTree(
         }
     }
     val alignment
-        get() = fields.maxOf { it.type.alignment }
+        get() = fields.maxOfOrNull { it.type.alignment } ?: 1
     val size: Int
-        get() = padTo(offsets.values.max() + fields.last().type.size, alignment)
+        get() = if (fields.isNotEmpty()) padTo(offsets.values.max() + fields.last().type.size, alignment) else 0
 }
