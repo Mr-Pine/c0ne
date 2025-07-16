@@ -78,6 +78,7 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
         assignmentTree: AssignmentTree, data: TypeData
     ) {
         val lType = assignmentTree.lValue.type
+        if (lType !is SmallType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue}: Expected small type got $lType")
         if (assignmentTree.expression.type incompatibleWith lType) throw SemanticException("Type mismatch at ${assignmentTree.span} for ${assignmentTree.lValue}: Expected $lType got ${assignmentTree.expression.type}")
         if (assignmentTree.operator.type != Operator.OperatorType.ASSIGN) {
             val operatorType = assignmentTree.operator.type.inputType
