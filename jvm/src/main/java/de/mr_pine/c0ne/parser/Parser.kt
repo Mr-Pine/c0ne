@@ -18,7 +18,7 @@ class Parser(private val tokenSource: TokenSource) {
     private fun parseTopLevelElements() = buildList {
         while (tokenSource.hasMore()) {
             val elementType = parseType()
-            val element = if (elementType.type is StructType) {
+            val element = if (tokenSource.peekAs<Separator>()?.type == SeparatorType.BRACE_OPEN && elementType.type is StructType) {
                 val nameTree = NameTree(elementType.type.name, elementType.span)
                 parseStructure(nameTree)
             } else {
