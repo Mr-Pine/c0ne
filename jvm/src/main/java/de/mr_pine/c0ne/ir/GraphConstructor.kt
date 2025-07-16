@@ -346,4 +346,8 @@ class GraphConstructor(private val optimizer: Optimizer, name: String) {
         }
         return tryRemoveTrivialPhi(phi)
     }
+
+    fun addInfiniteLoop(sideeffect: Node) {
+        graph.endBlock.addPredecessor(sideeffect)
+    }
 }

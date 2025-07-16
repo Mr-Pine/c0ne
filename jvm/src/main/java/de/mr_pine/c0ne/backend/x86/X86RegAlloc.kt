@@ -12,7 +12,7 @@ import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.Node
 
-class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule) {
+class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule, endNodes: List<Node>) {
     private var allocatable = (RealRegister.entries - listOf(
         RealRegister.RAX,
         RealRegister.RDX,
@@ -23,10 +23,10 @@ class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule)
     ))
         .asSequence() + generateSequence(stackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { nextStackOverflowSlot(it) }
 
-    private val allocation = allocateRegisters()
+    private val allocation = allocateRegisters(endNodes)
 
-    fun allocateRegisters(): Map<Node, Argument.RegMem> {
-        val interferenceGraph = AllocationInterferenceGraph(schedule, startBlock)
+    fun allocateRegisters(endNodes: List<Node>): Map<Node, Argument.RegMem> {
+        val interferenceGraph = AllocationInterferenceGraph(schedule, startBlock, endNodes)
         val simplicialOrdering = interferenceGraph.buildSimplicialOrdering()
         return allocateFromSimplicialOrdering(simplicialOrdering, interferenceGraph)
     }

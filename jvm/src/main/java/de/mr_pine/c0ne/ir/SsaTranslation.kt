@@ -80,7 +80,12 @@ class SsaTranslation(
             falseLtZeroBlock.addPredecessor(data.constructor.newJump())
 
             data.constructor.currentBlock = falseLtZeroBlock
-            val size = data.constructor.newMemoryRead(array, data.constructor.newConstInt(0) /* marking as array length read */, 0, 0)
+            val size = data.constructor.newMemoryRead(
+                array,
+                data.constructor.newConstInt(0) /* marking as array length read */,
+                0,
+                0
+            )
             val indexGeqSize = data.constructor.newGreaterThanOrEqual(index, size)
             val (trueGeqSize, falseGeqSize) = projectedIfNode(data, indexGeqSize)
             val trueGeqSizeBlock = data.constructor.newBlock("array-bounds-check-geq-size-true")
@@ -437,7 +442,8 @@ class SsaTranslation(
         override fun visit(whileTree: WhileTree, data: SsaTranslation): Node? {
             pushSpan(whileTree)
 
-            data.constructor.sealBlock(data.constructor.currentBlock)
+            val beforeBlock = data.constructor.currentBlock
+            data.constructor.sealBlock(beforeBlock)
             val exitJump = data.constructor.newJump()
 
             val whileBlock = data.constructor.newBlock("while")
@@ -466,6 +472,12 @@ class SsaTranslation(
             data.constructor.popLoopFollow(followBlock)
             data.constructor.sealBlock(followBlock)
 
+            // Infinite loop
+            if (followBlock.predecessors().all { it is UndefNode }) {
+                data.constructor.currentBlock = whileBlock
+                data.constructor.addInfiniteLoop(data.constructor.readCurrentSideEffect())
+            }
+
             data.constructor.currentBlock = followBlock
 
             popSpan()
@@ -475,7 +487,8 @@ class SsaTranslation(
         override fun visit(forTree: ForTree, data: SsaTranslation): Node? {
             pushSpan(forTree)
             forTree.initializer?.accept(this, data)
-            data.constructor.sealBlock(data.constructor.currentBlock)
+            val beforeBlock = data.constructor.currentBlock
+            data.constructor.sealBlock(beforeBlock)
             val entryJump = data.constructor.newJump()
 
             val forBlock = data.constructor.newBlock("for")
@@ -506,6 +519,13 @@ class SsaTranslation(
             stepBlock.addPredecessor(normalLoopExit)
 
             data.constructor.sealBlock(followBlock)
+
+            // Infinite loop
+            if (followBlock.predecessors().all { it is UndefNode }) {
+                data.constructor.currentBlock = forBlock.block
+                data.constructor.addInfiniteLoop(data.constructor.readCurrentSideEffect())
+            }
+
             data.constructor.sealBlock(stepBlock)
 
             data.constructor.popLoopFollow(followBlock)

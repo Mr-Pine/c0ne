@@ -5,8 +5,6 @@ import de.mr_pine.c0ne.backend.x86.instructions.Mov
 
 object NoUselessMov : PeepholeOptimization {
     override fun optimize(instructions: MutableList<Instruction>) {
-        val before = instructions.toList()
         instructions.removeAll { it is Mov && it.left == it.right }
-        println(before - instructions)
     }
 }

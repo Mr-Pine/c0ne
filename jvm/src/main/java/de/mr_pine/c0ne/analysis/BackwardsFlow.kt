@@ -1,10 +1,8 @@
 package de.mr_pine.c0ne.analysis
 
 import de.mr_pine.c0ne.backend.Schedule
-import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.Node
-import de.mr_pine.c0ne.ir.node.ReturnNode
 
 abstract class BackwardsFlow<InValue, OutValue>(protected val schedule: Schedule) {
     private val computedInputs = mutableMapOf<NodeInBlock, List<InValue?>>()
@@ -24,12 +22,24 @@ abstract class BackwardsFlow<InValue, OutValue>(protected val schedule: Schedule
             }
         }
 
-    open fun analyze() {
-        for ((block, node) in schedule.blockSchedules.mapNotNull { (key, value) ->
-            value.nodeOrder.firstNotNullOfOrNull { it as? ReturnNode }?.let { key to it }
-        }) {
-            queue.add(NodeInBlock(node, block))
+    open fun analyze(endNodes: List<Node>) {
+        val startQueue = endNodes.toMutableList()
+        val scheduledNodes = schedule.blockSchedules.values.flatMap { it.nodeOrder }.toSet()
+        val visitedStart = mutableSetOf<Node>()
+        while (startQueue.isNotEmpty()) {
+            val node = startQueue.removeLast()
+            if (node in visitedStart) continue
+            visitedStart.add(node)
+
+            if (node in scheduledNodes) {
+                queue.addAll(schedule.blockSchedules.mapNotNull { (block, schedule) ->
+                    schedule.nodeOrder.firstOrNull { it == node }?.let { NodeInBlock(it, block) }
+                })
+            } else {
+                startQueue.addAll(node.predecessors())
+            }
         }
+
         while (queue.isNotEmpty()) {
             analyzeNode(queue.removeFirst())
         }

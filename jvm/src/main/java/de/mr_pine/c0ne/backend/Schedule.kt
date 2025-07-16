@@ -32,9 +32,10 @@ class Schedule(private val irGraph: IrGraph) {
 
         val visited = mutableSetOf<Node>()
         val todo: MutableList<Node> = (blocks.mapNotNull { it.exitNode }).toMutableList()
+        todo.addAll(irGraph.endBlock.predecessors())
         while (todo.isNotEmpty()) {
             val node = todo.removeFirst()
-            if (node in visited || node is Block) continue
+            if (node in visited) continue
             visited.add(node)
             if (node is Phi) {
                 val phiPredecessors = node.predecessors()
@@ -49,7 +50,7 @@ class Schedule(private val irGraph: IrGraph) {
                         nodes.add(predecessorPhiIndex, node)
                     }
                 }
-            } else {
+            } else if (node !is Block) {
                 relevantNodes.getOrPut(node.block) { mutableListOf() }.add(node)
             }
             todo.addAll(node.predecessors())

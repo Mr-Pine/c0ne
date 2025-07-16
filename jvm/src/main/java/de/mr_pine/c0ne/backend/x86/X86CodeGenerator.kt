@@ -27,7 +27,7 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
         }
     val regAllocs = schedules.zip(irGraphs).map { (schedule, irGraph) ->
         X86RegAlloc(
-            irGraph.startBlock, schedule
+            irGraph.startBlock, schedule, irGraph.endBlock.predecessors()
         )
     }
     val concreteInstructions =

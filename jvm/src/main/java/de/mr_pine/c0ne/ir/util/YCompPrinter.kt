@@ -146,6 +146,8 @@ class YCompPrinter(
                 ) || parent is JumpNode || parent is IfNode
             ) {
                 result.add(formatControlflowEdge(parent, block, "$i"))
+            } else if (parent is ProjNode && parent.projectionInfo == SimpleProjectionInfo.SIDE_EFFECT || parent is Phi && parent.isSideEffectPhi) {
+                result.add(formatEdges(listOf(Edge(parent, block, i)), listOf()))
             } else {
                 throw RuntimeException("Unknown parent type: $parent")
             }

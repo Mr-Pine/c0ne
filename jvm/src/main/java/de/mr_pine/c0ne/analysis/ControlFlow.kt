@@ -1,15 +1,7 @@
 package de.mr_pine.c0ne.analysis
 
 import de.mr_pine.c0ne.backend.Schedule
-import de.mr_pine.c0ne.ir.IrGraph
-import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.Node
-
-fun IrGraph.nodesInControlFlowOrder(): List<Node> {
-    val controlFlowOrder = mutableListOf<Node>()
-    scan(endBlock, mutableSetOf(endBlock), controlFlowOrder)
-    return controlFlowOrder
-}
 
 private fun scan(node: Node, visited: MutableSet<Node>, controlFlowOrder: MutableList<Node>) {
     for (predecessor in node.predecessors()) {
