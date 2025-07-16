@@ -41,7 +41,7 @@ class Parser(private val tokenSource: TokenSource) {
 
         val fields = buildList {
             while (tokenSource.peekAs<Separator>()?.type != SeparatorType.BRACE_CLOSE) {
-                val declaration = parseDeclaration()
+                val declaration = parseDeclaration(true)
                 if (declaration.initializer != null) {
                     throw ParseException("struct fields cannot have initializers")
                 }
@@ -116,7 +116,7 @@ class Parser(private val tokenSource: TokenSource) {
         return statement
     }
 
-    private fun parseDeclaration(): DeclarationTree {
+    private fun parseDeclaration(structMember: Boolean = false): DeclarationTree {
         val type = parseType()
 
         val ident = this.tokenSource.expectIdentifier()
@@ -126,7 +126,7 @@ class Parser(private val tokenSource: TokenSource) {
         } else {
             null
         }
-        return DeclarationTree(type, name(ident), init)
+        return DeclarationTree(type, name(ident), init, isStructMember = structMember)
     }
 
     private fun parseType(): TypeTree {

@@ -65,7 +65,7 @@ class TypeCheckAnalysis : NoOpVisitor<TypeCheckAnalysis.TypeData> {
     override fun visit(
         declarationTree: DeclarationTree, data: TypeData
     ) {
-        if (declarationTree.type !is SmallType) {
+        if (!declarationTree.isStructMember && declarationTree.type !is SmallType) {
             throw SemanticException("Type mismatch at ${declarationTree.span} for ${declarationTree.name.name}: Expected small type got ${declarationTree.type}")
         }
         if (declarationTree.initializer != null) {

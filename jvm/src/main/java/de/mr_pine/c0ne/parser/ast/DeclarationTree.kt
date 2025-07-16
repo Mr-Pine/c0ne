@@ -6,7 +6,8 @@ import de.mr_pine.c0ne.parser.visitor.Visitor
 data class DeclarationTree(
     override val typeDeclaration: TypeTree,
     override val name: NameTree,
-    val initializer: ExpressionTree?
+    val initializer: ExpressionTree?,
+    val isStructMember: Boolean
 ) : StatementTree, Declaration {
     override val span: Span
         get() {
