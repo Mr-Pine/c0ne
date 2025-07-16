@@ -31,7 +31,7 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
 
     private fun defined(node: Node): Set<Node> {
         return when (node) {
-            is BinaryOperationNode, is UnaryOperationNode, is Phi, is ConstIntNode, is ConstBoolNode -> setOf(node)
+            is BinaryOperationNode, is UnaryOperationNode, is Phi, is ConstIntNode, is ConstBoolNode, is MemoryReadNode -> setOf(node)
             is ProjNode if node.projectionInfo() is ProjNode.NamedParameterProjectionInfo -> setOf(node)
             else -> setOf()
         }

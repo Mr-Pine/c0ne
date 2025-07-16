@@ -21,7 +21,7 @@ class Phi(block: Block) : Node(block) {
         get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || this is MemoryWriteNode || this is MemoryReadNode
 
     private val Node.hasNoValue
-        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || this is MemoryWriteNode
+        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || this is MemoryWriteNode || this is CallNode && !this.valueUsed
 
     private fun Phi.checkSideeffect(visited: MutableSet<Phi>): Boolean {
         visited.add(this)

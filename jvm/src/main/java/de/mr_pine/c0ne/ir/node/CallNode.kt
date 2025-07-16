@@ -4,7 +4,7 @@ import de.mr_pine.c0ne.ir.util.NodeSupport
 import de.mr_pine.c0ne.ir.visitor.SSAVisitor
 import de.mr_pine.c0ne.parser.symbol.Name
 
-class CallNode(block: Block, val target: Name, arguments: List<Node>, sideEffect: Node) :
+class CallNode(block: Block, val target: Name, arguments: List<Node>, val valueUsed: Boolean, sideEffect: Node) :
     Node(block, *(arguments + sideEffect).toTypedArray()) {
 
     val sideEffectIndex = arguments.size

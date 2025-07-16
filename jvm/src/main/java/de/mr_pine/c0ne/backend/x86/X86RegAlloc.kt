@@ -73,7 +73,7 @@ class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule)
 
     fun concretize(argument: Argument.RegMem.MemoryReference) = Argument.RegMem.MemoryReference(
         argument.base.concretize() as Argument.RegMem.Register,
-        argument.offset?.let { it.concretize() as Argument.RegMem.Register },
+        argument.offset?.concretize(),
         argument.offsetScale,
         argument.constantOffset
     )

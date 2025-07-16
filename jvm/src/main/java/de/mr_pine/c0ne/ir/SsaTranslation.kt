@@ -75,7 +75,7 @@ class SsaTranslation(
             data.constructor.sealBlock(falseLtZeroBlock)
 
             data.constructor.currentBlock = trueLtZeroBlock
-            val ltZeroAbort = data.constructor.newCall(IdentName("abort"), listOf())
+            val ltZeroAbort = data.constructor.newCall(IdentName("abort"), listOf(), false)
             data.constructor.writeCurrentSideEffect(ltZeroAbort)
             falseLtZeroBlock.addPredecessor(data.constructor.newJump())
 
@@ -91,7 +91,7 @@ class SsaTranslation(
             data.constructor.sealBlock(falseGeqSizeBlock)
 
             data.constructor.currentBlock = trueGeqSizeBlock
-            val arrayIndexOutOfBounds = data.constructor.newCall(IdentName("abort"), listOf())
+            val arrayIndexOutOfBounds = data.constructor.newCall(IdentName("abort"), listOf(), false)
             data.constructor.writeCurrentSideEffect(arrayIndexOutOfBounds)
             falseGeqSizeBlock.addPredecessor(data.constructor.newJump())
 
@@ -491,23 +491,22 @@ class SsaTranslation(
             val condition = forTree.condition.accept(this, data)!!
             val (trueProj, falseProj) = projectedIfNode(data, condition)
             bodyBlock.addPredecessor(trueProj)
+            data.constructor.sealBlock(bodyBlock)
             followBlock.addPredecessor(falseProj)
 
             data.constructor.currentBlock = stepBlock
             forTree.step?.accept(this, data)
             val stepExit = data.constructor.newJump()
             forBlock.addPredecessor(stepExit)
+            data.constructor.sealBlock(forBlock)
 
             data.constructor.currentBlock = bodyBlock
             forTree.loopBody.accept(this, data)
             val normalLoopExit = data.constructor.newJump()
             stepBlock.addPredecessor(normalLoopExit)
 
-
-            data.constructor.sealBlock(forBlock)
             data.constructor.sealBlock(followBlock)
             data.constructor.sealBlock(stepBlock)
-            data.constructor.sealBlock(bodyBlock)
 
             data.constructor.popLoopFollow(followBlock)
             data.constructor.popLoopBlock(stepBlock)
@@ -563,7 +562,7 @@ class SsaTranslation(
                     add(argNode)
                 }
             }
-            val call = data.constructor.newCall(callTree.identifier.name, arguments)
+            val call = data.constructor.newCall(callTree.identifier.name, arguments, true)
             data.constructor.writeCurrentSideEffect(call)
             return call
         }
@@ -581,7 +580,7 @@ class SsaTranslation(
                 data.constructor.newConstInt(baseSize)
             }
 
-            val callNode = data.constructor.newCall(IdentName("alloc"), listOf(sizeNode, arraySize))
+            val callNode = data.constructor.newCall(IdentName("alloc"), listOf(sizeNode, arraySize), false)
             data.constructor.writeCurrentSideEffect(callNode)
 
             return callNode

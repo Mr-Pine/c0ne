@@ -66,7 +66,7 @@ sealed interface Argument {
             }
         }
 
-        data class MemoryReference(val base: Register, val offset: Register?, val offsetScale: Int, val constantOffset: Int) : RegMem {
+        data class MemoryReference(val base: Register, val offset: Argument?, val offsetScale: Int, val constantOffset: Int) : RegMem {
             override val nodeValue = null
 
             context(alloc: X86RegAlloc)
@@ -85,7 +85,7 @@ sealed interface Argument {
                 fun nextStackOverflowSlot(current: MemoryReference) = stackOverflowSlot(-current.constantOffset + 8)
             }
 
-            override fun render(size: Int) = "${sizePrefix(size)} PTR [$base${offset?.let { " + $it * $offsetScale" } ?: ""} + $constantOffset]"
+            override fun render(size: Int) = "${sizePrefix(size)} PTR [$base${offset?.let { " + ${it.render(8)} * $offsetScale" } ?: ""} + $constantOffset]"
         }
 
         data class RegMemFor(val arg: Argument) : RegMem {

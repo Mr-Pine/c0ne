@@ -25,8 +25,9 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return StartNode(currentBlock)
     }
 
+    var blockCounter = 0
     fun newBlock(label: String): Block {
-        return Block(graph, label)
+        return Block(graph, "${blockCounter++}-${label}")
     }
 
     fun newAdd(left: Node, right: Node): Node {
@@ -123,8 +124,8 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return this.optimizer.transform(JumpNode(currentBlock))
     }
 
-    fun newCall(function: Name, arguments: List<Node>): Node {
-        return this.optimizer.transform(CallNode(currentBlock, function, arguments, readCurrentSideEffect()))
+    fun newCall(function: Name, arguments: List<Node>, valueUsed: Boolean): Node {
+        return this.optimizer.transform(CallNode(currentBlock, function, arguments, valueUsed, readCurrentSideEffect()))
     }
 
     fun newMemoryRead(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int): Node {
@@ -208,7 +209,7 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             return UndefNode(phi.block)
         } else if (other.size == 1) {
             var replacement = other.first()
-            for (succ in graph.successors(phi).sortedBy { it !is Phi }) {
+            for (succ in graph.successors(phi)) {
                 for ((idx, _) in succ.predecessors().withIndex().filter { it.value == phi }) {
                     succ.setPredecessor(idx, replacement)
                     if (succ is Phi && succ.block in sealedBlocks) {
@@ -219,7 +220,17 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
                     }
                 }
             }
-            return replacement
+            for (currentVariableDef in currentDef.values) {
+                for (block in currentVariableDef.keys) {
+                    if (currentVariableDef[block] == phi) {
+                        currentVariableDef[block] = replacement
+                    }
+                }
+            }
+            graph.removeSuccessor(replacement, phi)
+            return if (replacement is Phi) {
+                tryRemoveTrivialPhi(replacement)
+            } else replacement
         }
 
         return phi
@@ -255,9 +266,7 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         }
         for ((variable, phi) in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
             val replacement = addPhiOperands(variable, phi)
-            if (this.currentDef[variable]!![block] == phi) {
-                this.currentDef[variable]!![block] = replacement
-            }
+
         }
         incompletePhis.remove(block)
         this.incompleteSideEffectPhis[block]?.let { phi ->

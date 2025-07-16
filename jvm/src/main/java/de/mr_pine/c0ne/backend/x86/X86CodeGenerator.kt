@@ -176,19 +176,30 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
 
             private fun visitShift(node: BinaryOperationNode, isLeftShift: Boolean) {
                 val value = Argument.NodeValue(node.left)
-                val shift = Argument.NodeValue(node.right)
+                val shift =
+                    if (node.right is ConstIntNode) Argument.Immediate((node.right as ConstIntNode).value) else Argument.NodeValue(
+                        node.right
+                    )
 
                 val target = Argument.NodeValue(node)
                 val targetReg = Argument.RegMem.Register.RegisterFor(target)
 
                 instructionList.add(Mov(targetReg, value))
                 val insn = run {
-                    val shiftReg = Argument.RegMem.Register.EcxOf(shift)
-                    instructionList.add(Mov(shiftReg, shift))
-                    if (isLeftShift) {
-                        Sal(targetReg, shiftReg)
+                    if (shift is Argument.Immediate) {
+                        if (isLeftShift) {
+                            Sal(targetReg, shift)
+                        } else {
+                            Sar(targetReg, shift)
+                        }
                     } else {
-                        Sar(targetReg, shiftReg)
+                        val shiftReg = Argument.RegMem.Register.EcxOf(shift)
+                        instructionList.add(Mov(shiftReg, shift))
+                        if (isLeftShift) {
+                            Sal(targetReg, shiftReg)
+                        } else {
+                            Sar(targetReg, shiftReg)
+                        }
                     }
                 }
                 instructionList.add(insn)
@@ -362,18 +373,24 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
                 )
             }
 
-            private fun translateMemAddress(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int): Argument.RegMem.MemoryReference {
+            private fun translateMemAddress(
+                base: Node,
+                offset: Node?,
+                offsetScale: Int,
+                constantOffset: Int
+            ): Argument.RegMem.MemoryReference {
 
                 val base = Argument.NodeValue(base)
-                val offset = offset?.let { Argument.NodeValue(it) }
+                val offsetValue = offset?.let { if (it is ConstIntNode) Argument.Immediate(it.value) else {
+                    val nodeVal = Argument.NodeValue(it)
+                    val reg = Argument.RegMem.Register.RegisterFor(nodeVal)
+                    instructionList.add(Mov(reg, nodeVal))
+                    reg
+                } }
 
                 val baseInReg = RealRegister.RAX
-                val offsetReg = offset?.let { Argument.RegMem.Register.RegisterFor(it) }
                 instructionList.add(Mov(baseInReg, base))
-                if (offset != null) {
-                    instructionList.add(Mov(offsetReg!!, offset))
-                }
-                return Argument.RegMem.MemoryReference(baseInReg, offsetReg, offsetScale, constantOffset)
+                return Argument.RegMem.MemoryReference(baseInReg, offsetValue, offsetScale, constantOffset)
             }
 
             override fun visit(node: MemoryReadNode) {
@@ -387,10 +404,14 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
 
             override fun visit(node: MemoryWriteNode) {
                 val source = Argument.NodeValue(node.value)
-                val sourceReg = RealRegister.RDX
+                val sourceReg =
+                    if (node.value is ConstIntNode) Argument.Immediate((node.value as ConstIntNode).value) else {
+                        val register = RealRegister.RDX
+                        instructionList.add(Mov(register, source))
+                        register
+                    }
                 val target = translateMemAddress(node.base, node.offset, node.offsetScale, node.constantOffset)
 
-                instructionList.add(Mov(sourceReg, source))
                 instructionList.add(Mov(target, sourceReg))
             }
         }
