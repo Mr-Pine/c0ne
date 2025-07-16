@@ -228,7 +228,7 @@ class GraphConstructor(private val optimizer: Optimizer, name: String) {
     }
 
     fun tryRemoveTrivialPhi(phi: Phi): Node {
-        val other = phi.predecessors().toSet() - phi
+        val other = phi.predecessors().filter { it !is UndefNode }.toSet() - phi
 
         if (other.isEmpty()) {
             return UndefNode(phi.block)
