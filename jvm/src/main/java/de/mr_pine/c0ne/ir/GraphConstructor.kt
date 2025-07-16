@@ -253,7 +253,7 @@ class GraphConstructor(private val optimizer: Optimizer, name: String) {
                 }
             }
             graph.removeSuccessor(replacement, phi)
-            return if (replacement is Phi) {
+            return if (replacement is Phi && replacement.block in sealedBlocks) {
                 tryRemoveTrivialPhi(replacement)
             } else replacement
         }
