@@ -18,6 +18,10 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         val status = assignmentTree.expression.accept(this, data)
         return when (assignmentTree.lValue) {
             is LValueIdentTree -> {
+                if (assignmentTree.operator.type.isSelfAssignOperator) {
+                    data.checkUsage(assignmentTree.lValue.name, assignmentTree.span, true)
+                }
+
                 assignmentTree.lValue.accept(this, status)
                 status.addDefinition(
                     VariableDefinition(assignmentTree.lValue.name.name),
