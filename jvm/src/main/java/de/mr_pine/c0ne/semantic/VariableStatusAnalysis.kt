@@ -212,7 +212,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         heapAllocationTree: HeapAllocationTree,
         data: VariableStatus
     ): VariableStatus {
-        return data
+        return heapAllocationTree.arrayCount?.accept(this, data) ?: data
     }
 
     override fun visit(
