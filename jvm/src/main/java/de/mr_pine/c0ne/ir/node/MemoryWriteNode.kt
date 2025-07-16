@@ -9,7 +9,7 @@ class MemoryWriteNode(
     offset: Node?,
     val offsetScale: Int,
     val constantOffset: Int,
-    val value: Node,
+    value: Node,
     sideEffect: Node
 ) :
     Node(block, *listOfNotNull(base, offset, sideEffect, value).toTypedArray()) {
@@ -21,6 +21,7 @@ class MemoryWriteNode(
     }
 
     val sideEffectIndex: Int = if (hasOffset) 2 else 1
+    val valueIndex: Int = sideEffectIndex + 1
 
     companion object {
         const val BASE: Int = 0
@@ -33,4 +34,6 @@ class MemoryWriteNode(
         get() = NodeSupport.predecessorSkipSimpleProj(this, BASE)
     val offset
         get() = if (hasOffset) NodeSupport.predecessorSkipSimpleProj(this, OFFSET) else null
+    val value
+        get() = NodeSupport.predecessorSkipSimpleProj(this, valueIndex)
 }
