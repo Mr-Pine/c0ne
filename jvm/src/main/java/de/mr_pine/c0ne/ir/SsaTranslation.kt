@@ -601,6 +601,14 @@ class SsaTranslation(
         override fun visit(
             fieldAccessTree: FieldAccessTree, data: SsaTranslation
         ): Node? {
+            if (fieldAccessTree.structValue is TernaryOperationTree) {
+                val pulledInThen = FieldAccessTree(fieldAccessTree.structValue.thenExpression, fieldAccessTree.field)
+                val pulledInElse = FieldAccessTree(fieldAccessTree.structValue.elseExpression, fieldAccessTree.field)
+                val pulledIn = TernaryOperationTree(fieldAccessTree.structValue.condition, pulledInThen, pulledInElse)
+
+                return pulledIn.accept(this, data)
+            }
+
             val offsetData = getOffsetData(fieldAccessTree, data)
             val fieldValue = data.constructor.newMemoryRead(
                 offsetData.base,
