@@ -2,6 +2,7 @@ package de.mr_pine.c0ne.ir.optimize
 
 import de.mr_pine.c0ne.ir.IrGraph
 import de.mr_pine.c0ne.ir.node.Block
+import de.mr_pine.c0ne.ir.node.UndefNode
 
 class ControlFlowPrune : FinishPassOptimizer {
     val toRemove = mutableSetOf<Block>()
@@ -33,6 +34,9 @@ class ControlFlowPrune : FinishPassOptimizer {
 
         for (predecessor in block.predecessors()) {
             checkBlock(predecessor.block, irGraph)
+            if (predecessor is UndefNode) {
+                block.removePredecessor(predecessor)
+            }
         }
 
         if (block.predecessors().map { it.block }.all { it in toRemove }) toRemove.add(block)

@@ -80,7 +80,7 @@ class SsaTranslation(
             falseLtZeroBlock.addPredecessor(data.constructor.newJump())
 
             data.constructor.currentBlock = falseLtZeroBlock
-            val size = data.constructor.newMemoryRead(array, null, 0, 0)
+            val size = data.constructor.newMemoryRead(array, data.constructor.newConstInt(0) /* marking as array length read */, 0, 0)
             val indexGeqSize = data.constructor.newGreaterThanOrEqual(index, size)
             val (trueGeqSize, falseGeqSize) = projectedIfNode(data, indexGeqSize)
             val trueGeqSizeBlock = data.constructor.newBlock("array-bounds-check-geq-size-true")
@@ -395,7 +395,7 @@ class SsaTranslation(
             throw UnsupportedOperationException()
         }
 
-        data class IfProjections(val trueProj: ProjNode, val falseProj: ProjNode)
+        data class IfProjections(val trueProj: Node, val falseProj: Node)
 
         private fun projectedIfNode(data: SsaTranslation, condition: Node): IfProjections {
             val ifNode = data.constructor.newIf(condition)
@@ -408,7 +408,7 @@ class SsaTranslation(
             pushSpan(ifTree)
             val condition = ifTree.condition.accept(this, data)!!
 
-            fun processBranch(branch: StatementTree?, projection: ProjNode, label: String): Node? {
+            fun processBranch(branch: StatementTree?, projection: Node, label: String): Node? {
                 val block = data.constructor.newBlock("if-body-$label")
                 data.constructor.currentBlock = block
                 block.addPredecessor(projection)

@@ -78,7 +78,7 @@ class Schedule(private val irGraph: IrGraph) {
                 when (it.key) {
                     is ExitNode -> Int.MAX_VALUE
                     is StartNode -> Int.MIN_VALUE
-                    is ProjNode if (it.key as ProjNode).projectionInfo() is ProjNode.NamedParameterProjectionInfo -> it.value + Int.MIN_VALUE / 2
+                    is ProjNode if (it.key as ProjNode).projectionInfo is ProjNode.NamedParameterProjectionInfo -> it.value + Int.MIN_VALUE / 2
                     is Phi -> it.value + maxFinishNumber
                     else -> it.value
                 }

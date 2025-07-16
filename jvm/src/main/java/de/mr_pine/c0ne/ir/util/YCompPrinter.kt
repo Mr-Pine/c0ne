@@ -138,10 +138,10 @@ class YCompPrinter(
         val result = StringJoiner("\n")
         val parents = block.predecessors()
         for ((i, parent) in parents.withIndex()) {
-            if (parent is ReturnNode) {
+            if (parent is ReturnNode || parent is UndefNode) {
                 // Return needs no label
                 result.add(formatControlflowEdge(parent, block, "$i"))
-            } else if (parent is ProjNode && parent.projectionInfo() in listOf(
+            } else if (parent is ProjNode && parent.projectionInfo in listOf(
                     SimpleProjectionInfo.IF_TRUE, SimpleProjectionInfo.IF_FALSE
                 ) || parent is JumpNode || parent is IfNode
             ) {
@@ -165,11 +165,12 @@ class YCompPrinter(
 
 
     private val Node.isSideeffect: Boolean
-        get() = this is ProjNode && this.projectionInfo() === SimpleProjectionInfo.SIDE_EFFECT || this is Phi && this.isSideEffectPhi
+        get() = this is ProjNode && this.projectionInfo === SimpleProjectionInfo.SIDE_EFFECT || this is Phi && this.isSideEffectPhi
 
     private fun formatEdges(edges: Collection<Edge>, additionalProps: List<String>) = edges.joinToString("\n") { edge ->
         // edge: {sourcename: "n74" targetname: "n71" label: "0" class:14 priority:50 color:blue}
-        val isSideeffect = edge.src.isSideeffect || edge.dst.isSideeffect
+        val isSideeffect =
+            edge.src.isSideeffect || edge.dst.isSideeffect || edge.dst is MemoryReadNode && edge.index == edge.dst.sideEffectIndex || edge.dst is MemoryWriteNode && edge.index == edge.dst.sideEffectIndex
 
         val extraProps = additionalProps.toMutableList()
         if (isSideeffect) {
@@ -208,11 +209,11 @@ class YCompPrinter(
             is BinaryOperationNode, is UnaryOperationNode, is Block, is ConstIntNode, is ConstBoolNode -> VcgColor.NORMAL
             is Phi -> VcgColor.PHI
             is ProjNode -> {
-                if (node.projectionInfo() == SimpleProjectionInfo.SIDE_EFFECT) {
+                if (node.projectionInfo == SimpleProjectionInfo.SIDE_EFFECT) {
                     VcgColor.MEMORY
-                } else if (node.projectionInfo() == SimpleProjectionInfo.RESULT) {
+                } else if (node.projectionInfo == SimpleProjectionInfo.RESULT) {
                     VcgColor.NORMAL
-                } else if (node.projectionInfo() == SimpleProjectionInfo.IF_TRUE || node.projectionInfo() == SimpleProjectionInfo.IF_FALSE) {
+                } else if (node.projectionInfo == SimpleProjectionInfo.IF_TRUE || node.projectionInfo == SimpleProjectionInfo.IF_FALSE) {
                     VcgColor.CONTROL_FLOW
                 } else {
                     VcgColor.NORMAL

@@ -4,7 +4,7 @@ import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.optimize.Optimizer
 import de.mr_pine.c0ne.parser.symbol.Name
 
-internal class GraphConstructor(private val optimizer: Optimizer, name: String) {
+class GraphConstructor(private val optimizer: Optimizer, name: String) {
     val graph: IrGraph = IrGraph(name)
     private val currentDef: MutableMap<Name, MutableMap<Block, Node>> = mutableMapOf()
     private val incompletePhis: MutableMap<Block, MutableMap<Name, Phi>> = mutableMapOf()
@@ -129,11 +129,30 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     }
 
     fun newMemoryRead(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int): Node {
-        return this.optimizer.transform(MemoryReadNode(currentBlock, base, offset, offsetScale, constantOffset, readCurrentSideEffect()))
+        return this.optimizer.transform(
+            MemoryReadNode(
+                currentBlock,
+                base,
+                offset,
+                offsetScale,
+                constantOffset,
+                readCurrentSideEffect()
+            )
+        )
     }
 
     fun newMemoryWrite(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int, value: Node): Node {
-        return this.optimizer.transform(MemoryWriteNode(currentBlock, base, offset, offsetScale, constantOffset, value, readCurrentSideEffect()))
+        return this.optimizer.transform(
+            MemoryWriteNode(
+                currentBlock,
+                base,
+                offset,
+                offsetScale,
+                constantOffset,
+                value,
+                readCurrentSideEffect()
+            )
+        )
     }
 
     fun newSideEffectProj(node: Node): Node {
@@ -141,19 +160,25 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     }
 
     fun newParameterProj(node: Node, name: Name, index: Int): Node {
-        return this.optimizer.transform(ProjNode(currentBlock, node, ProjNode.NamedParameterProjectionInfo(name, index)))
+        return this.optimizer.transform(
+            ProjNode(
+                currentBlock,
+                node,
+                ProjNode.NamedParameterProjectionInfo(name, index)
+            )
+        )
     }
 
     fun newResultProj(node: Node): Node {
         return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.RESULT)
     }
 
-    fun newIfTrueProjection(node: Node): ProjNode {
-        return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_TRUE)
+    fun newIfTrueProjection(node: Node): Node {
+        return optimizer.transform(ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_TRUE))
     }
 
-    fun newIfFalseProjection(node: Node): ProjNode {
-        return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_FALSE)
+    fun newIfFalseProjection(node: Node): Node {
+        return optimizer.transform(ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_FALSE))
     }
 
     fun newPhi(block: Block): Phi {
@@ -265,8 +290,7 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             return
         }
         for ((variable, phi) in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
-            val replacement = addPhiOperands(variable, phi)
-
+            addPhiOperands(variable, phi)
         }
         incompletePhis.remove(block)
         this.incompleteSideEffectPhis[block]?.let { phi ->
