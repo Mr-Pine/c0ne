@@ -59,13 +59,17 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
         .extern calloc
         .global alloc
         alloc:
+            cmp ESI, 0
+            jge 1f
+            call abort
+        1: 
             mov R15D, ESI
             mov RSI, 1
             call calloc
             cmp R15D, 0
             je 1f
             mov DWORD PTR [RAX], R15D
-         1:
+        1:
             ret
             
     """.trimIndent() + "\n\n"
