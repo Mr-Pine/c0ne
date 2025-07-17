@@ -1,5 +1,6 @@
 package de.mr_pine.c0ne.ir.optimize
 
+import de.mr_pine.c0ne.ir.GraphConstructor
 import de.mr_pine.c0ne.ir.node.Node
 
 /** This depends on [Node.equals] and [Node.hashCode] methods.
@@ -10,6 +11,7 @@ import de.mr_pine.c0ne.ir.node.Node
 class LocalValueNumbering : Optimizer {
     private val knownNodes: MutableMap<Node, Node> = mutableMapOf()
 
+    context(constructor: GraphConstructor)
     override fun transform(node: Node): Node {
         return this.knownNodes.computeIfAbsent(node) { it }
     }

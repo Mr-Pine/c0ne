@@ -14,7 +14,7 @@ class FunctionAnalysis(program: ProgramTree) : NoOpVisitor<Unit> {
         FunctionTree.BuiltinFunction(IdentName("flush"), BasicType.Integer, listOf()),
     )
 
-    var functions: List<FunctionTree> = program.topLevelTrees + builtins
+    var functions: List<FunctionTree> = program.functions + builtins
 
     init {
         for ((name, definitions) in functions.groupBy { it.name }) {

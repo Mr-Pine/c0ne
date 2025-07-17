@@ -3,12 +3,12 @@ package de.mr_pine.c0ne.backend
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.Node
 
-class AllocationInterferenceGraph(schedule: Schedule, startBlock: Block) {
+class AllocationInterferenceGraph(schedule: Schedule, startBlock: Block, endNodes: List<Node>) {
     private val interferenceGraph = mutableMapOf<Node, MutableSet<Node>>()
 
     init {
         val livenessAnalysis = LivenessAnalysis(startBlock, schedule)
-        livenessAnalysis.analyze()
+        livenessAnalysis.analyze(endNodes)
         val livenessMap = livenessAnalysis.result
 
         for ((nodeInBlock, live) in livenessMap.filter { (key, _) -> key.node.needsRegister }) {

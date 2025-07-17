@@ -10,10 +10,13 @@ import de.mr_pine.c0ne.lexer.Operator
 import de.mr_pine.c0ne.parser.ast.*
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralBoolTree
 import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
+import de.mr_pine.c0ne.parser.symbol.IdentName
 import de.mr_pine.c0ne.parser.symbol.Name
-import de.mr_pine.c0ne.parser.type.BasicType
+import de.mr_pine.c0ne.parser.type.StructType
+import de.mr_pine.c0ne.parser.type.Type
 import de.mr_pine.c0ne.parser.visitor.Visitor
 import java.util.*
+import kotlin.math.max
 
 /** SSA translation as described in
  * [`Simple and Efficient Construction of Static Single Assignment Form`](https://compilers.cs.uni-saarland.de/papers/bbhlmz13cc.pdf).
@@ -60,6 +63,93 @@ class SsaTranslation(
             DebugInfoHelper.debugInfo = this.debugStack.pop()
         }
 
+        fun arrayBoundsCheck(array: Node, index: Node, data: SsaTranslation) {
+            val indexLtZero = data.constructor.newLessThan(index, data.constructor.newConstInt(0))
+            val (trueNode, falseNode) = projectedIfNode(data, indexLtZero)
+
+            val trueLtZeroBlock = data.constructor.newBlock("array-bounds-check-lt-zero")
+            val falseLtZeroBlock = data.constructor.newBlock("array-bounds-check-lt-zero-false")
+            trueLtZeroBlock.addPredecessor(trueNode)
+            falseLtZeroBlock.addPredecessor(falseNode)
+            data.constructor.sealBlock(trueLtZeroBlock)
+            data.constructor.sealBlock(falseLtZeroBlock)
+
+            data.constructor.currentBlock = trueLtZeroBlock
+            val ltZeroAbort = data.constructor.newCall(IdentName("abort"), listOf(), false)
+            data.constructor.writeCurrentSideEffect(ltZeroAbort)
+            falseLtZeroBlock.addPredecessor(data.constructor.newJump())
+
+            data.constructor.currentBlock = falseLtZeroBlock
+            val size = data.constructor.newMemoryRead(
+                array,
+                data.constructor.newConstInt(0) /* marking as array length read */,
+                0,
+                0
+            )
+            val indexGeqSize = data.constructor.newGreaterThanOrEqual(index, size)
+            val (trueGeqSize, falseGeqSize) = projectedIfNode(data, indexGeqSize)
+            val trueGeqSizeBlock = data.constructor.newBlock("array-bounds-check-geq-size-true")
+            val falseGeqSizeBlock = data.constructor.newBlock("array-bounds-check-geq-size-false")
+            trueGeqSizeBlock.addPredecessor(trueGeqSize)
+            falseGeqSizeBlock.addPredecessor(falseGeqSize)
+            data.constructor.sealBlock(trueGeqSizeBlock)
+            data.constructor.sealBlock(falseGeqSizeBlock)
+
+            data.constructor.currentBlock = trueGeqSizeBlock
+            val arrayIndexOutOfBounds = data.constructor.newCall(IdentName("abort"), listOf(), false)
+            data.constructor.writeCurrentSideEffect(arrayIndexOutOfBounds)
+            falseGeqSizeBlock.addPredecessor(data.constructor.newJump())
+
+            data.constructor.currentBlock = falseGeqSizeBlock
+        }
+
+        private data class OffsetData(val base: Node, val offset: Node?, val offsetScale: Int, val constOffset: Int)
+
+        private fun getOffsetData(value: ExpressionTree, data: SsaTranslation): OffsetData = when (value) {
+            is ArrayAccessTree -> {
+                val index = value.index.accept(this, data)!!
+                val array = value.arrayValue.accept(this, data)!!
+                val offsetScale = max(value.type.size, 8)
+                val scaledIndex = if (offsetScale > 8) {
+                    data.constructor.newMul(index, data.constructor.newConstInt(offsetScale / 8))
+                } else {
+                    index
+                }
+                arrayBoundsCheck(array, index, data)
+                OffsetData(array, scaledIndex, 8, 8)
+            }
+
+            is DereferenceTree -> OffsetData(
+                value.pointerValue.accept(this, data)!!,
+                null,
+                0,
+                0
+            )
+
+            is FieldAccessTree -> {
+                val constantOffset =
+                    (value.structValue.type as StructType).references!!.offsets[value.field.name]!!
+                when (value.structValue) {
+                    is DereferenceTree -> {
+                        val pointerTree = value.structValue
+                        val base = pointerTree.pointerValue.accept(this, data)!!
+
+                        OffsetData(base, null, 0, constantOffset)
+                    }
+
+                    else -> {
+                        val base = getOffsetData(value.structValue, data)
+
+                        base.copy(constOffset = base.constOffset + constantOffset)
+                    }
+                }
+
+            }
+
+            is LValueIdentTree -> throw IllegalStateException("LValueIdentTree is not handled here")
+            else -> TODO()
+        }
+
         override fun visit(assignmentTree: AssignmentTree, data: SsaTranslation): Node? {
             pushSpan(assignmentTree)
             val desugar: ((Node, Node) -> Node)? = when (assignmentTree.operator.type) {
@@ -68,15 +158,13 @@ class SsaTranslation(
                 Operator.OperatorType.ASSIGN_MUL -> data.constructor::newMul
                 Operator.OperatorType.ASSIGN_DIV -> { lhs: Node, rhs: Node ->
                     projResultDivMod(
-                        data,
-                        data.constructor.newDiv(lhs, rhs)
+                        data, data.constructor.newDiv(lhs, rhs)
                     )
                 }
 
                 Operator.OperatorType.ASSIGN_MOD -> { lhs: Node, rhs: Node ->
                     projResultDivMod(
-                        data,
-                        data.constructor.newMod(lhs, rhs)
+                        data, data.constructor.newMod(lhs, rhs)
                     )
                 }
 
@@ -99,7 +187,32 @@ class SsaTranslation(
                     data.writeVariable(assignmentTree.lValue.name.name, data.currentBlock(), rhs)
                 }
 
-                else -> throw IllegalStateException("Unexpected value: " + assignmentTree.lValue)
+                else -> {
+                    val rhs = assignmentTree.expression.accept(this, data)!!
+
+                    val offsetData = getOffsetData(assignmentTree.lValue, data)
+                    val value = if (desugar != null) {
+                        val selfValue = data.constructor.newMemoryRead(
+                            offsetData.base,
+                            offsetData.offset,
+                            offsetData.offsetScale,
+                            offsetData.constOffset
+                        )
+                        data.constructor.writeCurrentSideEffect(selfValue)
+                        desugar(selfValue, rhs)
+                    } else {
+                        rhs
+                    }
+
+                    val write = data.constructor.newMemoryWrite(
+                        offsetData.base,
+                        offsetData.offset,
+                        offsetData.offsetScale,
+                        offsetData.constOffset,
+                        value
+                    )
+                    data.constructor.writeCurrentSideEffect(write)
+                }
             }
             popSpan()
             return NOT_AN_EXPRESSION
@@ -118,15 +231,13 @@ class SsaTranslation(
             val res = when (binaryOperationTree.operatorType) {
                 Operator.OperatorType.MINUS -> data.constructor.newSub(lhs, rhs)
                 Operator.OperatorType.PLUS -> data.constructor.newAdd(lhs, rhs)
-                Operator.OperatorType.MUL -> data.constructor.newMul(lhs, rhs)
+                Operator.OperatorType.STAR -> data.constructor.newMul(lhs, rhs)
                 Operator.OperatorType.DIV -> projResultDivMod(
-                    data,
-                    data.constructor.newDiv(lhs, rhs)
+                    data, data.constructor.newDiv(lhs, rhs)
                 )
 
                 Operator.OperatorType.MOD -> projResultDivMod(
-                    data,
-                    data.constructor.newMod(lhs, rhs)
+                    data, data.constructor.newMod(lhs, rhs)
                 )
 
                 Operator.OperatorType.LEFT_SHIFT -> data.constructor.newLeftShift(lhs, rhs)
@@ -142,18 +253,11 @@ class SsaTranslation(
                 Operator.OperatorType.GREATER_THAN_OR_EQUAL -> data.constructor.newGreaterThanOrEqual(lhs, rhs)
 
                 Operator.OperatorType.EQUALS -> {
-                    val size = when (binaryOperationTree.lhs.type) {
-                        BasicType.Boolean -> 1
-                        BasicType.Integer -> 4
-                    }
-                    data.constructor.newEquals(lhs, rhs, size)
+                    data.constructor.newEquals(lhs, rhs, (binaryOperationTree.lhs.type as Type.SmallType).smallSize)
                 }
+
                 Operator.OperatorType.NOT_EQUALS -> {
-                    val size = when (binaryOperationTree.lhs.type) {
-                        BasicType.Boolean -> 1
-                        BasicType.Integer -> 4
-                    }
-                    data.constructor.newNotEquals(lhs, rhs, size)
+                    data.constructor.newNotEquals(lhs, rhs, (binaryOperationTree.lhs.type as Type.SmallType).smallSize)
                 }
 
                 else -> throw java.lang.IllegalArgumentException("not a binary expression operator " + binaryOperationTree.operatorType)
@@ -179,13 +283,18 @@ class SsaTranslation(
             pushSpan(declarationTree)
             if (declarationTree.initializer != null) {
                 val rhs = declarationTree.initializer.accept(
-                    this,
-                    data
+                    this, data
                 )!!
                 data.writeVariable(declarationTree.name.name, data.currentBlock(), rhs)
             }
             popSpan()
             return NOT_AN_EXPRESSION
+        }
+
+        override fun visit(
+            structureTree: StructureTree, data: SsaTranslation
+        ): Node? {
+            error("What is SSA on a struct definition supposed to mean? Why did you call it then?")
         }
 
         override fun visit(functionTree: DeclaredFunctionTree, data: SsaTranslation): Node? {
@@ -232,12 +341,12 @@ class SsaTranslation(
             followBlock.addPredecessor(trueExit)
             followBlock.addPredecessor(falseExit)
             data.constructor.sealBlock(followBlock)
-            val value = data.constructor.newPhi(data.constructor.currentBlock)
-            value.addPredecessor(trueValue)
-            value.addPredecessor(falseValue)
+            val phi = data.constructor.newPhi(data.constructor.currentBlock)
+            if (trueProj !is UndefNode) phi.addPredecessor(trueValue)
+            if (falseProj !is UndefNode) phi.addPredecessor(falseValue)
             data.constructor.currentBlock = followBlock
 
-            return data.constructor.tryRemoveTrivialPhi(value)
+            return data.constructor.tryRemoveTrivialPhi(phi)
         }
 
         override fun visit(literalIntTree: LiteralIntTree, data: SsaTranslation): Node? {
@@ -254,8 +363,18 @@ class SsaTranslation(
             return node
         }
 
+        override fun visit(
+            literalNullTree: LiteralTree.LiteralNullTree,
+            data: SsaTranslation
+        ): Node? {
+            pushSpan(literalNullTree)
+            val node = data.constructor.newConstInt(0)
+            popSpan()
+            return node
+        }
+
         override fun visit(lValueIdentTree: LValueIdentTree, data: SsaTranslation): Node? {
-            return NOT_AN_EXPRESSION
+            return data.readVariable(lValueIdentTree.name.name, data.currentBlock())
         }
 
         override fun visit(nameTree: NameTree, data: SsaTranslation): Node? {
@@ -265,8 +384,7 @@ class SsaTranslation(
         override fun visit(unaryOperationTree: UnaryOperationTree, data: SsaTranslation): Node? {
             pushSpan(unaryOperationTree)
             val node = unaryOperationTree.expression.accept(
-                this,
-                data
+                this, data
             )!!
             val res = when (unaryOperationTree.operator.type) {
                 Operator.OperatorType.MINUS -> data.constructor.newSub(data.constructor.newConstInt(0), node)
@@ -282,7 +400,7 @@ class SsaTranslation(
             throw UnsupportedOperationException()
         }
 
-        data class IfProjections(val trueProj: ProjNode, val falseProj: ProjNode)
+        data class IfProjections(val trueProj: Node, val falseProj: Node)
 
         private fun projectedIfNode(data: SsaTranslation, condition: Node): IfProjections {
             val ifNode = data.constructor.newIf(condition)
@@ -295,7 +413,8 @@ class SsaTranslation(
             pushSpan(ifTree)
             val condition = ifTree.condition.accept(this, data)!!
 
-            fun processBranch(branch: StatementTree?, projection: ProjNode, label: String): Node? {
+            fun processBranch(branch: StatementTree?, projection: Node, label: String): Node? {
+                if (projection is UndefNode) return null
                 val block = data.constructor.newBlock("if-body-$label")
                 data.constructor.currentBlock = block
                 block.addPredecessor(projection)
@@ -324,7 +443,8 @@ class SsaTranslation(
         override fun visit(whileTree: WhileTree, data: SsaTranslation): Node? {
             pushSpan(whileTree)
 
-            data.constructor.sealBlock(data.constructor.currentBlock)
+            val beforeBlock = data.constructor.currentBlock
+            data.constructor.sealBlock(beforeBlock)
             val exitJump = data.constructor.newJump()
 
             val whileBlock = data.constructor.newBlock("while")
@@ -353,6 +473,12 @@ class SsaTranslation(
             data.constructor.popLoopFollow(followBlock)
             data.constructor.sealBlock(followBlock)
 
+            // Infinite loop
+            if (followBlock.predecessors().all { it is UndefNode }) {
+                data.constructor.currentBlock = whileBlock
+                data.constructor.addInfiniteLoop(data.constructor.readCurrentSideEffect())
+            }
+
             data.constructor.currentBlock = followBlock
 
             popSpan()
@@ -362,7 +488,8 @@ class SsaTranslation(
         override fun visit(forTree: ForTree, data: SsaTranslation): Node? {
             pushSpan(forTree)
             forTree.initializer?.accept(this, data)
-            data.constructor.sealBlock(data.constructor.currentBlock)
+            val beforeBlock = data.constructor.currentBlock
+            data.constructor.sealBlock(beforeBlock)
             val entryJump = data.constructor.newJump()
 
             val forBlock = data.constructor.newBlock("for")
@@ -378,23 +505,29 @@ class SsaTranslation(
             val condition = forTree.condition.accept(this, data)!!
             val (trueProj, falseProj) = projectedIfNode(data, condition)
             bodyBlock.addPredecessor(trueProj)
+            data.constructor.sealBlock(bodyBlock)
             followBlock.addPredecessor(falseProj)
 
             data.constructor.currentBlock = stepBlock
             forTree.step?.accept(this, data)
             val stepExit = data.constructor.newJump()
             forBlock.addPredecessor(stepExit)
+            data.constructor.sealBlock(forBlock)
 
             data.constructor.currentBlock = bodyBlock
             forTree.loopBody.accept(this, data)
             val normalLoopExit = data.constructor.newJump()
             stepBlock.addPredecessor(normalLoopExit)
 
-
-            data.constructor.sealBlock(forBlock)
             data.constructor.sealBlock(followBlock)
+
+            // Infinite loop
+            if (followBlock.predecessors().all { it is UndefNode }) {
+                data.constructor.currentBlock = forBlock.block
+                data.constructor.addInfiniteLoop(data.constructor.readCurrentSideEffect())
+            }
+
             data.constructor.sealBlock(stepBlock)
-            data.constructor.sealBlock(bodyBlock)
 
             data.constructor.popLoopFollow(followBlock)
             data.constructor.popLoopBlock(stepBlock)
@@ -450,9 +583,73 @@ class SsaTranslation(
                     add(argNode)
                 }
             }
-            val call = data.constructor.newCall(callTree.identifier.name, arguments)
+            val call = data.constructor.newCall(callTree.identifier.name, arguments, true)
             data.constructor.writeCurrentSideEffect(call)
             return call
+        }
+
+        override fun visit(heapAllocationTree: HeapAllocationTree, data: SsaTranslation): Node? {
+            val baseSize = heapAllocationTree.typeTree.type.size
+            val arraySize = heapAllocationTree.arrayCount?.accept(this, data) ?: data.constructor.newConstInt(0)
+            val sizeNode = if (heapAllocationTree.arrayCount != null) {
+                data.constructor.newAdd(
+                    data.constructor.newMul(
+                        data.constructor.newConstInt(max(baseSize, 8)), arraySize
+                    ), data.constructor.newConstInt(8) // Write array size here
+                )
+            } else {
+                data.constructor.newConstInt(baseSize)
+            }
+
+            val callNode = data.constructor.newCall(IdentName("alloc"), listOf(sizeNode, arraySize), true)
+            data.constructor.writeCurrentSideEffect(callNode)
+
+            return callNode
+        }
+
+        override fun visit(
+            arrayAccessTree: ArrayAccessTree, data: SsaTranslation
+        ): Node {
+            val index = arrayAccessTree.index.accept(this, data)!!
+            val array = arrayAccessTree.arrayValue.accept(this, data)!!
+            arrayBoundsCheck(array, index, data)
+            val arrayRead = data.constructor.newMemoryRead(array, index, max(arrayAccessTree.type.size, 8), 8)
+            data.constructor.writeCurrentSideEffect(arrayRead)
+            return arrayRead
+        }
+
+        override fun visit(
+            fieldAccessTree: FieldAccessTree, data: SsaTranslation
+        ): Node? {
+            if (fieldAccessTree.structValue is TernaryOperationTree) {
+                val pulledInThen = FieldAccessTree(fieldAccessTree.structValue.thenExpression, fieldAccessTree.field)
+                val pulledInElse = FieldAccessTree(fieldAccessTree.structValue.elseExpression, fieldAccessTree.field)
+                val pulledIn = TernaryOperationTree(fieldAccessTree.structValue.condition, pulledInThen, pulledInElse)
+
+                return pulledIn.accept(this, data)
+            }
+
+            val offsetData = getOffsetData(fieldAccessTree, data)
+            val fieldValue = data.constructor.newMemoryRead(
+                offsetData.base,
+                offsetData.offset,
+                offsetData.offsetScale,
+                offsetData.constOffset
+            )
+            data.constructor.writeCurrentSideEffect(fieldValue)
+            return fieldValue
+        }
+
+        override fun visit(
+            dereferenceTree: DereferenceTree, data: SsaTranslation
+        ): Node? {
+            if (dereferenceTree.type !is Type.SmallType) {
+                error("Cannot just dereference large type")
+            }
+            val base = dereferenceTree.pointerValue.accept(this, data)!!
+            val dereferenced = data.constructor.newMemoryRead(base, null, 0, 0)
+            data.constructor.writeCurrentSideEffect(dereferenced)
+            return dereferenced
         }
 
         override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: SsaTranslation): Node? {
@@ -460,8 +657,7 @@ class SsaTranslation(
         }
 
         override fun visit(
-            parameterTree: ParameterTree,
-            data: SsaTranslation
+            parameterTree: ParameterTree, data: SsaTranslation
         ): Node? {
             return null
         }
@@ -495,11 +691,26 @@ class SsaTranslation(
             data.constructor.sealBlock(followBlock)
             data.constructor.currentBlock = followBlock
 
-            val phi = data.constructor.newPhi(data.constructor.currentBlock)
-            phi.appendOperand(lhs)
-            phi.appendOperand(rhs)
 
-            val res = data.constructor.tryRemoveTrivialPhi(phi)
+            val res = if (trueProj !is UndefNode && falseProj !is UndefNode) {
+                val phi = data.constructor.newPhi(data.constructor.currentBlock)
+                phi.appendOperand(lhs)
+                phi.appendOperand(rhs)
+                data.constructor.tryRemoveTrivialPhi(phi)
+            } else if (trueProj !is UndefNode) {
+                if (type == ShortCircuitType.LOGICAL_AND) {
+                    rhs
+                } else {
+                    lhs // Const true
+                }
+            } else {
+                if (type == ShortCircuitType.LOGICAL_AND) {
+                    lhs // Const false
+                } else {
+                    rhs
+                }
+            }
+
 
             popSpan()
             return res

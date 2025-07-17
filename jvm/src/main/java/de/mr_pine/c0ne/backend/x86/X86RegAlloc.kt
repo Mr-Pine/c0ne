@@ -4,14 +4,15 @@ import de.mr_pine.c0ne.backend.AllocationInterferenceGraph
 import de.mr_pine.c0ne.backend.Schedule
 import de.mr_pine.c0ne.backend.needsRegister
 import de.mr_pine.c0ne.backend.x86.instructions.Argument
+import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.MemoryReference.Companion.stackOverflowSlot
+import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.MemoryReference.Companion.nextStackOverflowSlot
 import de.mr_pine.c0ne.backend.x86.instructions.Argument.RegMem.Register.RealRegister
 import de.mr_pine.c0ne.ir.node.Block
 import de.mr_pine.c0ne.ir.node.ConstBoolNode
 import de.mr_pine.c0ne.ir.node.ConstIntNode
 import de.mr_pine.c0ne.ir.node.Node
-import kotlin.collections.set
 
-class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule) {
+class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule, endNodes: List<Node>) {
     private var allocatable = (RealRegister.entries - listOf(
         RealRegister.RAX,
         RealRegister.RDX,
@@ -20,17 +21,20 @@ class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule)
         RealRegister.RSP,
         RealRegister.R15
     ))
-        .asSequence() + generateSequence(Argument.RegMem.StackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { Argument.RegMem.StackOverflowSlot(it.offset + 8) }
+        .asSequence() + generateSequence(stackOverflowSlot(8 /*RBP + 0 == Return ptr*/)) { nextStackOverflowSlot(it) }
 
-    private val allocation = allocateRegisters()
+    private val allocation = allocateRegisters(endNodes)
 
-    fun allocateRegisters(): Map<Node, Argument.RegMem> {
-        val interferenceGraph = AllocationInterferenceGraph(schedule, startBlock)
+    fun allocateRegisters(endNodes: List<Node>): Map<Node, Argument.RegMem> {
+        val interferenceGraph = AllocationInterferenceGraph(schedule, startBlock, endNodes)
         val simplicialOrdering = interferenceGraph.buildSimplicialOrdering()
         return allocateFromSimplicialOrdering(simplicialOrdering, interferenceGraph)
     }
 
-    fun allocateFromSimplicialOrdering(ordering: List<Node>, interferenceGraph: AllocationInterferenceGraph): Map<Node, Argument.RegMem> = buildMap {
+    fun allocateFromSimplicialOrdering(
+        ordering: List<Node>,
+        interferenceGraph: AllocationInterferenceGraph
+    ): Map<Node, Argument.RegMem> = buildMap {
         val relevant = ordering.filter(Node::needsRegister)
         val soFar = mutableSetOf<Node>()
         for (node in relevant) {
@@ -43,7 +47,9 @@ class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule)
     }
 
     val overflowCount
-        get() = allocation.values.mapNotNull { it as? Argument.RegMem.StackOverflowSlot }.maxOfOrNull { it.offset }?.let { it + 1 } ?: 0
+        get() = allocation.values.mapNotNull { it as? Argument.RegMem.MemoryReference }
+            .filter { it.base == RealRegister.RBP && it.constantOffset < 0 }.maxOfOrNull { -it.constantOffset }
+            ?.let { it + 1 } ?: 0
 
     fun concretize(argument: Argument.NodeValue): Argument {
         return when (argument.node) {
@@ -65,7 +71,13 @@ class X86RegAlloc(private val startBlock: Block, private val schedule: Schedule)
             ?: RealRegister.R15
     }
 
-    fun concretize(argument: Argument.RegMem.StackOverflowSlot) = argument
+    fun concretize(argument: Argument.RegMem.MemoryReference) = Argument.RegMem.MemoryReference(
+        argument.base.concretize() as Argument.RegMem.Register,
+        argument.offset?.concretize(),
+        argument.offsetScale,
+        argument.constantOffset
+    )
+
     fun concretize(argument: RealRegister) = argument
     fun concretize(argument: Argument.Immediate) = argument
     fun concretize(argument: Argument.RegMem.Register.EcxOf) = RealRegister.RCX

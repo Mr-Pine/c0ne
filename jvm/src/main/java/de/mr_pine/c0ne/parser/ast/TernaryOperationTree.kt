@@ -1,5 +1,6 @@
 package de.mr_pine.c0ne.parser.ast
 
+import de.mr_pine.c0ne.parser.type.Type
 import de.mr_pine.c0ne.parser.visitor.Visitor
 
 data class TernaryOperationTree(
@@ -10,7 +11,9 @@ data class TernaryOperationTree(
     ExpressionTree {
     override val span = condition.span merge thenExpression.span merge elseExpression.span
 
-    override val type by lazy(thenExpression::type)
+    override val type by lazy {
+        Type.commonType(thenExpression.type, elseExpression.type)
+    }
 
     override fun <T, R> accept(visitor: Visitor<T, R>, data: T): R {
         return visitor.visit(this, data)

@@ -32,15 +32,16 @@ class Schedule(private val irGraph: IrGraph) {
 
         val visited = mutableSetOf<Node>()
         val todo: MutableList<Node> = (blocks.mapNotNull { it.exitNode }).toMutableList()
+        todo.addAll(irGraph.endBlock.predecessors())
         while (todo.isNotEmpty()) {
             val node = todo.removeFirst()
-            if (node in visited || node is Block) continue
+            if (node in visited) continue
             visited.add(node)
             if (node is Phi) {
                 val phiPredecessors = node.predecessors()
                 val blockPredecessors = node.block.predecessors()
                 assert(phiPredecessors.size == blockPredecessors.size) { "Phi predecessors and block predecessors don't match" }
-                if (!node.isSideEffectPhi) {
+                if (node.isValuePhi) {
                     for (predBlock in blockPredecessors.map { it.block }.toSet()) {
                         val nodes = relevantNodes[predBlock]!!
                         val predecessorPhiIndex =
@@ -49,7 +50,7 @@ class Schedule(private val irGraph: IrGraph) {
                         nodes.add(predecessorPhiIndex, node)
                     }
                 }
-            } else {
+            } else if (node !is Block) {
                 relevantNodes.getOrPut(node.block) { mutableListOf() }.add(node)
             }
             todo.addAll(node.predecessors())
@@ -78,7 +79,7 @@ class Schedule(private val irGraph: IrGraph) {
                 when (it.key) {
                     is ExitNode -> Int.MAX_VALUE
                     is StartNode -> Int.MIN_VALUE
-                    is ProjNode if (it.key as ProjNode).projectionInfo() is ProjNode.NamedParameterProjectionInfo -> it.value + Int.MIN_VALUE / 2
+                    is ProjNode if (it.key as ProjNode).projectionInfo is ProjNode.NamedParameterProjectionInfo -> it.value + Int.MIN_VALUE / 2
                     is Phi -> it.value + maxFinishNumber
                     else -> it.value
                 }

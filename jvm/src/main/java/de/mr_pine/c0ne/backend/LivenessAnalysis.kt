@@ -15,8 +15,8 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
         return liveIn
     }
 
-    override fun analyze() {
-        super.analyze()
+    override fun analyze(endNodes: List<Node>) {
+        super.analyze(endNodes)
         val start = NodeInBlock(schedule.blockSchedules[startBlock]!!.nodeOrder.first(), startBlock)
         assert(result[start]!!.outValue.isEmpty()) { "Something is alive at program start. Not good" }
     }
@@ -31,8 +31,11 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
 
     private fun defined(node: Node): Set<Node> {
         return when (node) {
-            is BinaryOperationNode, is UnaryOperationNode, is Phi, is ConstIntNode, is ConstBoolNode -> setOf(node)
-            is ProjNode if node.projectionInfo() is ProjNode.NamedParameterProjectionInfo -> setOf(node)
+            is BinaryOperationNode, is UnaryOperationNode, is Phi, is ConstIntNode, is ConstBoolNode, is MemoryReadNode -> setOf(
+                node
+            )
+
+            is ProjNode if node.projectionInfo is ProjNode.NamedParameterProjectionInfo -> setOf(node)
             else -> setOf()
         }
     }
@@ -44,12 +47,15 @@ class LivenessAnalysis(private val startBlock: Block, schedule: Schedule) :
             is UnaryOperationNode -> setOf(node.value)
             is Phi -> {
                 val predecessorIndex = node.block.predecessors().indexOfFirst { it.block == nodeInBlock.block }
-                setOf(node[predecessorIndex])
+                if (predecessorIndex == -1) setOf()
+                else setOf(node[predecessorIndex])
             }
 
             is ReturnNode -> setOf(node.result)
             is IfNode -> setOf(node.condition)
             is CallNode -> node.arguments.toSet()
+            is MemoryReadNode -> setOfNotNull(node.base, node.offset)
+            is MemoryWriteNode -> setOfNotNull(node.base, node.offset, node.value)
             is ExitNode, is ProjNode, is ConstIntNode, is ConstBoolNode, is Block, is StartNode, is UndefNode -> setOf()
         }
     }

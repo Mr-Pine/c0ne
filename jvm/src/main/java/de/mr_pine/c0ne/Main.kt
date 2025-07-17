@@ -6,9 +6,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
 import de.mr_pine.c0ne.backend.x86.X86CodeGenerator
 import de.mr_pine.c0ne.ir.SsaTranslation
-import de.mr_pine.c0ne.ir.optimize.ControlFlowPrune
-import de.mr_pine.c0ne.ir.optimize.LocalValueNumbering
-import de.mr_pine.c0ne.ir.optimize.MultiOptimizer
+import de.mr_pine.c0ne.ir.optimize.*
 import de.mr_pine.c0ne.ir.util.YCompPrinter
 import de.mr_pine.c0ne.lexer.Lexer
 import de.mr_pine.c0ne.parser.ParseException
@@ -56,8 +54,10 @@ class C0ne : CliktCommand() {
         fun compileToAssembly(source: String): String {
             val program = lexAndParse(source)
             SemanticAnalysis(program).analyze()
-            val graphs = program.topLevelTrees.map { function ->
-                val optimizer = MultiOptimizer(/*ConstantFolding(), */LocalValueNumbering())
+            val graphs = program.functions.map { function ->
+                val optimizer = MultiOptimizer(
+                    ArraySizeRead(), ConstantFolding(), LocalValueNumbering(), CondJumpEliding(),
+                )
                 val finishPassOptimizer = ControlFlowPrune()
                 val translation = SsaTranslation(function, optimizer, finishPassOptimizer)
                 translation.translate()

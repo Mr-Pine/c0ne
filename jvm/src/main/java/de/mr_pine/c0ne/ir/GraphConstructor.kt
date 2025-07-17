@@ -4,7 +4,7 @@ import de.mr_pine.c0ne.ir.node.*
 import de.mr_pine.c0ne.ir.optimize.Optimizer
 import de.mr_pine.c0ne.parser.symbol.Name
 
-internal class GraphConstructor(private val optimizer: Optimizer, name: String) {
+class GraphConstructor(private val optimizer: Optimizer, name: String) {
     val graph: IrGraph = IrGraph(name)
     private val currentDef: MutableMap<Name, MutableMap<Block, Node>> = mutableMapOf()
     private val incompletePhis: MutableMap<Block, MutableMap<Name, Phi>> = mutableMapOf()
@@ -25,8 +25,9 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return StartNode(currentBlock)
     }
 
+    var blockCounter = 0
     fun newBlock(label: String): Block {
-        return Block(graph, label)
+        return Block(graph, "${blockCounter++}-${label}")
     }
 
     fun newAdd(left: Node, right: Node): Node {
@@ -123,8 +124,35 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
         return this.optimizer.transform(JumpNode(currentBlock))
     }
 
-    fun newCall(function: Name, arguments: List<Node>): Node {
-        return this.optimizer.transform(CallNode(currentBlock, function, arguments, readCurrentSideEffect()))
+    fun newCall(function: Name, arguments: List<Node>, valueUsed: Boolean): Node {
+        return this.optimizer.transform(CallNode(currentBlock, function, arguments, valueUsed, readCurrentSideEffect()))
+    }
+
+    fun newMemoryRead(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int): Node {
+        return this.optimizer.transform(
+            MemoryReadNode(
+                currentBlock,
+                base,
+                offset,
+                offsetScale,
+                constantOffset,
+                readCurrentSideEffect()
+            )
+        )
+    }
+
+    fun newMemoryWrite(base: Node, offset: Node?, offsetScale: Int, constantOffset: Int, value: Node): Node {
+        return this.optimizer.transform(
+            MemoryWriteNode(
+                currentBlock,
+                base,
+                offset,
+                offsetScale,
+                constantOffset,
+                value,
+                readCurrentSideEffect()
+            )
+        )
     }
 
     fun newSideEffectProj(node: Node): Node {
@@ -132,19 +160,25 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     }
 
     fun newParameterProj(node: Node, name: Name, index: Int): Node {
-        return this.optimizer.transform(ProjNode(currentBlock, node, ProjNode.NamedParameterProjectionInfo(name, index)))
+        return this.optimizer.transform(
+            ProjNode(
+                currentBlock,
+                node,
+                ProjNode.NamedParameterProjectionInfo(name, index)
+            )
+        )
     }
 
     fun newResultProj(node: Node): Node {
         return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.RESULT)
     }
 
-    fun newIfTrueProjection(node: Node): ProjNode {
-        return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_TRUE)
+    fun newIfTrueProjection(node: Node): Node {
+        return optimizer.transform(ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_TRUE))
     }
 
-    fun newIfFalseProjection(node: Node): ProjNode {
-        return ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_FALSE)
+    fun newIfFalseProjection(node: Node): Node {
+        return optimizer.transform(ProjNode(currentBlock, node, ProjNode.SimpleProjectionInfo.IF_FALSE))
     }
 
     fun newPhi(block: Block): Phi {
@@ -184,7 +218,7 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     }
 
     fun addPhiOperands(variable: Name, phi: Phi): Node {
-        for (pred in phi.block.predecessors()) {
+        for (pred in phi.block.predecessors().filter { it !is UndefNode }) {
             val operand = readVariable(variable, pred.block)
             if (operand !is UndefNode) {
                 phi.appendOperand(operand)
@@ -194,21 +228,34 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
     }
 
     fun tryRemoveTrivialPhi(phi: Phi): Node {
-        val other = phi.predecessors().toSet() - phi
+        val other = phi.predecessors().filter { it !is UndefNode }.toSet() - phi
 
         if (other.isEmpty()) {
             return UndefNode(phi.block)
         } else if (other.size == 1) {
-            val replacement = other.first()
+            var replacement = other.first()
             for (succ in graph.successors(phi)) {
                 for ((idx, _) in succ.predecessors().withIndex().filter { it.value == phi }) {
                     succ.setPredecessor(idx, replacement)
                     if (succ is Phi && succ.block in sealedBlocks) {
-                        tryRemoveTrivialPhi(succ)
+                        val succReplacement = tryRemoveTrivialPhi(succ)
+                        if (succ == replacement) {
+                            replacement = succReplacement
+                        }
                     }
                 }
             }
-            return replacement
+            for (currentVariableDef in currentDef.values) {
+                for (block in currentVariableDef.keys) {
+                    if (currentVariableDef[block] == phi) {
+                        currentVariableDef[block] = replacement
+                    }
+                }
+            }
+            graph.removeSuccessor(replacement, phi)
+            return if (replacement is Phi && replacement.block in sealedBlocks) {
+                tryRemoveTrivialPhi(replacement)
+            } else replacement
         }
 
         return phi
@@ -243,10 +290,7 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             return
         }
         for ((variable, phi) in this.incompletePhis.getOrDefault(block, mapOf()).entries) {
-            val replacement = addPhiOperands(variable, phi)
-            if (this.currentDef[variable]!![block] == phi) {
-                this.currentDef[variable]!![block] = replacement
-            }
+            addPhiOperands(variable, phi)
         }
         incompletePhis.remove(block)
         this.incompleteSideEffectPhis[block]?.let { phi ->
@@ -278,12 +322,13 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
 
     private fun readSideEffectRecursive(block: Block): Node {
         var value: Node
+        val blockPredecessors = block.predecessors().filter { it !is UndefNode }
         if (!this.sealedBlocks.contains(block)) {
             value = newPhi(block)
             val old = this.incompleteSideEffectPhis.put(block, value)
             assert(old == null) { "double readSideEffectRecursive for $block" }
-        } else if (block.predecessors().size == 1) {
-            value = readSideEffect(block.predecessors().first().block)
+        } else if (blockPredecessors.size == 1) {
+            value = readSideEffect(blockPredecessors.first().block)
         } else {
             value = newPhi(block)
             writeSideEffect(block, value)
@@ -301,5 +346,9 @@ internal class GraphConstructor(private val optimizer: Optimizer, name: String) 
             }
         }
         return tryRemoveTrivialPhi(phi)
+    }
+
+    fun addInfiniteLoop(sideeffect: Node) {
+        graph.endBlock.addPredecessor(sideeffect)
     }
 }

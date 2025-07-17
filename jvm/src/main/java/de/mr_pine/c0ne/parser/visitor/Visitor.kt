@@ -15,6 +15,8 @@ interface Visitor<T, R> {
 
     fun visit(functionTree: DeclaredFunctionTree, data: T): R
 
+    fun visit(structureTree: StructureTree, data: T): R
+
     fun visit(identExpressionTree: IdentExpressionTree, data: T): R
 
     fun visit(ternaryOperationTree: TernaryOperationTree, data: T): R
@@ -22,6 +24,8 @@ interface Visitor<T, R> {
     fun visit(literalIntTree: LiteralIntTree, data: T): R
 
     fun visit(literalBoolTree: LiteralBoolTree, data: T): R
+
+    fun visit(literalNullTree: LiteralTree.LiteralNullTree, data: T): R
 
     fun visit(lValueIdentTree: LValueIdentTree, data: T): R
 
@@ -46,6 +50,14 @@ interface Visitor<T, R> {
     fun visit(typeTree: TypeTree, data: T): R
 
     fun visit(callTree: CallTree, data: T): R
+
+    fun visit(heapAllocationTree: HeapAllocationTree, data: T): R
+
+    fun visit(arrayAccessTree: ArrayAccessTree, data: T): R
+
+    fun visit(fieldAccessTree: FieldAccessTree, data: T): R
+
+    fun visit(dereferenceTree: DereferenceTree, data: T): R
 
     fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R
 

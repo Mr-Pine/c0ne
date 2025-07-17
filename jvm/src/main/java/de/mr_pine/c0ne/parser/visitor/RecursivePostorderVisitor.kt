@@ -12,14 +12,14 @@ import de.mr_pine.c0ne.parser.ast.LiteralTree.LiteralIntTree
 open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) : Visitor<T, R> {
     override fun visit(assignmentTree: AssignmentTree, data: T): R {
         var r = assignmentTree.lValue.accept<T, R>(this, data)
-        r = assignmentTree.expression.accept<T, R>(this, accumulate(data, r))
+        r = assignmentTree.expression.accept(this, accumulate(data, r))
         r = this.visitor.visit(assignmentTree, accumulate(data, r))
         return r
     }
 
     override fun visit(binaryOperationTree: BinaryOperationTree, data: T): R {
         var r = binaryOperationTree.lhs.accept<T, R>(this, data)
-        r = binaryOperationTree.rhs.accept<T, R>(this, accumulate(data, r))
+        r = binaryOperationTree.rhs.accept(this, accumulate(data, r))
         r = this.visitor.visit(binaryOperationTree, accumulate(data, r))
         return r
     }
@@ -51,6 +51,15 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         return r
     }
 
+    override fun visit(structureTree: StructureTree, data: T): R {
+        var r = structureTree.nameTree.accept(this, data)
+        for (field in structureTree.fields) {
+            r = field.accept(this, accumulate(data, r))
+        }
+        r = this.visitor.visit(structureTree, accumulate(data, r))
+        return r
+    }
+
     override fun visit(ternaryOperationTree: TernaryOperationTree, data: T): R {
         var r = ternaryOperationTree.condition.accept(this, data)
         r = ternaryOperationTree.thenExpression.accept(this, accumulate(data, r))
@@ -70,6 +79,10 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
 
     override fun visit(literalBoolTree: LiteralBoolTree, data: T): R {
         return this.visitor.visit(literalBoolTree, data)
+    }
+
+    override fun visit(literalNullTree: LiteralTree.LiteralNullTree, data: T): R {
+        return this.visitor.visit(literalNullTree, data)
     }
 
     override fun visit(lValueIdentTree: LValueIdentTree, data: T): R {
@@ -152,6 +165,27 @@ open class RecursivePostorderVisitor<T, R>(private val visitor: Visitor<T, R>) :
         val r = callTree.identifier.accept(this, data)
         callTree.arguments.accept(this, accumulate(data, r))
         return this.visitor.visit(callTree, accumulate(data, r))
+    }
+
+    override fun visit(heapAllocationTree: HeapAllocationTree, data: T): R {
+        val r = heapAllocationTree.typeTree.accept(this, data)
+        return this.visitor.visit(heapAllocationTree, accumulate(data, r))
+    }
+
+    override fun visit(arrayAccessTree: ArrayAccessTree, data: T): R {
+        var r = arrayAccessTree.arrayValue.accept(this, data)
+        r = arrayAccessTree.index.accept(this, accumulate(data, r))
+        return this.visitor.visit(arrayAccessTree, accumulate(data, r))
+    }
+
+    override fun visit(fieldAccessTree: FieldAccessTree, data: T): R {
+        val r = fieldAccessTree.structValue.accept(this, data)
+        return this.visitor.visit(fieldAccessTree, accumulate(data, r))
+    }
+
+    override fun visit(dereferenceTree: DereferenceTree, data: T): R {
+        val r = dereferenceTree.pointerValue.accept(this, data)
+        return this.visitor.visit(dereferenceTree, accumulate(data, r))
     }
 
     override fun visit(builtinFunction: FunctionTree.BuiltinFunction, data: T): R {

@@ -16,17 +16,28 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         assignmentTree: AssignmentTree, data: VariableStatus
     ): VariableStatus {
         val status = assignmentTree.expression.accept(this, data)
-        if (assignmentTree.lValue !is LValueIdentTree) {
-            throw NotImplementedError("Only assignments to variables are currently supported")
+        return when (assignmentTree.lValue) {
+            is LValueIdentTree -> {
+                if (assignmentTree.operator.type.isSelfAssignOperator) {
+                    data.checkUsage(assignmentTree.lValue.name, assignmentTree.span, true)
+                }
+
+                assignmentTree.lValue.accept(this, status)
+                status.addDefinition(
+                    VariableDefinition(assignmentTree.lValue.name.name),
+                    assignmentTree.span,
+                    assignmentTree
+                )
+            }
+
+            is ArrayAccessTree -> {
+                val res = assignmentTree.lValue.arrayValue.accept(this, status)
+                assignmentTree.lValue.index.accept(this, res)
+            }
+
+            is DereferenceTree -> assignmentTree.lValue.pointerValue.accept(this, status)
+            is FieldAccessTree -> assignmentTree.lValue.structValue.accept(this, status)
         }
-        if (assignmentTree.operator.type.isSelfAssignOperator) {
-            assignmentTree.lValue.references = data.checkUsage(assignmentTree.lValue.name, assignmentTree.span)
-        }
-        return status.addDefinition(
-            VariableDefinition(assignmentTree.lValue.name.name),
-            assignmentTree.span,
-            assignmentTree
-        )
     }
 
     override fun visit(
@@ -67,9 +78,16 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
+        structureTree: StructureTree,
+        data: VariableStatus
+    ): VariableStatus {
+        error("Should not be called for structures. Only functions should be visited here.")
+    }
+
+    override fun visit(
         identExpressionTree: IdentExpressionTree, data: VariableStatus
     ): VariableStatus {
-        identExpressionTree.references = data.checkUsage(identExpressionTree.name, identExpressionTree.span)
+        identExpressionTree.references = data.checkUsage(identExpressionTree.name, identExpressionTree.span, true)
         return data
     }
 
@@ -95,8 +113,16 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
     }
 
     override fun visit(
+        literalNullTree: LiteralTree.LiteralNullTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return data
+    }
+
+    override fun visit(
         lValueIdentTree: LValueIdentTree, data: VariableStatus
     ): VariableStatus {
+        lValueIdentTree.references = data.checkUsage(lValueIdentTree.name, lValueIdentTree.span, false)
         return data
     }
 
@@ -116,7 +142,7 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         programTree: ProgramTree, data: VariableStatus
     ): VariableStatus {
         var status = data
-        for (function in programTree.topLevelTrees) {
+        for (function in programTree.functions) {
             status = function.accept(this, status)
         }
         return status
@@ -184,6 +210,35 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
         data: VariableStatus
     ): VariableStatus {
         return callTree.arguments.accept(this, data)
+    }
+
+    override fun visit(
+        heapAllocationTree: HeapAllocationTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return heapAllocationTree.arrayCount?.accept(this, data) ?: data
+    }
+
+    override fun visit(
+        arrayAccessTree: ArrayAccessTree,
+        data: VariableStatus
+    ): VariableStatus {
+        val result = arrayAccessTree.index.accept(this, data)
+        return arrayAccessTree.arrayValue.accept(this, result)
+    }
+
+    override fun visit(
+        fieldAccessTree: FieldAccessTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return fieldAccessTree.structValue.accept(this, data)
+    }
+
+    override fun visit(
+        dereferenceTree: DereferenceTree,
+        data: VariableStatus
+    ): VariableStatus {
+        return dereferenceTree.pointerValue.accept(this, data)
     }
 
     override fun visit(
@@ -270,12 +325,12 @@ class VariableStatusAnalysis : Visitor<VariableStatusAnalysis.VariableStatus, Va
             )
         }
 
-        fun checkUsage(name: NameTree, span: Span): Declaration {
+        fun checkUsage(name: NameTree, span: Span, checkDefinition: Boolean): Declaration {
             val declaration = declarationFor(name.name)
             if (declaration == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not defined at $span")
             }
-            if (definitionFor(name.name) == null) {
+            if (checkDefinition && definitionFor(name.name) == null) {
                 throw SemanticException("Variable ${name.name.asString()} used but not declared at $span")
             }
             return declaration.declaration

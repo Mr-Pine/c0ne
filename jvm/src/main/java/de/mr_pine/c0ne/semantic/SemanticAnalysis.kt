@@ -18,8 +18,14 @@ class SemanticAnalysis(private val program: ProgramTree) {
             RecursivePostorderVisitor(FunctionAnalysis(this.program)), Unit
         )
         this.program.accept(
-            RecursivePostorderVisitor(TypeCheckAnalysis()), mutableListOf()
+            RecursivePostorderVisitor(TypeCheckAnalysis()),
+            TypeCheckAnalysis.TypeData(structDeclarations = program.structs.associateBy { it.nameTree.name }.apply {
+                if (size != program.structs.size) {
+                    throw SemanticException("Duplicate struct declaration somewhere (I don't know where)")
+                }
+            })
         )
+        this.program.accept(RecursivePostorderVisitor(RecursiveStructAnalysis()), mutableMapOf())
         this.program.accept(RecursivePostorderVisitor(ForStepAnalysis()), Unit)
         this.program.accept(RecursivePostorderVisitor(BreakContinueAnalysis()), mutableListOf())
         this.program.accept(
