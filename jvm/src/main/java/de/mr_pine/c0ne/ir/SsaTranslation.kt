@@ -690,11 +690,26 @@ class SsaTranslation(
             data.constructor.sealBlock(followBlock)
             data.constructor.currentBlock = followBlock
 
-            val phi = data.constructor.newPhi(data.constructor.currentBlock)
-            if (trueProj !is UndefNode) phi.appendOperand(lhs)
-            if (falseProj !is UndefNode) phi.appendOperand(rhs)
 
-            val res = data.constructor.tryRemoveTrivialPhi(phi)
+            val res = if (trueProj !is UndefNode && falseProj !is UndefNode) {
+                val phi = data.constructor.newPhi(data.constructor.currentBlock)
+                phi.appendOperand(lhs)
+                phi.appendOperand(rhs)
+                data.constructor.tryRemoveTrivialPhi(phi)
+            } else if (trueProj !is UndefNode) {
+                if (type == ShortCircuitType.LOGICAL_AND) {
+                    rhs
+                } else {
+                    lhs // Const true
+                }
+            } else {
+                if (type == ShortCircuitType.LOGICAL_AND) {
+                    lhs // Const false
+                } else {
+                    rhs
+                }
+            }
+
 
             popSpan()
             return res
