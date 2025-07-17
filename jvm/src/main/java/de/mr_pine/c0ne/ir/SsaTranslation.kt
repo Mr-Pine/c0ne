@@ -414,6 +414,7 @@ class SsaTranslation(
             val condition = ifTree.condition.accept(this, data)!!
 
             fun processBranch(branch: StatementTree?, projection: Node, label: String): Node? {
+                if (projection is UndefNode) return null
                 val block = data.constructor.newBlock("if-body-$label")
                 data.constructor.currentBlock = block
                 block.addPredecessor(projection)
