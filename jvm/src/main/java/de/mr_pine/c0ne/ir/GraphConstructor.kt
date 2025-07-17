@@ -218,7 +218,7 @@ class GraphConstructor(private val optimizer: Optimizer, name: String) {
     }
 
     fun addPhiOperands(variable: Name, phi: Phi): Node {
-        for (pred in phi.block.predecessors()) {
+        for (pred in phi.block.predecessors().filter { it !is UndefNode }) {
             val operand = readVariable(variable, pred.block)
             if (operand !is UndefNode) {
                 phi.appendOperand(operand)
@@ -322,12 +322,13 @@ class GraphConstructor(private val optimizer: Optimizer, name: String) {
 
     private fun readSideEffectRecursive(block: Block): Node {
         var value: Node
+        val blockPredecessors = block.predecessors().filter { it !is UndefNode }
         if (!this.sealedBlocks.contains(block)) {
             value = newPhi(block)
             val old = this.incompleteSideEffectPhis.put(block, value)
             assert(old == null) { "double readSideEffectRecursive for $block" }
-        } else if (block.predecessors().size == 1) {
-            value = readSideEffect(block.predecessors().first().block)
+        } else if (blockPredecessors.size == 1) {
+            value = readSideEffect(blockPredecessors.first().block)
         } else {
             value = newPhi(block)
             writeSideEffect(block, value)

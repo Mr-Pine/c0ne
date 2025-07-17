@@ -341,12 +341,12 @@ class SsaTranslation(
             followBlock.addPredecessor(trueExit)
             followBlock.addPredecessor(falseExit)
             data.constructor.sealBlock(followBlock)
-            val value = data.constructor.newPhi(data.constructor.currentBlock)
-            value.addPredecessor(trueValue)
-            value.addPredecessor(falseValue)
+            val phi = data.constructor.newPhi(data.constructor.currentBlock)
+            if (trueProj !is UndefNode) phi.addPredecessor(trueValue)
+            if (falseProj !is UndefNode) phi.addPredecessor(falseValue)
             data.constructor.currentBlock = followBlock
 
-            return data.constructor.tryRemoveTrivialPhi(value)
+            return data.constructor.tryRemoveTrivialPhi(phi)
         }
 
         override fun visit(literalIntTree: LiteralIntTree, data: SsaTranslation): Node? {
@@ -691,8 +691,8 @@ class SsaTranslation(
             data.constructor.currentBlock = followBlock
 
             val phi = data.constructor.newPhi(data.constructor.currentBlock)
-            phi.appendOperand(lhs)
-            phi.appendOperand(rhs)
+            if (trueProj !is UndefNode) phi.appendOperand(lhs)
+            if (falseProj !is UndefNode) phi.appendOperand(rhs)
 
             val res = data.constructor.tryRemoveTrivialPhi(phi)
 

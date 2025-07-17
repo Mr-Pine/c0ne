@@ -13,6 +13,7 @@ import de.mr_pine.c0ne.ir.node.ModNode
 import de.mr_pine.c0ne.ir.node.MulNode
 import de.mr_pine.c0ne.ir.node.Node
 import de.mr_pine.c0ne.ir.node.SubNode
+import de.mr_pine.c0ne.ir.node.XorNode
 
 class ConstantFolding : Optimizer {
     context(constructor: GraphConstructor)
@@ -22,6 +23,11 @@ class ConstantFolding : Optimizer {
             is LessThanNode if (node.left is ConstIntNode && node.right is ConstIntNode) -> foldConstantLt(node)
             is LessThanEqNode if (node.right is ConstIntNode && node.left is ConstIntNode) -> foldConstantLte(node)
             is EqualsNode -> foldConstantEq(node)
+            is XorNode if node.left is ConstBoolNode && node.right is ConstIntNode && (node.right as ConstIntNode).value == 1 -> ConstBoolNode(
+                node.graph.startBlock,
+                !(node.left as ConstBoolNode).value
+            )
+
             is BinaryOperationNode if (node.left is ConstIntNode && node.right is ConstIntNode) -> foldConstantBinop(
                 node
             )
