@@ -193,7 +193,7 @@ class X86CodeGenerator(irGraphs: List<IrGraph>) {
             private fun visitShift(node: BinaryOperationNode, isLeftShift: Boolean) {
                 val value = Argument.NodeValue(node.left)
                 val shift =
-                    if (node.right is ConstIntNode) Argument.Immediate((node.right as ConstIntNode).value) else Argument.NodeValue(
+                    if (node.right is ConstIntNode) Argument.Immediate((node.right as ConstIntNode).value and 0b11111) else Argument.NodeValue(
                         node.right
                     )
 
